@@ -5,3 +5,10 @@ node_modules/
 dist/
 build/
 out/
+
+# Internal docs (research, devlog, design specs — not for public repo)
+docs/.local/
+docs/superpowers/
+
+# Claude Code
+.claude/
