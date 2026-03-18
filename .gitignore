@@ -22,8 +22,9 @@ src-tauri/gen/
 *.keystore
 *.mobileprovision
 
-# Internal docs (research, devlog, design specs — not for public repo)
+# Internal docs (research, devlog, design specs, plans — not for public repo)
 docs/.local/
+docs/plans/
 docs/superpowers/
 
 # Claude Code

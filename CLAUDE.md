@@ -700,6 +700,7 @@ Open risks:        已知风险
 | 文档 | 路径 | 说明 |
 |------|------|------|
 | 重建设计规格 | `docs/.local/specs/2026-03-18-eyezen-rebuild-design.md` | 核心参考，已通过审查 |
+| 实现计划 | `docs/plans/` | 功能切片实现计划，命名 `<序号>-<scope>.md` |
 | 开发工作流 | `docs/development-workflow.md` | 10 阶段全生命周期指南 |
 | Phase 1 复盘 | `docs/.local/experience-review.md` | 保留/改变的设计决策 |
 | 开发日志 | `docs/.local/devlog.md` | 关键决策、里程碑记录 |

@@ -142,11 +142,12 @@
   - Rust edition、Tauri 版本、Svelte 版本、TailwindCSS 版本、关键 crate 版本
   - 不允许 AI 随意引入新依赖，必须先讨论
 - 版本锁定策略：次要版本号锁定（如 `"@tauri-apps/api": "~2.0.0"`）
-- 当前技术栈参考：`docs/superpowers/specs/2026-03-18-eyezen-rebuild-design.md` § 1.4
+- 当前技术栈参考：`docs/.local/specs/2026-03-18-eyezen-rebuild-design.md` § 1.4
 
 **模块拆解原则**：
 - 每个切片满足：1 个目标、1 个主要路径、1 次提交主题
 - 尽量不超过 5 个文件、1 小时内可完成并验证
+- 拆解结果写入 `docs/plans/<NNN>-<scope>.md`，按 README.md 中的模板格式
 - 示例（Phase 2 拆解）：
   ```
   statistics-data-model     → Rust struct + migration
@@ -675,16 +676,17 @@ Rust 侧建议在 `lib.rs` 或 `main.rs` 顶部加：
 
 ## 四、文档策略
 
-### 4.1 必需文档（6 类）
+### 4.1 必需文档（7 类）
 
 | 文档 | 内容 | 维护频率 |
 |------|------|----------|
 | `README.md` | 用户视角：是什么、平台、下载、功能、截图 | 每次 release |
 | `CLAUDE.md` | AI 上下文：架构、模块索引、IPC 接口、开发命令、权限说明 | 每次架构变更 |
 | `docs/development-workflow.md` | 本文档（含测试策略、发布流程） | 流程变更时 |
+| `docs/plans/` | 实现计划，命名 `<NNN>-<scope>.md`（gitignored，本地保留） | 每个功能切片规划时 |
 | `docs/.local/experience-review.md` | 经验复盘与重建指南 | 阶段复盘时 |
 | `docs/.local/devlog.md` | 开发日志：关键决策、里程碑、会话摘要 | 每个切片/阶段完成时 |
-| `docs/superpowers/specs/` | 设计规格文档 | 新功能设计时 |
+| `docs/.local/specs/` | 设计规格文档 | 新功能设计时 |
 
 > 注意：不要拆出独立的 `testing-strategy.md`、`release-runbook.md`、`security-and-permissions.md` — 这些内容已分别覆盖在本文档的阶段 4/8/7 和 `CLAUDE.md` 中。单人项目维护 8 份独立文档不现实，会迅速过期。等团队扩展到 3+ 人时再拆分。
 
