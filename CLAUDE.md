@@ -14,30 +14,34 @@
 
 - Phase 1 MVP 已完成并经三模型审查（Claude Opus + Codex + Gemini）
 - Phase 1 代码已废弃，仅保留架构经验和设计决策
-- 重建设计规格：`docs/superpowers/specs/2026-03-18-eyezen-rebuild-design.md`
+- 重建设计规格：`docs/.local/specs/2026-03-18-eyezen-rebuild-design.md`
 - 脚手架已就绪：Tauri v2 + Svelte 5 + Vite 6 + TailwindCSS v4
-- 下一步：规划后端切片（ConfigService → TimerService → ...），同步做前端原型
+- 下一步：规划后端切片（ConfigService -> TimerService -> ...），同步做前端原型
 
 ---
 
 ## 技术栈（版本锁定）
 
-| 层 | 选型 | 版本约束 | 说明 |
-|---|------|---------|------|
-| 框架 | Tauri | v2 (`~2.x`) | 跨平台，轻量，Rust 后端 |
-| 前端 | Svelte 5 (Runes) | `~5.x` | 零运行时编译，最小 bundle |
-| 构建 | Vite | `~6.x` | Tauri 官方推荐，快速 HMR |
-| CSS | TailwindCSS | v4 (`~4.x`) | 工具类优先，与 Svelte 配合好 |
-| 图表 | ECharts | tree-shaken 导入 | 功能全面，CJK 生态好 |
-| 数据库 | SQLite | 通过 Rust sqlx | 后端管理，单文件 |
-| 配置 | TOML | 人类可读 | Rust 生态标准 |
-| 类型桥接 | ts-rs | 最新稳定版 | Rust struct -> TS type 生成 |
-| 日志 | tracing + 每日轮转 | -- | Phase 1 已验证 |
-| 音频 | rodio (独立线程) | -- | Phase 1 已验证 |
+| 层 | 选型 | 版本约束 | 实际版本 | 说明 |
+|---|------|---------|---------|------|
+| 框架 | Tauri | v2 (`~2.x`) | `~2.10` | 跨平台，轻量，Rust 后端 |
+| 前端 | Svelte 5 (Runes) | `~5.x` | `~5.54.0` | 零运行时编译，最小 bundle |
+| 构建 | Vite | `~6.x` | `~6.4.1` | Tauri 官方推荐，快速 HMR |
+| CSS | TailwindCSS | v4 (`~4.x`) | `~4.2.1` | 工具类优先，与 Svelte 配合好 |
+| 图表 | ECharts | tree-shaken 导入 | 未安装 (P2) | 功能全面，CJK 生态好 |
+| 数据库 | SQLite | 通过 Rust sqlx | 未安装 (P2) | 后端管理，单文件 |
+| 配置 | TOML | 人类可读 | 未安装 | Rust 生态标准 |
+| 类型桥接 | ts-rs | 最新稳定版 | 未安装 | Rust struct -> TS type 生成 |
+| 日志 | tracing + 每日轮转 | -- | 未安装 | Phase 1 已验证 |
+| 音频 | rodio (独立线程) | -- | 未安装 | Phase 1 已验证 |
+| 序列化 | serde + serde_json | `~1.0` | `~1.0` | Rust 标准序列化 |
+| 异步运行时 | tokio | `~1.x` | `~1.50` (full) | 异步任务调度 |
+| 测试 | Vitest | `~3.x` | `~3.2.4` | 前端测试框架 |
+| 类型检查 | svelte-check | `~4.x` | `~4.4.5` | Svelte 类型检查 |
 
 **依赖管理规则**：
 - 不允许 AI 随意引入新依赖，必须先讨论
-- 版本锁定策略：次要版本号锁定（如 `"@tauri-apps/api": "~2.0.0"`）
+- 版本锁定策略：次要版本号锁定（如 `"@tauri-apps/api": "~2.10.1"`）
 - Rust 侧 `u32` 替代 `u64` 用于计时器场景，避免 ts-rs 生成 `bigint`
 
 ---
@@ -108,7 +112,7 @@ graph TD
     ROOT --> SRC["src (Svelte 前端)"]
     ROOT --> DOCS["docs"]
 
-    SRC_TAURI --> SERVICES["services/"]
+    SRC_TAURI --> SERVICES["services/ (计划)"]
     SERVICES --> S_CONFIG["ConfigService"]
     SERVICES --> S_TIMER["TimerService"]
     SERVICES --> S_DETECTOR["DetectorService"]
@@ -118,54 +122,62 @@ graph TD
     SERVICES --> S_TRAY["TrayService"]
     SERVICES --> S_I18N["I18nService (P2)"]
 
-    SRC_TAURI --> PLATFORM["platform/"]
+    SRC_TAURI --> PLATFORM["platform/ (计划)"]
     PLATFORM --> P_WIN["windows.rs"]
     PLATFORM --> P_MAC["macos.rs"]
     PLATFORM --> P_LINUX["linux.rs"]
 
-    SRC_TAURI --> COMMANDS["commands/"]
-    SRC_TAURI --> EVENTS["events/"]
+    SRC_TAURI --> COMMANDS["commands/ (计划)"]
+    SRC_TAURI --> EVENTS["events/ (计划)"]
 
     SRC --> ENTRIES["entries/"]
-    ENTRIES --> E_MAIN["main.html/ts"]
-    ENTRIES --> E_TIP["tip.html/ts"]
-    ENTRIES --> E_TIPMIN["tip-minimal.html/ts"]
-    ENTRIES --> E_TRAY["tray.html/ts"]
+    ENTRIES --> E_MAIN["main.ts"]
+    ENTRIES --> E_TIP["tip.ts"]
+    ENTRIES --> E_TIPMIN["tip-minimal.ts"]
+    ENTRIES --> E_TRAY["tray.ts"]
+
+    ROOT --> HTML_ENTRIES["HTML 入口 (根目录)"]
+    HTML_ENTRIES --> H_MAIN["index.html"]
+    HTML_ENTRIES --> H_TIP["tip.html"]
+    HTML_ENTRIES --> H_TIPMIN["tip-minimal.html"]
+    HTML_ENTRIES --> H_TRAY["tray.html"]
 
     SRC --> PAGES["pages/"]
-    PAGES --> PG_MAIN["main/ (Settings|Statistics|About)"]
+    PAGES --> PG_MAIN["main/ (Settings|About)"]
     PAGES --> PG_TIP["tip/ (TipApp)"]
     PAGES --> PG_TIPMIN["tip-minimal/ (TipMinimalApp)"]
     PAGES --> PG_TRAY["tray/ (TrayApp)"]
 
     SRC --> LIB["lib/"]
-    LIB --> L_BIND["bindings/ (ts-rs 生成)"]
-    LIB --> L_CMD["commands.ts"]
-    LIB --> L_EVT["events.ts"]
-    LIB --> L_STORE["stores/"]
-    LIB --> L_COMP["components/"]
+    LIB --> L_BIND["bindings/ (计划, ts-rs 生成)"]
+    LIB --> L_CMD["commands.ts (计划)"]
+    LIB --> L_EVT["events.ts (计划)"]
+    LIB --> L_STORE["stores/ (计划)"]
+    LIB --> L_COMP["components/ (计划)"]
 ```
 
 ---
 
 ## 模块索引
 
-| 模块 | 路径 (计划) | 语言 | 职责 | 阶段 |
-|------|------------|------|------|------|
-| ConfigService | `src-tauri/src/services/config.rs` | Rust | TOML 配置读写、watch channel 广播、原子写入 | MVP |
-| TimerService | `src-tauri/src/services/timer.rs` | Rust | 纯函数状态机、tokio timer loop、锁外 effects | MVP |
-| DetectorService | `src-tauri/src/services/detector.rs` | Rust | 全屏检测 (MVP)；离席检测 + 进程白名单 (P2) | MVP |
-| WindowService | `src-tauri/src/services/window.rs` | Rust | 多显示器 tip-window 创建/销毁 | MVP |
-| SoundService | `src-tauri/src/services/sound.rs` | Rust | rodio 独立线程 + mpsc channel 音频播放 | MVP |
-| TrayService | `src-tauri/src/services/tray.rs` | Rust | 托盘菜单、tooltip 倒计时、状态图标切换 | MVP |
-| StatService | `src-tauri/src/services/stat.rs` | Rust | SQLite 存储 + 查询 API | P2 |
-| I18nService | `src-tauri/src/services/i18n.rs` | Rust | 语言目录 + 运行时语言切换 | P2 |
-| PlatformApi | `src-tauri/src/platform/` | Rust | 跨平台抽象 trait + 平台实现 | MVP |
-| Commands | `src-tauri/src/commands/` | Rust | Tauri command 薄层 | MVP |
-| Events | `src-tauri/src/events/` | Rust | Tauri 类型化事件定义 | MVP |
-| 前端 entries | `src/entries/` | TS/Svelte | Vite 多入口 (main/tip/tip-minimal/tray) | MVP |
-| 前端 pages | `src/pages/` | Svelte | 各窗口页面组件 | MVP |
-| 前端 lib | `src/lib/` | TS/Svelte | 共享组件、bindings、stores、commands/events 封装 | MVP |
+| 模块 | 路径 | 语言 | 状态 | 职责 | 阶段 |
+|------|------|------|------|------|------|
+| Rust 入口 | `src-tauri/src/main.rs`, `lib.rs` | Rust | 已存在 | Tauri Builder 启动 + 占位 command | MVP |
+| ConfigService | `src-tauri/src/services/config.rs` | Rust | 计划 | TOML 配置读写、watch channel 广播、原子写入 | MVP |
+| TimerService | `src-tauri/src/services/timer.rs` | Rust | 计划 | 纯函数状态机、tokio timer loop、锁外 effects | MVP |
+| DetectorService | `src-tauri/src/services/detector.rs` | Rust | 计划 | 全屏检测 (MVP)；离席检测 + 进程白名单 (P2) | MVP |
+| WindowService | `src-tauri/src/services/window.rs` | Rust | 计划 | 多显示器 tip-window 创建/销毁 | MVP |
+| SoundService | `src-tauri/src/services/sound.rs` | Rust | 计划 | rodio 独立线程 + mpsc channel 音频播放 | MVP |
+| TrayService | `src-tauri/src/services/tray.rs` | Rust | 计划 | 托盘菜单、tooltip 倒计时、状态图标切换 | MVP |
+| StatService | `src-tauri/src/services/stat.rs` | Rust | 计划 | SQLite 存储 + 查询 API | P2 |
+| I18nService | `src-tauri/src/services/i18n.rs` | Rust | 计划 | 语言目录 + 运行时语言切换 | P2 |
+| PlatformApi | `src-tauri/src/platform/` | Rust | 计划 | 跨平台抽象 trait + 平台实现 | MVP |
+| Commands | `src-tauri/src/commands/` | Rust | 计划 | Tauri command 薄层 | MVP |
+| Events | `src-tauri/src/events/` | Rust | 计划 | Tauri 类型化事件定义 | MVP |
+| HTML 入口 | `index.html`, `tip.html`, `tip-minimal.html`, `tray.html` | HTML | 已存在 | Vite 多入口 HTML（位于项目根目录） | MVP |
+| 前端 entries | `src/entries/` | TS | 已存在 | 各窗口 TS 入口（挂载 Svelte 组件） | MVP |
+| 前端 pages | `src/pages/` | Svelte | 已存在 | 各窗口页面组件（占位） | MVP |
+| 前端 lib | `src/lib/` | TS/Svelte | 占位 | 共享组件、bindings、stores、commands/events 封装 | MVP |
 
 ---
 
@@ -257,6 +269,8 @@ Working 超时时，如果任何 flag 为 true -> 重置计时器，不进入 Pr
 | `update_display_config` | `DisplayConfig` | `()` | main | 更新显示配置 (即时生效) |
 | `get_daily_stats` | `{ range }` | `Vec<DailyStat>` | main | P2: 查询每日统计 |
 
+> 当前已实现：`get_state_snapshot`（占位，返回 `"Working"` 字符串）。其余 command 待后端服务实现后补充。
+
 ### Events (Backend -> Frontend)
 
 | Event | Payload | 说明 |
@@ -294,45 +308,53 @@ pub enum AppError {
 
 纯 Svelte 5 + Vite，每个窗口类型一个 HTML 入口，避免轻量窗口加载不必要代码。
 
+HTML 入口文件位于项目根目录（Vite 多入口标准布局），TS 入口在 `src/entries/`。
+
 ```
+(根目录)
+|-- index.html                      -> main-window 入口
+|-- tip.html                        -> tip-window 入口
+|-- tip-minimal.html                -> tip-window-minimal 入口
++-- tray.html                       -> tray-panel 入口
+
 src/
 |-- entries/
-|   |-- main.html / main.ts       -> main-window
-|   |-- tip.html / tip.ts         -> tip-window-{n}
-|   |-- tip-minimal.html / tip-minimal.ts -> tip-window-minimal-{n}
-|   +-- tray.html / tray.ts       -> tray-panel
+|   |-- main.ts                     -> 挂载 MainApp
+|   |-- tip.ts                      -> 挂载 TipApp
+|   |-- tip-minimal.ts              -> 挂载 TipMinimalApp
+|   +-- tray.ts                     -> 挂载 TrayApp
 |-- pages/
 |   |-- main/
-|   |   |-- MainApp.svelte        Tab 布局 (Settings | Statistics | About)
-|   |   |-- Settings.svelte
-|   |   |-- Statistics.svelte     P2
-|   |   +-- About.svelte
+|   |   +-- MainApp.svelte          Tab 布局 (Settings | About); Statistics P2 后加入
 |   |-- tip/
-|   |   +-- TipApp.svelte         主显示器提醒
+|   |   +-- TipApp.svelte           主显示器提醒（占位）
 |   |-- tip-minimal/
-|   |   +-- TipMinimalApp.svelte  副显示器遮罩
+|   |   +-- TipMinimalApp.svelte    副显示器遮罩（占位）
 |   +-- tray/
-|       +-- TrayApp.svelte        托盘快捷面板
+|       +-- TrayApp.svelte          托盘快捷面板（占位）
 |-- lib/
-|   |-- components/               共享组件
-|   |-- bindings/                 ts-rs 生成类型（直接消费）
-|   |-- events.ts                 Tauri 事件监听封装
-|   |-- commands.ts               Tauri invoke 封装
-|   +-- stores/                   Svelte stores
-+-- app.css                       TailwindCSS + CSS 变量
+|   |-- components/.gitkeep         共享组件（待创建）
+|   |-- bindings/.gitkeep           ts-rs 生成类型（待创建）
+|   +-- stores/.gitkeep             Svelte stores（待创建）
++-- app.css                         TailwindCSS v4 导入 + CSS 变量
 ```
+
+> 设计目标中的 `src/lib/commands.ts`、`src/lib/events.ts` 尚未创建，等后端 command/event 实现后同步创建。
 
 ### 窗口
 
-| 窗口 | 用途 | 生命周期 | 阶段 |
-|------|------|---------|------|
-| `main-window` | 设置/统计/关于 (Tab 切换) | 用户按需打开，关闭时隐藏 | MVP |
-| `tip-window-{n}` | 全屏休息提醒 (每个显示器一个) | Alerting/Resting 时创建，结束后销毁 | MVP |
-| `tip-window-minimal-{n}` | 副显示器最小化遮罩 | 同上，仅副显示器 | MVP |
-| `tray-panel` | 托盘点击快捷面板 | tauri.conf.json 预创建隐藏，托盘左键点击时切换 | MVP |
+| 窗口 | 用途 | 生命周期 | tauri.conf.json | 阶段 |
+|------|------|---------|-----------------|------|
+| `main-window` | 设置/关于 (Tab 切换) | 用户按需打开，关闭时隐藏 | 已配置 (520x640, visible:false) | MVP |
+| `tip-window-{n}` | 全屏休息提醒 (每个显示器一个) | Alerting/Resting 时创建，结束后销毁 | 动态创建（未配置） | MVP |
+| `tip-window-minimal-{n}` | 副显示器最小化遮罩 | 同上，仅副显示器 | 动态创建（未配置） | MVP |
+| `tray-panel` | 托盘点击快捷面板 | 预创建隐藏，托盘左键点击时切换 | 已配置 (280x160, decorations:false, visible:false) | MVP |
 
 ### Capability 权限 (最小权限原则)
 
+当前仅有 `default.json`（`core:default` + `shell:allow-open`），分窗口 capability 文件待后续 command 实现后创建。
+
+设计目标：
 ```
 capabilities/
 |-- main-window.json       window:*, config:*, stat:*
@@ -467,8 +489,6 @@ pub trait PlatformApi: Send + Sync {
 
 ## 开发命令
 
-> 注意：脚手架尚未初始化，以下为项目初始化后的预期命令。
-
 ```bash
 # 安装依赖
 npm install
@@ -497,17 +517,17 @@ npm test
 # 前端构建检查
 npm run build
 
-# ts-rs 类型生成
+# ts-rs 类型生成（ts-rs 安装后可用）
 cargo test --manifest-path src-tauri/Cargo.toml export_bindings
 
-# 安全审计
+# 安全审计（cargo-audit / cargo-deny 安装后可用）
 cargo audit --manifest-path src-tauri/Cargo.toml
 cargo deny check --manifest-path src-tauri/Cargo.toml
 ```
 
 ### Rust Lint 配置
 
-在 `lib.rs` 或 `main.rs` 顶部：
+在 `lib.rs` 顶部（已配置）：
 
 ```rust
 #![deny(clippy::all)]
@@ -587,6 +607,8 @@ npm run build
 ### CI (GitHub Actions)
 
 在 `push`/`pull_request` 到 `dev`/`main` 时触发，覆盖 Rust fmt + clippy + test + svelte-check + frontend test + build + security audit。
+
+> CI 配置文件（`.github/workflows/ci.yml`）尚未创建，详细配置参见 `docs/development-workflow.md` 阶段 8。
 
 ---
 
@@ -677,7 +699,7 @@ Open risks:        已知风险
 
 | 文档 | 路径 | 说明 |
 |------|------|------|
-| 重建设计规格 | `docs/superpowers/specs/2026-03-18-eyezen-rebuild-design.md` | 核心参考，已通过审查 |
+| 重建设计规格 | `docs/.local/specs/2026-03-18-eyezen-rebuild-design.md` | 核心参考，已通过审查 |
 | 开发工作流 | `docs/development-workflow.md` | 10 阶段全生命周期指南 |
 | Phase 1 复盘 | `docs/.local/experience-review.md` | 保留/改变的设计决策 |
 | 开发日志 | `docs/.local/devlog.md` | 关键决策、里程碑记录 |
@@ -688,6 +710,20 @@ Open risks:        已知风险
 ---
 
 ## 变更记录 (Changelog)
+
+### 2026-03-18 -- 架构扫描更新（脚手架后）
+
+- 扫描脚手架初始化后的实际文件结构，增量更新 CLAUDE.md
+- 修正 HTML 入口文件位置：根目录（`index.html` 等），非 `src/entries/`
+- 修正设计规格文档路径：`docs/.local/specs/`，非 `docs/superpowers/specs/`
+- 技术栈表新增"实际版本"列，标注已安装/未安装状态
+- 模块索引新增"状态"列，区分已存在/计划/占位
+- 更新前端架构树，反映实际文件布局和占位状态
+- 更新窗口表，补充 tauri.conf.json 配置信息
+- 更新 Capability 权限描述，反映当前只有 default.json
+- 移除开发命令中"脚手架尚未初始化"过时注释
+- 更新 Rust Lint 配置描述为"已配置"
+- 补充 IPC 接口当前实现状态说明
 
 ### 2026-03-18 -- 脚手架初始化
 
