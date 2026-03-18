@@ -10,12 +10,13 @@
 
 ## 项目状态
 
-**当前阶段：重建 -- 设计规格已通过审查，脚手架尚未初始化。**
+**当前阶段：重建 -- 脚手架已初始化，准备进入后端服务实现。**
 
 - Phase 1 MVP 已完成并经三模型审查（Claude Opus + Codex + Gemini）
 - Phase 1 代码已废弃，仅保留架构经验和设计决策
 - 重建设计规格：`docs/superpowers/specs/2026-03-18-eyezen-rebuild-design.md`
-- 下一步：初始化 Tauri v2 + Svelte 5 + Vite + TailwindCSS v4 脚手架
+- 脚手架已就绪：Tauri v2 + Svelte 5 + Vite 6 + TailwindCSS v4
+- 下一步：规划后端切片（ConfigService → TimerService → ...），同步做前端原型
 
 ---
 
@@ -688,8 +689,16 @@ Open risks:        已知风险
 
 ## 变更记录 (Changelog)
 
+### 2026-03-18 -- 脚手架初始化
+
+- 初始化 Tauri v2 + Svelte 5 + Vite 6 + TailwindCSS v4 项目骨架
+- 配置 Vite 多入口（main / tip / tip-minimal / tray）
+- 创建 4 个窗口占位组件 + CSS 变量体系
+- Rust 端 Builder + clippy lint + 占位 command
+- 依赖版本 tilde 锁定，通过双轮代码审查（Claude + Codex）
+- 更新项目状态
+
 ### 2026-03-18 -- 初始创建
 
 - 基于重建设计规格生成根级 `CLAUDE.md`
 - 覆盖：项目概述、架构、模块索引、IPC 接口、Timer 状态机、前端架构、数据存储、平台抽象、开发命令、编码规范、AI 使用指引
-- 项目当前状态：脚手架未初始化，仅有基础文件 (LICENSE, CONTRIBUTING.md, CODE_OF_CONDUCT.md)
