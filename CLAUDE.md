@@ -10,12 +10,14 @@
 
 ## 项目状态
 
-**当前阶段：重建 -- 后端 MVP 已实现，准备进入前端原型与集成测试。**
+**当前阶段：重建 -- 前端原型已实现并通过 E2E 测试，准备进入 Phase 2 增强。**
 
 - Phase 1 MVP 代码已废弃，仅保留架构经验和设计决策
 - 脚手架已就绪：Tauri v2 + Svelte 5 + Vite 6 + TailwindCSS v4
 - 后端 MVP 已实现：6 个核心服务 + Commands + Events + Platform + Models
-- 下一步：前端原型（tip-window / tray / settings）、集成测试、代码审查
+- 前端原型已实现：ts-rs 类型桥接 + IPC stores + tray-panel + tip-window + tip-minimal
+- E2E 测试通过：完整用户流程验证（Working → PreAlert → Alerting → Resting → Working）
+- 下一步：Phase 2 增强（Settings UI / Statistics / i18n / 离席检测）
 
 ---
 
@@ -30,7 +32,7 @@
 | 图表 | ECharts | tree-shaken | 未安装 (P2) | |
 | 数据库 | SQLite | via sqlx | 未安装 (P2) | |
 | 配置 | TOML | 人类可读 | `~0.8` | |
-| 类型桥接 | ts-rs | 最新稳定 | 未安装 | Rust → TS |
+| 类型桥接 | ts-rs | 最新稳定 | `~10` (dev-dep) | Rust → TS |
 | 日志 | tracing + 日轮转 | -- | `~0.1` / `~0.3` / `~0.2` | tracing + subscriber + appender |
 | 音频 | rodio | 独立线程 | `~0.20` | |
 | 序列化 | serde + serde_json | `~1.0` | `~1.0` | |
@@ -102,8 +104,8 @@ graph TD
 | ServiceContext | `src-tauri/src/services/context.rs` | 已实现 | 服务间通信上下文 |
 | HTML 入口 | `*.html` (根目录) | 已存在 | Vite 多入口 |
 | 前端 entries | `src/entries/` | 已存在 | 窗口 TS 入口 |
-| 前端 pages | `src/pages/` | 已存在 | 窗口页面组件 |
-| 前端 lib | `src/lib/` | 占位 | 共享组件/stores/bindings |
+| 前端 pages | `src/pages/` | 已实现 | tray-panel / tip-window / tip-minimal 页面组件 |
+| 前端 lib | `src/lib/` | 已实现 | bindings / commands / events / stores |
 
 ---
 
@@ -166,6 +168,8 @@ npm run build                # 前端构建检查
 | 文档 | 路径 | 说明 |
 |------|------|------|
 | 重建设计规格 | `docs/.local/specs/2026-03-18-eyezen-rebuild-design.md` | 核心参考 |
+| 前端原型设计规格 | `docs/.local/specs/2026-03-19-frontend-prototype-design.md` | tray-panel + tip-window 设计 |
+| 前端原型 mockup | `docs/.local/mockups/2026-03-19-tray-tip-v4.html` | 已采纳的 v4 视觉原型（浏览器打开） |
 | 实现计划 | `docs/plans/` | 功能切片，命名 `<NNN>-<scope>.md` |
 | 开发工作流 | `docs/development-workflow.md` | 10 阶段全生命周期 |
 
@@ -222,6 +226,21 @@ Open risks:        已知风险
 ---
 
 ## 变更记录
+
+### 2026-03-20 -- 前端原型实现 + Codex 审查修复
+
+- 实现 ts-rs 类型桥接：5 个 TypeScript bindings（cfg_attr(test) 模式）
+- 修复 Paused 状态快照 bug（service.rs + machine.rs 双路径修复）
+- 实现 IPC 封装层：commands.ts (9 函数 + 5s 超时) + events.ts (2 监听器)
+- 实现 Svelte 5 Runes stores：timer + config（版本计数器防竞态）
+- 实现视觉基础：Plus Jakarta Sans 本地字体 + biophilic CSS 变量
+- 实现 tray-panel：5 状态映射 + 玻璃拟态 + 呼吸动画 + 跟随托盘图标定位
+- 实现 tip-window：alerting + resting 双视图 + 深森林绿极光背景
+- 实现 tip-minimal：次显示器覆盖 + 呼吸文字
+- 托盘面板多显示器定位：available_monitors() 查找实际 monitor + 双轴 clamp
+- 新增依赖：ts-rs ~10 (dev-dep), @testing-library/svelte, @testing-library/jest-dom, jsdom
+- Codex 审查修复：store 竞态保护、invokeWithTimeout 清理、pre_alert 分离
+- E2E 测试通过
 
 ### 2026-03-19 -- 后端 MVP 实现
 
