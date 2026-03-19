@@ -8,22 +8,37 @@
 }
 
 :root {
-  /* Legacy vars (retained for main-window backward compat) */
-  --bg-primary: #fafbfc;
-  --bg-secondary: #f0f2f5;
+  /* Fresh green theme */
+  --bg-primary: #f8faf9;
   --bg-card: #ffffff;
+  --bg-tab: rgba(248, 250, 249, 0.85);
+
   --text-primary: #1a1d23;
-  --text-secondary: #6b7280;
-  --accent: #6366f1;
-  --accent-soft: rgba(99, 102, 241, 0.08);
-  --green: #22c55e;
-  --border: #e5e7eb;
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
+  --text-secondary: #5f6b6a;
+  --text-tertiary: #94a3a0;
+  --text-hint: #adb8b5;
+
+  --accent: #22c55e;
+  --accent-deep: #16a34a;
+  --accent-soft: rgba(34, 197, 94, 0.07);
+  --accent-hover: rgba(34, 197, 94, 0.12);
+  --accent-glow: rgba(34, 197, 94, 0.05);
+  --accent-border: rgba(34, 197, 94, 0.12);
+
+  --border: #e5eae7;
+  --border-light: rgba(0, 0, 0, 0.03);
+  --separator: #f0f3f1;
+
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.02), 0 2px 8px rgba(22, 100, 60, 0.03);
+  --shadow-card-hover: 0 2px 4px rgba(0, 0, 0, 0.03), 0 4px 16px rgba(22, 100, 60, 0.05);
+
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 16px;
   --transition: 150ms ease;
+
+  --toggle-on: #22c55e;
+  --toggle-off: #d1d8d4;
 
   /* Biophilic state colors (tray + tip windows) */
   --state-active: #10b981;
