@@ -1,14 +1,17 @@
 import { invoke } from '@tauri-apps/api/core';
 import type { StatePayload } from './bindings/StatePayload';
 import type { Config } from './bindings/Config';
+import type { TimerConfig } from './bindings/TimerConfig';
+import type { BehaviorConfig } from './bindings/BehaviorConfig';
+import type { DisplayConfig } from './bindings/DisplayConfig';
 
-const TIMEOUT_MS = 5000;
+const INVOKE_TIMEOUT_MS = 5000;
 
 function invokeWithTimeout<T>(cmd: string, args?: Record<string, unknown>): Promise<T> {
   return Promise.race([
     invoke<T>(cmd, args),
     new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error(`Command "${cmd}" timed out`)), TIMEOUT_MS),
+      setTimeout(() => reject(new Error(`Command "${cmd}" timed out`)), INVOKE_TIMEOUT_MS),
     ),
   ]);
 }
@@ -35,4 +38,16 @@ export function resumeTimer(): Promise<void> {
 
 export function getConfig(): Promise<Config> {
   return invokeWithTimeout('get_config');
+}
+
+export function updateTimerConfig(config: TimerConfig): Promise<void> {
+  return invokeWithTimeout('update_timer_config', { config });
+}
+
+export function updateBehaviorConfig(config: BehaviorConfig): Promise<void> {
+  return invokeWithTimeout('update_behavior_config', { config });
+}
+
+export function updateDisplayConfig(config: DisplayConfig): Promise<void> {
+  return invokeWithTimeout('update_display_config', { config });
 }
