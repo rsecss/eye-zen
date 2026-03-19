@@ -2,14 +2,14 @@
 #![warn(clippy::pedantic)]
 
 #[cfg(not(test))]
-pub mod commands;
-pub mod error;
+pub(crate) mod commands;
+pub(crate) mod error;
 #[cfg(not(test))]
-pub mod events;
-pub mod logging;
-pub mod models;
-pub mod platform;
-pub mod services;
+pub(crate) mod events;
+pub(crate) mod logging;
+pub(crate) mod models;
+pub(crate) mod platform;
+pub(crate) mod services;
 
 #[cfg(not(test))]
 use std::future::Future;

@@ -23,7 +23,7 @@ use super::timer::{Effect, Inner};
 use super::SharedAppServices;
 
 #[derive(Clone, Default)]
-pub struct ServiceContext {
+pub(crate) struct ServiceContext {
     #[cfg(not(test))]
     app: Option<AppHandle>,
 }
@@ -31,24 +31,24 @@ pub struct ServiceContext {
 impl ServiceContext {
     #[must_use]
     #[cfg(not(test))]
-    pub const fn new(app: Option<AppHandle>) -> Self {
+    pub(crate) const fn new(app: Option<AppHandle>) -> Self {
         Self { app }
     }
 
     #[must_use]
     #[cfg(not(test))]
-    pub fn app_handle(&self) -> Option<AppHandle> {
+    pub(crate) fn app_handle(&self) -> Option<AppHandle> {
         self.app.clone()
     }
 
     #[cfg(test)]
     #[must_use]
-    pub const fn app_handle(&self) -> Option<()> {
+    pub(crate) const fn app_handle(&self) -> Option<()> {
         None
     }
 
     #[cfg(not(test))]
-    pub fn emit_config_changed(&self, config: &Config) {
+    pub(crate) fn emit_config_changed(&self, config: &Config) {
         let Some(app) = self.app.as_ref() else {
             return;
         };
@@ -59,10 +59,10 @@ impl ServiceContext {
     }
 
     #[cfg(test)]
-    pub fn emit_config_changed(&self, _config: &Config) {}
+    pub(crate) fn emit_config_changed(&self, _config: &Config) {}
 
     #[cfg(not(test))]
-    pub fn execute_timer_effect(&self, effect: &Effect) {
+    pub(crate) fn execute_timer_effect(&self, effect: &Effect) {
         let Some(app) = self.app.as_ref() else {
             info!("STUB effect: {effect:?}");
             return;
@@ -99,13 +99,13 @@ impl ServiceContext {
     }
 
     #[cfg(test)]
-    pub fn execute_timer_effect(&self, effect: &Effect) {
+    pub(crate) fn execute_timer_effect(&self, effect: &Effect) {
         info!("STUB effect: {effect:?}");
     }
 
     #[must_use]
     #[cfg(not(test))]
-    pub fn spawn_timer_loop(
+    pub(crate) fn spawn_timer_loop(
         &self,
         inner: Arc<Mutex<Inner>>,
         mut config_rx: watch::Receiver<Arc<Config>>,
@@ -124,10 +124,10 @@ impl ServiceContext {
                     TimerService::sync_runtime_config(&mut guard, &config);
                 }
 
+                let flags = current_skip_flags(&app);
                 let effects = {
                     let mut guard = inner.lock().await;
                     let now = std::time::Instant::now();
-                    let flags = current_skip_flags(&app);
 
                     match step_time(&guard, now, &flags) {
                         Some(transition) => {
@@ -148,7 +148,7 @@ impl ServiceContext {
 
     #[must_use]
     #[cfg(test)]
-    pub fn spawn_timer_loop(
+    pub(crate) fn spawn_timer_loop(
         &self,
         _inner: Arc<Mutex<Inner>>,
         _config_rx: watch::Receiver<Arc<Config>>,

@@ -6,13 +6,13 @@ use tracing::warn;
 
 use super::PlatformApi;
 
-pub struct WindowsPlatform {
+pub(crate) struct WindowsPlatform {
     warned: AtomicBool,
 }
 
 impl WindowsPlatform {
     #[must_use]
-    pub const fn new() -> Self {
+    pub(crate) const fn new() -> Self {
         Self {
             warned: AtomicBool::new(false),
         }

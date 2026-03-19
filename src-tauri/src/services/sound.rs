@@ -16,7 +16,7 @@ use crate::services::ServiceContext;
 
 /// Commands consumed by the dedicated audio thread.
 #[derive(Debug)]
-pub enum SoundCommand {
+pub(crate) enum SoundCommand {
     Play(SoundAsset),
     Stop,
     SetEnabled(bool),
@@ -25,7 +25,7 @@ pub enum SoundCommand {
 
 /// Audio assets currently supported by the service.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum SoundAsset {
+pub(crate) enum SoundAsset {
     PreAlert,
     RestComplete,
 }
@@ -39,7 +39,7 @@ impl From<SoundType> for SoundAsset {
     }
 }
 
-pub struct SoundService {
+pub(crate) struct SoundService {
     tx: mpsc::Sender<SoundCommand>,
     thread_handle: Mutex<Option<thread::JoinHandle<()>>>,
 }
@@ -50,7 +50,7 @@ impl SoundService {
     /// # Errors
     ///
     /// Returns an error when the audio thread cannot be spawned.
-    pub fn new() -> Result<Self> {
+    pub(crate) fn new() -> Result<Self> {
         let (tx, rx) = mpsc::channel(32);
         let thread_handle = thread::Builder::new()
             .name("eyezen-audio".to_string())
@@ -67,26 +67,26 @@ impl SoundService {
     }
 
     /// Queue playback of a sound asset.
-    pub fn play(&self, asset: SoundAsset) {
+    pub(crate) fn play(&self, asset: SoundAsset) {
         if let Err(err) = self.tx.try_send(SoundCommand::Play(asset)) {
             warn!("failed to send play command: {err}");
         }
     }
 
     /// Queue playback by timer sound type.
-    pub fn play_type(&self, sound: SoundType) {
+    pub(crate) fn play_type(&self, sound: SoundType) {
         self.play(sound.into());
     }
 
     /// Stop any currently playing sink.
-    pub fn stop(&self) {
+    pub(crate) fn stop(&self) {
         if let Err(err) = self.tx.try_send(SoundCommand::Stop) {
             warn!("failed to send stop command: {err}");
         }
     }
 
     /// Enable or disable future playback.
-    pub fn set_enabled(&self, enabled: bool) {
+    pub(crate) fn set_enabled(&self, enabled: bool) {
         if let Err(err) = self.tx.try_send(SoundCommand::SetEnabled(enabled)) {
             warn!("failed to send enabled command: {err}");
         }

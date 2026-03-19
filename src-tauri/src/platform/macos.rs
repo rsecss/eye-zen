@@ -6,14 +6,14 @@ use tracing::warn;
 
 use super::PlatformApi;
 
-pub struct MacosPlatform {
+pub(crate) struct MacosPlatform {
     warned: AtomicBool,
     degraded_warned: AtomicBool,
 }
 
 impl MacosPlatform {
     #[must_use]
-    pub const fn new() -> Self {
+    pub(crate) const fn new() -> Self {
         Self {
             warned: AtomicBool::new(false),
             degraded_warned: AtomicBool::new(false),

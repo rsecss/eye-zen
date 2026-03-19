@@ -1,12 +1,12 @@
-pub mod config;
-pub mod context;
-pub mod detector;
-pub mod sound;
-pub mod timer;
+pub(crate) mod config;
+pub(crate) mod context;
+pub(crate) mod detector;
+pub(crate) mod sound;
+pub(crate) mod timer;
 #[cfg(not(test))]
-pub mod tray;
+pub(crate) mod tray;
 #[cfg(not(test))]
-pub mod window;
+pub(crate) mod window;
 
 #[cfg(not(test))]
 use std::sync::Arc;
@@ -14,21 +14,21 @@ use std::sync::Arc;
 use crate::error::Result;
 
 #[cfg(not(test))]
-pub struct AppServices {
-    pub config: config::ConfigService,
-    pub timer: timer::TimerService,
-    pub detector: detector::DetectorService,
-    pub window: window::WindowService,
-    pub sound: sound::SoundService,
-    pub tray: tray::TrayService,
+pub(crate) struct AppServices {
+    pub(crate) config: config::ConfigService,
+    pub(crate) timer: timer::TimerService,
+    pub(crate) detector: detector::DetectorService,
+    pub(crate) window: window::WindowService,
+    pub(crate) sound: sound::SoundService,
+    pub(crate) tray: tray::TrayService,
 }
 
 #[cfg(not(test))]
-pub type SharedAppServices = Arc<AppServices>;
-pub use context::ServiceContext;
+pub(crate) type SharedAppServices = Arc<AppServices>;
+pub(crate) use context::ServiceContext;
 
 /// Lifecycle contract shared by application services.
-pub trait Service: Send + Sync {
+pub(crate) trait Service: Send + Sync {
     fn init(&self, app: &ServiceContext) -> impl std::future::Future<Output = Result<()>> + Send;
     fn start(&self, app: &ServiceContext) -> impl std::future::Future<Output = Result<()>> + Send;
     fn shutdown(&self) -> impl std::future::Future<Output = Result<()>> + Send;

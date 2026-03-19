@@ -11,7 +11,7 @@ use crate::error::{AppError, Result};
 use crate::models::config::{BehaviorConfig, Config, DisplayConfig, TimerConfig};
 use crate::services::{Service, ServiceContext};
 
-pub struct ConfigService {
+pub(crate) struct ConfigService {
     config: Arc<ArcSwap<Config>>,
     tx: watch::Sender<Arc<Config>>,
     path: PathBuf,
@@ -22,7 +22,7 @@ pub struct ConfigService {
 impl ConfigService {
     /// Create a service from a TOML file path.
     #[allow(clippy::missing_errors_doc)]
-    pub fn new(path: PathBuf) -> Result<Self> {
+    pub(crate) fn new(path: PathBuf) -> Result<Self> {
         let config = Self::load_or_default(&path)?;
         let config = Arc::new(config);
         let (tx, _rx) = watch::channel(Arc::clone(&config));
@@ -38,19 +38,19 @@ impl ConfigService {
 
     /// Return the current lock-free config snapshot.
     #[must_use]
-    pub fn current(&self) -> Arc<Config> {
+    pub(crate) fn current(&self) -> Arc<Config> {
         self.config.load_full()
     }
 
     /// Subscribe to config updates.
     #[must_use]
-    pub fn subscribe(&self) -> watch::Receiver<Arc<Config>> {
+    pub(crate) fn subscribe(&self) -> watch::Receiver<Arc<Config>> {
         self.tx.subscribe()
     }
 
     /// Replace the timer section and persist the new config.
     #[allow(clippy::missing_errors_doc)]
-    pub fn update_timer(&self, timer: TimerConfig) -> Result<()> {
+    pub(crate) fn update_timer(&self, timer: TimerConfig) -> Result<()> {
         self.update_with(move |config| {
             config.timer = timer;
         })
@@ -58,7 +58,7 @@ impl ConfigService {
 
     /// Replace the behavior section and persist the new config.
     #[allow(clippy::missing_errors_doc)]
-    pub fn update_behavior(&self, behavior: BehaviorConfig) -> Result<()> {
+    pub(crate) fn update_behavior(&self, behavior: BehaviorConfig) -> Result<()> {
         self.update_with(move |config| {
             config.behavior = behavior;
         })
@@ -66,7 +66,7 @@ impl ConfigService {
 
     /// Replace the display section and persist the new config.
     #[allow(clippy::missing_errors_doc)]
-    pub fn update_display(&self, display: DisplayConfig) -> Result<()> {
+    pub(crate) fn update_display(&self, display: DisplayConfig) -> Result<()> {
         self.update_with(move |config| {
             config.display = display;
         })
@@ -161,18 +161,30 @@ impl ConfigService {
     }
 
     fn emit_config_changed(&self, config: &Config) {
-        if let Ok(guard) = self.app.lock() {
-            if let Some(app) = guard.as_ref() {
-                app.emit_config_changed(config);
+        let app = {
+            match self.app.lock() {
+                Ok(guard) => guard.clone(),
+                Err(e) => {
+                    warn!("app mutex poisoned in emit_config_changed: {e}");
+                    return;
+                }
             }
+        };
+        if let Some(app) = app {
+            app.emit_config_changed(config);
         }
     }
 }
 
 impl Service for ConfigService {
     async fn init(&self, app: &ServiceContext) -> Result<()> {
-        if let Ok(mut guard) = self.app.lock() {
-            *guard = Some(app.clone());
+        match self.app.lock() {
+            Ok(mut guard) => {
+                *guard = Some(app.clone());
+            }
+            Err(e) => {
+                warn!("app mutex poisoned in init: {e}");
+            }
         }
         Ok(())
     }

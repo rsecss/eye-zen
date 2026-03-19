@@ -1,10 +1,10 @@
-pub mod effect;
-pub mod effect_executor;
-pub mod machine;
-pub mod service;
-pub mod state;
+pub(crate) mod effect;
+pub(crate) mod effect_executor;
+pub(crate) mod machine;
+pub(crate) mod service;
+pub(crate) mod state;
 
-pub use effect::{Effect, SoundType, TrayUpdate};
-pub use machine::{collect_effects, collect_tick_effects, resolve_user_event, step_time};
-pub use service::TimerService;
-pub use state::{Inner, SkipFlags, TimerState, Transition, UserEvent};
+pub(crate) use effect::{Effect, SoundType, TrayUpdate};
+pub(crate) use machine::{collect_effects, collect_tick_effects, resolve_user_event, step_time};
+pub(crate) use service::TimerService;
+pub(crate) use state::{Inner, SkipFlags, TimerState, Transition, UserEvent};

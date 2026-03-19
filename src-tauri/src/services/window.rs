@@ -7,16 +7,16 @@ use crate::error::Result;
 use crate::services::{Service, ServiceContext};
 
 /// Manages tip-window lifecycle across all monitors.
-pub struct WindowService;
+pub(crate) struct WindowService;
 
 impl WindowService {
     #[must_use]
-    pub const fn new() -> Self {
+    pub(crate) const fn new() -> Self {
         Self
     }
 
     /// Create fullscreen tip windows on every monitor.
-    pub fn show_tip_windows(&self, app: &AppHandle) {
+    pub(crate) fn show_tip_windows(&self, app: &AppHandle) {
         let monitors = match app.available_monitors() {
             Ok(monitors) => monitors,
             Err(err) => {
@@ -82,7 +82,7 @@ impl WindowService {
     }
 
     /// Close every dynamically created tip window.
-    pub fn hide_tip_windows(&self, app: &AppHandle) {
+    pub(crate) fn hide_tip_windows(&self, app: &AppHandle) {
         let labels_to_close: Vec<String> = app
             .webview_windows()
             .keys()

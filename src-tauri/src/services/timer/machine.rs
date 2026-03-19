@@ -8,13 +8,18 @@ use super::state::{Inner, SkipFlags, TimerState, Transition, UserEvent};
 /// Resolve a user action into a valid state transition.
 #[allow(clippy::trivially_copy_pass_by_ref)]
 #[must_use]
-pub fn resolve_user_event(state: &TimerState, event: UserEvent) -> Option<Transition> {
+pub(crate) fn resolve_user_event(
+    state: &TimerState,
+    event: UserEvent,
+    paused_from: Option<TimerState>,
+) -> Option<Transition> {
     use TimerState::{Alerting, Paused, PreAlert, Resting, Working};
     use UserEvent::{Pause, Resume, Skip, StartRest};
 
     let to = match (*state, event) {
         (Alerting, StartRest) => Resting,
-        (Alerting, Skip) | (Paused, Resume) => Working,
+        (Alerting, Skip) => Working,
+        (Paused, Resume) => paused_from.unwrap_or(Working),
         (Working | PreAlert | Alerting | Resting, Pause) => Paused,
         _ => return None,
     };
@@ -24,7 +29,7 @@ pub fn resolve_user_event(state: &TimerState, event: UserEvent) -> Option<Transi
 
 /// Resolve timeout-driven state changes.
 #[must_use]
-pub fn step_time(inner: &Inner, now: Instant, skip_flags: &SkipFlags) -> Option<Transition> {
+pub(crate) fn step_time(inner: &Inner, now: Instant, skip_flags: &SkipFlags) -> Option<Transition> {
     use TimerState::{Alerting, Paused, PreAlert, Resting, Working};
 
     let elapsed = inner.elapsed(now);
@@ -70,7 +75,7 @@ pub fn step_time(inner: &Inner, now: Instant, skip_flags: &SkipFlags) -> Option<
 
 /// Collect effects for a completed transition.
 #[must_use]
-pub fn collect_effects(transition: Transition, inner: &Inner, now: Instant) -> Vec<Effect> {
+pub(crate) fn collect_effects(transition: Transition, inner: &Inner, now: Instant) -> Vec<Effect> {
     use TimerState::{Alerting, Paused, PreAlert, Resting, Working};
 
     let mut effects = vec![Effect::EmitStateChanged(state_payload(inner, now))];
@@ -131,7 +136,7 @@ pub fn collect_effects(transition: Transition, inner: &Inner, now: Instant) -> V
 
 /// Collect periodic effects for the current state without a transition.
 #[must_use]
-pub fn collect_tick_effects(inner: &Inner, now: Instant) -> Vec<Effect> {
+pub(crate) fn collect_tick_effects(inner: &Inner, now: Instant) -> Vec<Effect> {
     vec![
         Effect::EmitStateChanged(state_payload(inner, now)),
         Effect::UpdateTray(TrayUpdate::Tooltip(format_tray_tooltip(inner, now))),
@@ -199,7 +204,7 @@ mod tests {
 
     #[test]
     fn alerting_start_rest() {
-        let transition = resolve_user_event(&Alerting, UserEvent::StartRest);
+        let transition = resolve_user_event(&Alerting, UserEvent::StartRest, None);
         assert_eq!(
             transition,
             Some(Transition {
@@ -211,7 +216,7 @@ mod tests {
 
     #[test]
     fn alerting_skip() {
-        let transition = resolve_user_event(&Alerting, UserEvent::Skip);
+        let transition = resolve_user_event(&Alerting, UserEvent::Skip, None);
         assert_eq!(
             transition,
             Some(Transition {
@@ -223,7 +228,7 @@ mod tests {
 
     #[test]
     fn working_pause() {
-        let transition = resolve_user_event(&Working, UserEvent::Pause);
+        let transition = resolve_user_event(&Working, UserEvent::Pause, None);
         assert_eq!(
             transition,
             Some(Transition {
@@ -234,8 +239,8 @@ mod tests {
     }
 
     #[test]
-    fn paused_resume() {
-        let transition = resolve_user_event(&Paused, UserEvent::Resume);
+    fn paused_resume_defaults_to_working() {
+        let transition = resolve_user_event(&Paused, UserEvent::Resume, None);
         assert_eq!(
             transition,
             Some(Transition {
@@ -246,18 +251,37 @@ mod tests {
     }
 
     #[test]
+    fn paused_resume_from_resting() {
+        let transition =
+            resolve_user_event(&Paused, UserEvent::Resume, Some(Resting));
+        assert_eq!(
+            transition,
+            Some(Transition {
+                from: Paused,
+                to: Resting,
+            })
+        );
+    }
+
+    #[test]
     fn working_start_rest_invalid() {
-        assert_eq!(resolve_user_event(&Working, UserEvent::StartRest), None);
+        assert_eq!(
+            resolve_user_event(&Working, UserEvent::StartRest, None),
+            None
+        );
     }
 
     #[test]
     fn paused_pause_invalid() {
-        assert_eq!(resolve_user_event(&Paused, UserEvent::Pause), None);
+        assert_eq!(
+            resolve_user_event(&Paused, UserEvent::Pause, None),
+            None
+        );
     }
 
     #[test]
     fn resting_pause() {
-        let transition = resolve_user_event(&Resting, UserEvent::Pause);
+        let transition = resolve_user_event(&Resting, UserEvent::Pause, None);
         assert_eq!(
             transition,
             Some(Transition {
@@ -269,7 +293,7 @@ mod tests {
 
     #[test]
     fn pre_alert_pause() {
-        let transition = resolve_user_event(&PreAlert, UserEvent::Pause);
+        let transition = resolve_user_event(&PreAlert, UserEvent::Pause, None);
         assert_eq!(
             transition,
             Some(Transition {
@@ -281,7 +305,7 @@ mod tests {
 
     #[test]
     fn alerting_pause() {
-        let transition = resolve_user_event(&Alerting, UserEvent::Pause);
+        let transition = resolve_user_event(&Alerting, UserEvent::Pause, None);
         assert_eq!(
             transition,
             Some(Transition {

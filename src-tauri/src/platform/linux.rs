@@ -9,7 +9,7 @@ use super::PlatformApi;
 
 static WAYLAND_WARNING_EMITTED: AtomicBool = AtomicBool::new(false);
 
-pub struct LinuxPlatform {
+pub(crate) struct LinuxPlatform {
     warned: AtomicBool,
     is_x11: bool,
     x11_session: Option<Mutex<X11Session>>,
@@ -17,7 +17,7 @@ pub struct LinuxPlatform {
 
 impl LinuxPlatform {
     #[must_use]
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         let is_x11 = std::env::var("XDG_SESSION_TYPE")
             .map(|value| value.eq_ignore_ascii_case("x11"))
             .unwrap_or(false)

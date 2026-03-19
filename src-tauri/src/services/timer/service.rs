@@ -17,7 +17,7 @@ use super::effect_executor;
 use super::machine::{collect_effects, collect_tick_effects, resolve_user_event, step_time};
 use super::state::{Inner, SkipFlags, UserEvent};
 
-pub struct TimerService {
+pub(crate) struct TimerService {
     inner: Arc<Mutex<Inner>>,
     #[cfg_attr(test, allow(dead_code))]
     config_rx: watch::Receiver<Arc<Config>>,
@@ -28,7 +28,7 @@ pub struct TimerService {
 impl TimerService {
     /// Create a timer service from the current config snapshot.
     #[must_use]
-    pub fn new(config_rx: watch::Receiver<Arc<Config>>) -> Self {
+    pub(crate) fn new(config_rx: watch::Receiver<Arc<Config>>) -> Self {
         let config = Arc::clone(&config_rx.borrow());
         let inner = Inner::new(
             config.timer.work_minutes,
@@ -46,7 +46,7 @@ impl TimerService {
     }
 
     /// Single tick of the timer loop.
-    pub async fn on_tick(&self, skip_flags: &SkipFlags) -> Vec<Effect> {
+    pub(crate) async fn on_tick(&self, skip_flags: &SkipFlags) -> Vec<Effect> {
         let effects = {
             let mut inner = self.inner.lock().await;
             let now = Instant::now();
@@ -59,7 +59,7 @@ impl TimerService {
             }
         };
 
-        let app = self.app.lock().await;
+        let app = self.app.lock().await.clone();
         for effect in &effects {
             effect_executor::execute_effect(app.as_ref(), effect);
         }
@@ -72,10 +72,12 @@ impl TimerService {
     /// # Errors
     ///
     /// Returns an error when the event is invalid for the current timer state.
-    pub async fn handle_user_event(&self, event: UserEvent) -> Result<()> {
+    pub(crate) async fn handle_user_event(&self, event: UserEvent) -> Result<()> {
         let effects = {
             let mut inner = self.inner.lock().await;
-            if let Some(transition) = resolve_user_event(&inner.state, event) {
+            if let Some(transition) =
+                resolve_user_event(&inner.state, event, inner.paused_from)
+            {
                 let now = Instant::now();
                 inner.apply_transition(transition);
                 collect_effects(transition, &inner, now)
@@ -88,7 +90,7 @@ impl TimerService {
             }
         };
 
-        let app = self.app.lock().await;
+        let app = self.app.lock().await.clone();
         for effect in &effects {
             effect_executor::execute_effect(app.as_ref(), effect);
         }
@@ -97,7 +99,7 @@ impl TimerService {
     }
 
     /// Apply timer config to future cycles without resetting current state.
-    pub async fn apply_config(&self, config: &Config) {
+    pub(crate) async fn apply_config(&self, config: &Config) {
         let mut inner = self.inner.lock().await;
         Self::sync_runtime_config(&mut inner, config);
 
@@ -111,7 +113,7 @@ impl TimerService {
     }
 
     /// Build a frontend-friendly state snapshot.
-    pub async fn state_snapshot(&self) -> StatePayload {
+    pub(crate) async fn state_snapshot(&self) -> StatePayload {
         let inner = self.inner.lock().await;
         let now = Instant::now();
 

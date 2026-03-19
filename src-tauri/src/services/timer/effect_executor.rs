@@ -4,7 +4,7 @@ use super::effect::Effect;
 use crate::services::ServiceContext;
 
 /// Execute timer effects by dispatching to concrete services.
-pub fn execute_effect(app: Option<&ServiceContext>, effect: &Effect) {
+pub(crate) fn execute_effect(app: Option<&ServiceContext>, effect: &Effect) {
     let Some(app) = app else {
         info!("STUB effect: {effect:?}");
         return;

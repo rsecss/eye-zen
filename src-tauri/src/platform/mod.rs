@@ -1,18 +1,18 @@
 #[cfg(target_os = "linux")]
-pub mod linux;
+pub(crate) mod linux;
 #[cfg(target_os = "macos")]
-pub mod macos;
+pub(crate) mod macos;
 #[cfg(target_os = "windows")]
-pub mod windows;
+pub(crate) mod windows;
 
 /// Platform abstraction for OS-specific capability detection.
-pub trait PlatformApi: Send + Sync {
+pub(crate) trait PlatformApi: Send + Sync {
     fn is_fullscreen_app_active(&self) -> bool;
 }
 
 /// Create the platform-specific implementation for the current target.
 #[must_use]
-pub fn create_platform() -> Box<dyn PlatformApi> {
+pub(crate) fn create_platform() -> Box<dyn PlatformApi> {
     #[cfg(target_os = "windows")]
     {
         Box::new(windows::WindowsPlatform::new())

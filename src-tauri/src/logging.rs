@@ -8,7 +8,7 @@ use tracing_subscriber::{fmt, EnvFilter};
 static TRACING_INITIALIZED: OnceLock<()> = OnceLock::new();
 
 /// Initialize tracing once for the application process.
-pub fn init_tracing(log_dir: &Path) {
+pub(crate) fn init_tracing(log_dir: &Path) {
     if TRACING_INITIALIZED.get().is_some() {
         return;
     }

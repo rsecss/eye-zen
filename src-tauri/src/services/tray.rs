@@ -16,7 +16,7 @@ use crate::models::config::Config;
 use crate::services::timer::UserEvent;
 use crate::services::{Service, ServiceContext, SharedAppServices};
 
-pub struct TrayService {
+pub(crate) struct TrayService {
     #[cfg_attr(test, allow(dead_code))]
     config_rx: watch::Receiver<Arc<Config>>,
     pause_item: Mutex<Option<MenuItem<Wry>>>,
@@ -24,7 +24,7 @@ pub struct TrayService {
 
 impl TrayService {
     #[must_use]
-    pub fn new(config_rx: watch::Receiver<Arc<Config>>) -> Self {
+    pub(crate) fn new(config_rx: watch::Receiver<Arc<Config>>) -> Self {
         Self {
             config_rx,
             pause_item: Mutex::new(None),
@@ -36,7 +36,7 @@ impl TrayService {
     /// # Errors
     ///
     /// Returns an error when tray menu items or the tray icon cannot be created.
-    pub fn create_tray(&self, app: &AppHandle) -> Result<()> {
+    pub(crate) fn create_tray(&self, app: &AppHandle) -> Result<()> {
         let pause_item =
             MenuItem::with_id(app, "pause", "Pause", true, None::<&str>).map_err(Self::io_error)?;
         let settings_item = MenuItem::with_id(app, "settings", "Settings", true, None::<&str>)
@@ -77,7 +77,7 @@ impl TrayService {
         Ok(())
     }
 
-    pub fn handle_menu_event(app: &AppHandle, id: &str) {
+    pub(crate) fn handle_menu_event(app: &AppHandle, id: &str) {
         match id {
             "pause" => {
                 info!("tray: pause/resume clicked");
@@ -111,7 +111,7 @@ impl TrayService {
         }
     }
 
-    pub fn toggle_tray_panel(app: &AppHandle) {
+    pub(crate) fn toggle_tray_panel(app: &AppHandle) {
         if let Some(panel) = app.get_webview_window("tray-panel") {
             match panel.is_visible() {
                 Ok(true) => {
@@ -135,7 +135,7 @@ impl TrayService {
         }
     }
 
-    pub fn update_tooltip(&self, app: &AppHandle, text: &str) {
+    pub(crate) fn update_tooltip(&self, app: &AppHandle, text: &str) {
         if let Some(tray) = app.tray_by_id("main") {
             if let Err(err) = tray.set_tooltip(Some(text)) {
                 warn!("failed to update tray tooltip: {err}");
@@ -145,7 +145,7 @@ impl TrayService {
         }
     }
 
-    pub fn update_pause_item(&self, app: &AppHandle, is_paused: bool) {
+    pub(crate) fn update_pause_item(&self, app: &AppHandle, is_paused: bool) {
         let text = if is_paused { "Resume" } else { "Pause" };
         let _ = app;
 

@@ -7,18 +7,18 @@ use crate::platform::PlatformApi;
 use crate::services::{Service, ServiceContext};
 
 /// Thin wrapper around `PlatformApi` for timer-facing detection queries.
-pub struct DetectorService {
+pub(crate) struct DetectorService {
     platform: Box<dyn PlatformApi>,
 }
 
 impl DetectorService {
     #[must_use]
-    pub fn new(platform: Box<dyn PlatformApi>) -> Self {
+    pub(crate) fn new(platform: Box<dyn PlatformApi>) -> Self {
         Self { platform }
     }
 
     #[must_use]
-    pub fn is_fullscreen(&self) -> bool {
+    pub(crate) fn is_fullscreen(&self) -> bool {
         self.platform.is_fullscreen_app_active()
     }
 }

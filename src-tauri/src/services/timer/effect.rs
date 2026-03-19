@@ -6,7 +6,7 @@ use crate::models::types::StatePayload;
 
 /// Side effects collected by the pure timer core.
 #[derive(Debug, Clone)]
-pub enum Effect {
+pub(crate) enum Effect {
     EmitStateChanged(StatePayload),
     ShowTipWindows,
     HideTipWindows,
@@ -17,14 +17,14 @@ pub enum Effect {
 
 /// Sound variants consumed by the sound service.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum SoundType {
+pub(crate) enum SoundType {
     PreAlert,
     RestComplete,
 }
 
 /// Tray updates consumed by the tray service.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum TrayUpdate {
+pub(crate) enum TrayUpdate {
     Tooltip(String),
     StateIcon(String),
 }
