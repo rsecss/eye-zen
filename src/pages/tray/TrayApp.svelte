@@ -57,7 +57,9 @@
         ? 'Paused'
         : currentState === 'resting'
           ? 'Resting'
-          : 'Time for a break',
+          : currentState === 'pre_alert'
+            ? 'Break soon'
+            : 'Time for a break',
   );
 
   const labelColor = $derived(
@@ -153,6 +155,15 @@
   }
 </script>
 
+{#snippet settingsIcon()}
+  <svg viewBox="0 0 24 24">
+    <path
+      d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"
+    />
+    <circle cx="12" cy="12" r="3" />
+  </svg>
+{/snippet}
+
 <main class="tray-card {stateClass}">
   <!-- Status row -->
   <div class="status-row">
@@ -176,34 +187,49 @@
   <!-- Action buttons -->
   <div class="btn-row">
     {#if currentState === 'working'}
-      <button class="btn primary" onclick={handlePause}>Pause</button>
-      <button class="btn icon-btn" title="Settings" onclick={handleSettings}>
-        <svg viewBox="0 0 24 24"
-          ><path
-            d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"
-          /><circle cx="12" cy="12" r="3" /></svg
-        >
+      <button class="btn primary" aria-label="Pause timer" onclick={handlePause}>Pause</button>
+      <button
+        class="btn icon-btn"
+        title="Settings"
+        aria-label="Open settings"
+        onclick={handleSettings}
+      >
+        {@render settingsIcon()}
       </button>
     {:else if currentState === 'paused'}
-      <button class="btn primary" onclick={handleResume}>Resume</button>
-      <button class="btn icon-btn" title="Settings" onclick={handleSettings}>
-        <svg viewBox="0 0 24 24"
-          ><path
-            d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"
-          /><circle cx="12" cy="12" r="3" /></svg
-        >
+      <button class="btn primary" aria-label="Resume timer" onclick={handleResume}>Resume</button>
+      <button
+        class="btn icon-btn"
+        title="Settings"
+        aria-label="Open settings"
+        onclick={handleSettings}
+      >
+        {@render settingsIcon()}
       </button>
-    {:else if currentState === 'pre_alert' || currentState === 'alerting'}
-      <button class="btn solid" onclick={handleStartRest}>Start Rest</button>
-      <button class="btn neutral" onclick={handleSkip}>Skip</button>
+    {:else if currentState === 'pre_alert'}
+      <!-- pre_alert: user can still pause, no rest action yet -->
+      <button class="btn primary" aria-label="Pause timer" onclick={handlePause}>Pause</button>
+      <button
+        class="btn icon-btn"
+        title="Settings"
+        aria-label="Open settings"
+        onclick={handleSettings}
+      >
+        {@render settingsIcon()}
+      </button>
+    {:else if currentState === 'alerting'}
+      <button class="btn solid" aria-label="Start rest" onclick={handleStartRest}>Start Rest</button
+      >
+      <button class="btn neutral" aria-label="Skip" onclick={handleSkip}>Skip</button>
     {:else if currentState === 'resting'}
-      <button class="btn neutral" onclick={handleSkip}>Skip</button>
-      <button class="btn icon-btn" title="Settings" onclick={handleSettings}>
-        <svg viewBox="0 0 24 24"
-          ><path
-            d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"
-          /><circle cx="12" cy="12" r="3" /></svg
-        >
+      <button class="btn neutral" aria-label="Skip" onclick={handleSkip}>Skip</button>
+      <button
+        class="btn icon-btn"
+        title="Settings"
+        aria-label="Open settings"
+        onclick={handleSettings}
+      >
+        {@render settingsIcon()}
       </button>
     {/if}
   </div>
@@ -213,7 +239,7 @@
   /* --- Glassmorphic tray card --- */
   .tray-card {
     width: 320px;
-    background: rgba(255, 255, 255, 0.72);
+    background: var(--glass-tray-bg);
     backdrop-filter: blur(24px) saturate(1.5);
     -webkit-backdrop-filter: blur(24px) saturate(1.5);
     border-radius: 20px;
@@ -355,7 +381,7 @@
 
   .btn.primary {
     background: rgba(5, 150, 105, 0.1);
-    color: #059669;
+    color: var(--state-active-label);
   }
 
   .btn.primary:hover {
@@ -363,7 +389,7 @@
   }
 
   .btn.solid {
-    background: #059669;
+    background: var(--state-active-label);
     color: #fff;
   }
 
