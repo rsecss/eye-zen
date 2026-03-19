@@ -4,7 +4,7 @@
   import { startRest, skipRest } from '$lib/commands';
 
   onMount(() => {
-    timerStore.init();
+    timerStore.init().catch((err) => console.error('Failed to init timer store:', err));
     return () => timerStore.destroy();
   });
 
@@ -20,7 +20,7 @@
     restSeconds > 0 ? Math.round(((restSeconds - remainingSecs) / restSeconds) * 100) : 0,
   );
 
-  const isAlerting = $derived(currentState === 'alerting' || currentState === 'pre_alert');
+  const isAlerting = $derived(currentState === 'alerting');
   const isResting = $derived(currentState === 'resting');
 
   // --- Helpers ---
