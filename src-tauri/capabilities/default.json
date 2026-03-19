@@ -3,8 +3,5 @@
   "identifier": "default",
   "description": "Shared permissions for all windows",
   "windows": ["*"],
-  "permissions": [
-    "core:default",
-    "shell:allow-open"
-  ]
+  "permissions": ["core:default", "shell:allow-open"]
 }

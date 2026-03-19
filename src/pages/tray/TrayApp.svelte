@@ -1,6 +1,6 @@
 <script lang="ts">
-  let timerState = $state("Working");
-  let countdown = $state("18:30");
+  let timerState = $state('Working');
+  let countdown = $state('18:30');
 </script>
 
 <main class="p-3" style="background: var(--bg-card);">

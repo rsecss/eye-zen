@@ -1,8 +1,8 @@
 <script lang="ts">
-  const tabs = ["Settings", "About"] as const;
+  const tabs = ['Settings', 'About'] as const;
   type Tab = (typeof tabs)[number];
 
-  let activeTab = $state<Tab>("Settings");
+  let activeTab = $state<Tab>('Settings');
 </script>
 
 <main class="h-screen flex flex-col" style="background: var(--bg-primary);">
@@ -23,9 +23,9 @@
   </nav>
 
   <div class="flex-1 p-4 overflow-y-auto">
-    {#if activeTab === "Settings"}
+    {#if activeTab === 'Settings'}
       <p style="color: var(--text-secondary);">Settings page placeholder</p>
-    {:else if activeTab === "About"}
+    {:else if activeTab === 'About'}
       <p style="color: var(--text-secondary);">Eyezen v0.1.0</p>
     {/if}
   </div>
