@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-resume-timer"
+description = "Enables the resume_timer command without any pre-configured scope."
+commands.allow = ["resume_timer"]
+
+[[permission]]
+identifier = "deny-resume-timer"
+description = "Denies the resume_timer command without any pre-configured scope."
+commands.deny = ["resume_timer"]

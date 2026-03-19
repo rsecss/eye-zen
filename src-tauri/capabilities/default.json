@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "Shared permissions for all windows",
+  "description": "Shared baseline capability with no IPC permissions by default",
   "windows": ["*"],
-  "permissions": ["core:default", "shell:allow-open"]
+  "permissions": []
 }
