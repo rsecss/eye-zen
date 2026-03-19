@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-update-behavior-config"
+description = "Enables the update_behavior_config command without any pre-configured scope."
+commands.allow = ["update_behavior_config"]
+
+[[permission]]
+identifier = "deny-update-behavior-config"
+description = "Denies the update_behavior_config command without any pre-configured scope."
+commands.deny = ["update_behavior_config"]
