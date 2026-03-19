@@ -139,9 +139,11 @@ impl TrayService {
 
     /// Position the tray panel near the system tray icon.
     ///
+    /// - Finds the monitor containing the tray icon via `available_monitors()`
+    /// - Uses monitor origin offset (correct for secondary monitors)
     /// - Windows (taskbar bottom): panel above icon, horizontally centered
     /// - macOS (menu bar top): panel below icon, horizontally centered
-    /// - Clamps to screen bounds to prevent off-screen rendering
+    /// - Clamps both axes to monitor bounds to prevent off-screen rendering
     fn position_near_tray(panel: &tauri::WebviewWindow, icon_rect: &tauri::Rect) {
         let Ok(panel_size) = panel.outer_size() else {
             return;
@@ -162,33 +164,66 @@ impl TrayService {
         let panel_w = f64::from(panel_size.width);
         let panel_h = f64::from(panel_size.height);
 
+        // Find the monitor that contains the tray icon
+        let (mon_x, mon_y, mon_w, mon_h) = panel
+            .available_monitors()
+            .ok()
+            .and_then(|monitors| {
+                monitors.into_iter().find(|m| {
+                    let pos = m.position();
+                    let size = m.size();
+                    let mx = f64::from(pos.x);
+                    let my = f64::from(pos.y);
+                    let mw = f64::from(size.width);
+                    let mh = f64::from(size.height);
+                    icon_x >= mx && icon_x < mx + mw && icon_y >= my && icon_y < my + mh
+                })
+            })
+            .map(|m| {
+                let pos = m.position();
+                let size = m.size();
+                (
+                    f64::from(pos.x),
+                    f64::from(pos.y),
+                    f64::from(size.width),
+                    f64::from(size.height),
+                )
+            })
+            .unwrap_or_else(|| {
+                // Fallback to primary monitor
+                panel
+                    .primary_monitor()
+                    .ok()
+                    .flatten()
+                    .map(|m| {
+                        let pos = m.position();
+                        let size = m.size();
+                        (
+                            f64::from(pos.x),
+                            f64::from(pos.y),
+                            f64::from(size.width),
+                            f64::from(size.height),
+                        )
+                    })
+                    .unwrap_or((0.0, 0.0, 1920.0, 1080.0))
+            });
+
         // Center horizontally on the tray icon
         let mut x = icon_x + (icon_w / 2.0) - (panel_w / 2.0);
 
-        // Determine vertical position based on icon's screen location
-        let (screen_w, screen_h) = panel
-            .current_monitor()
-            .ok()
-            .flatten()
-            .map(|m| (f64::from(m.size().width), f64::from(m.size().height)))
-            .unwrap_or((1920.0, 1080.0));
-
-        let y = if icon_y < screen_h / 2.0 {
-            icon_y + icon_h + 4.0
-        } else {
+        // Vertical: above icon if in bottom half, below if in top half
+        let mut y = if icon_y - mon_y > mon_h / 2.0 {
             icon_y - panel_h - 4.0
+        } else {
+            icon_y + icon_h + 4.0
         };
 
-        // Clamp horizontal position to screen bounds
-        if x < 0.0 {
-            x = 8.0;
-        } else if x + panel_w > screen_w {
-            x = screen_w - panel_w - 8.0;
-        }
+        // Clamp to monitor bounds (both axes)
+        let margin = 8.0;
+        x = x.clamp(mon_x + margin, mon_x + mon_w - panel_w - margin);
+        y = y.clamp(mon_y + margin, mon_y + mon_h - panel_h - margin);
 
-        if let Err(err) =
-            panel.set_position(tauri::PhysicalPosition::new(x as i32, y as i32))
-        {
+        if let Err(err) = panel.set_position(tauri::PhysicalPosition::new(x as i32, y as i32)) {
             warn!("failed to position tray panel: {err}");
         }
     }
