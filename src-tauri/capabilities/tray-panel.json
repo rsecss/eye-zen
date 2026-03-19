@@ -9,6 +9,7 @@
       "identifier": "core:event:allow-listen",
       "allow": [{ "event": "config_changed" }, { "event": "state_changed" }]
     },
+    "allow-get-config",
     "allow-get-state-snapshot",
     "allow-start-rest",
     "allow-skip-rest",
