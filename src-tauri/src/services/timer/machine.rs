@@ -145,9 +145,14 @@ pub(crate) fn collect_tick_effects(inner: &Inner, now: Instant) -> Vec<Effect> {
 
 #[must_use]
 fn state_payload(inner: &Inner, now: Instant) -> StatePayload {
+    let remaining_secs = if inner.state == TimerState::Paused {
+        duration_to_secs(inner.paused_remaining)
+    } else {
+        duration_to_secs(inner.remaining(now))
+    };
     StatePayload {
         state: inner.state.as_str().to_string(),
-        remaining_secs: duration_to_secs(inner.remaining(now)),
+        remaining_secs,
         work_minutes: duration_minutes_to_u32(inner.work_duration),
         rest_seconds: duration_to_secs(Some(inner.rest_duration)),
     }

@@ -347,7 +347,10 @@ mod tests {
             let mut inner = service.inner.lock().await;
             inner.state_entered_at = past_instant(300); // 5 min worked
         }
-        service.handle_user_event(UserEvent::Pause).await.unwrap();
+        service
+            .handle_user_event(UserEvent::Pause)
+            .await
+            .expect("pause should succeed");
 
         let snapshot = service.state_snapshot().await;
         assert_eq!(snapshot.state, "paused");
