@@ -106,9 +106,10 @@ impl Inner {
         } else if transition.from == TimerState::Paused {
             // Transitioning FROM Paused: restore saved state with remaining time
             let target_duration = match transition.to {
-                TimerState::Working => {
-                    self.work_duration.checked_sub(self.pre_alert_duration).unwrap_or(self.work_duration)
-                }
+                TimerState::Working => self
+                    .work_duration
+                    .checked_sub(self.pre_alert_duration)
+                    .unwrap_or(self.work_duration),
                 TimerState::PreAlert => self.pre_alert_duration,
                 TimerState::Alerting => self.alert_timeout,
                 TimerState::Resting => self.rest_duration,

@@ -252,8 +252,7 @@ mod tests {
 
     #[test]
     fn paused_resume_from_resting() {
-        let transition =
-            resolve_user_event(&Paused, UserEvent::Resume, Some(Resting));
+        let transition = resolve_user_event(&Paused, UserEvent::Resume, Some(Resting));
         assert_eq!(
             transition,
             Some(Transition {
@@ -273,10 +272,7 @@ mod tests {
 
     #[test]
     fn paused_pause_invalid() {
-        assert_eq!(
-            resolve_user_event(&Paused, UserEvent::Pause, None),
-            None
-        );
+        assert_eq!(resolve_user_event(&Paused, UserEvent::Pause, None), None);
     }
 
     #[test]

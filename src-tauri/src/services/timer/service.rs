@@ -75,9 +75,7 @@ impl TimerService {
     pub(crate) async fn handle_user_event(&self, event: UserEvent) -> Result<()> {
         let effects = {
             let mut inner = self.inner.lock().await;
-            if let Some(transition) =
-                resolve_user_event(&inner.state, event, inner.paused_from)
-            {
+            if let Some(transition) = resolve_user_event(&inner.state, event, inner.paused_from) {
                 let now = Instant::now();
                 inner.apply_transition(transition);
                 collect_effects(transition, &inner, now)
@@ -117,11 +115,19 @@ impl TimerService {
         let inner = self.inner.lock().await;
         let now = Instant::now();
 
+        let remaining_secs = if inner.state == super::state::TimerState::Paused {
+            inner
+                .paused_remaining
+                .map_or(0, |d| u32::try_from(d.as_secs()).unwrap_or(u32::MAX))
+        } else {
+            inner
+                .remaining(now)
+                .map_or(0, |d| u32::try_from(d.as_secs()).unwrap_or(u32::MAX))
+        };
+
         StatePayload {
             state: inner.state.as_str().to_string(),
-            remaining_secs: inner.remaining(now).map_or(0, |duration| {
-                u32::try_from(duration.as_secs()).unwrap_or(u32::MAX)
-            }),
+            remaining_secs,
             work_minutes: u32::try_from(inner.work_duration.as_secs() / 60).unwrap_or(u32::MAX),
             rest_seconds: u32::try_from(inner.rest_duration.as_secs()).unwrap_or(u32::MAX),
         }
@@ -331,5 +337,24 @@ mod tests {
         assert_eq!(snapshot.state, "working");
         assert_eq!(snapshot.work_minutes, 20);
         assert_eq!(snapshot.rest_seconds, 20);
+    }
+
+    #[tokio::test]
+    async fn state_snapshot_paused_returns_remaining() {
+        let (service, _tx) = make_test_service();
+        // Enter Working for some time, then Pause
+        {
+            let mut inner = service.inner.lock().await;
+            inner.state_entered_at = past_instant(300); // 5 min worked
+        }
+        service.handle_user_event(UserEvent::Pause).await.unwrap();
+
+        let snapshot = service.state_snapshot().await;
+        assert_eq!(snapshot.state, "paused");
+        // Should show remaining work time, not 0
+        assert!(
+            snapshot.remaining_secs > 0,
+            "paused snapshot should preserve remaining time"
+        );
     }
 }

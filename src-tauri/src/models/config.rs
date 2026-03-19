@@ -1,17 +1,20 @@
 #![allow(clippy::module_name_repetitions)]
 
 use serde::{Deserialize, Serialize};
+use ts_rs::TS;
 
 /// Root application configuration persisted as TOML.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default, TS)]
 #[serde(default)]
+#[ts(export, export_to = "../../src/lib/bindings/")]
 pub struct Config {
     pub timer: TimerConfig,
     pub behavior: BehaviorConfig,
     pub display: DisplayConfig,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, TS)]
+#[ts(export, export_to = "../../src/lib/bindings/")]
 pub struct TimerConfig {
     #[serde(default = "default_work_minutes")]
     pub work_minutes: u32,
@@ -34,7 +37,8 @@ impl Default for TimerConfig {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, TS)]
+#[ts(export, export_to = "../../src/lib/bindings/")]
 pub struct BehaviorConfig {
     #[serde(default = "default_true")]
     pub sound_enabled: bool,
@@ -54,7 +58,8 @@ impl Default for BehaviorConfig {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, TS)]
+#[ts(export, export_to = "../../src/lib/bindings/")]
 pub struct DisplayConfig {
     #[serde(default = "default_language")]
     pub language: String,
