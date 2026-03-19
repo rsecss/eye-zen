@@ -5,7 +5,7 @@
   import { pauseTimer, resumeTimer, startRest, skipRest } from '$lib/commands';
 
   onMount(() => {
-    timerStore.init();
+    timerStore.init().catch((err) => console.error('Failed to init timer store:', err));
     return () => timerStore.destroy();
   });
 

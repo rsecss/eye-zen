@@ -8,12 +8,16 @@ import type { DisplayConfig } from './bindings/DisplayConfig';
 const INVOKE_TIMEOUT_MS = 5000;
 
 function invokeWithTimeout<T>(cmd: string, args?: Record<string, unknown>): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout>;
   return Promise.race([
     invoke<T>(cmd, args),
-    new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error(`Command "${cmd}" timed out`)), INVOKE_TIMEOUT_MS),
-    ),
-  ]);
+    new Promise<never>((_, reject) => {
+      timeoutId = setTimeout(
+        () => reject(new Error(`Command "${cmd}" timed out`)),
+        INVOKE_TIMEOUT_MS,
+      );
+    }),
+  ]).finally(() => clearTimeout(timeoutId));
 }
 
 export function getStateSnapshot(): Promise<StatePayload> {

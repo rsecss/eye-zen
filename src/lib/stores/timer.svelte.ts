@@ -11,6 +11,7 @@ const DEFAULT_STATE: StatePayload = {
 
 let state = $state<StatePayload>({ ...DEFAULT_STATE });
 let unlisten: (() => void) | null = null;
+let version = 0;
 
 export const timerStore = {
   get current(): StatePayload {
@@ -18,10 +19,30 @@ export const timerStore = {
   },
 
   async init(): Promise<void> {
-    unlisten = await onStateChanged((payload) => {
+    // Clean up previous subscription if any
+    unlisten?.();
+    unlisten = null;
+
+    const initVersion = ++version;
+
+    const newUnlisten = await onStateChanged((payload) => {
+      version++;
       state = payload;
     });
-    state = await getStateSnapshot();
+
+    try {
+      const snapshot = await getStateSnapshot();
+      // Only apply snapshot if no event has arrived since we started
+      if (version === initVersion) {
+        state = snapshot;
+      }
+    } catch (err) {
+      // Rollback listener on failure
+      newUnlisten();
+      throw err;
+    }
+
+    unlisten = newUnlisten;
   },
 
   destroy(): void {

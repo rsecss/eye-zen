@@ -3,7 +3,7 @@
   import { timerStore } from '$lib/stores/timer.svelte';
 
   onMount(() => {
-    timerStore.init();
+    timerStore.init().catch((err) => console.error('Failed to init timer store:', err));
     return () => timerStore.destroy();
   });
 

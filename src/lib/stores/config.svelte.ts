@@ -22,6 +22,7 @@ const DEFAULT_CONFIG: Config = {
 
 let config = $state<Config>({ ...DEFAULT_CONFIG });
 let unlisten: (() => void) | null = null;
+let version = 0;
 
 export const configStore = {
   get current(): Config {
@@ -29,10 +30,30 @@ export const configStore = {
   },
 
   async init(): Promise<void> {
-    unlisten = await onConfigChanged((payload) => {
+    // Clean up previous subscription if any
+    unlisten?.();
+    unlisten = null;
+
+    const initVersion = ++version;
+
+    const newUnlisten = await onConfigChanged((payload) => {
+      version++;
       config = payload;
     });
-    config = await getConfig();
+
+    try {
+      const snapshot = await getConfig();
+      // Only apply snapshot if no event has arrived since we started
+      if (version === initVersion) {
+        config = snapshot;
+      }
+    } catch (err) {
+      // Rollback listener on failure
+      newUnlisten();
+      throw err;
+    }
+
+    unlisten = newUnlisten;
   },
 
   destroy(): void {
