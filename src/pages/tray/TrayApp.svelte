@@ -238,11 +238,12 @@
 <style>
   /* --- Glassmorphic tray card --- */
   .tray-card {
-    width: 320px;
+    width: 100%;
+    min-height: 100vh;
     background: var(--glass-tray-bg);
     backdrop-filter: blur(24px) saturate(1.5);
     -webkit-backdrop-filter: blur(24px) saturate(1.5);
-    border-radius: 20px;
+    border-radius: 16px;
     border: 1px solid rgba(255, 255, 255, 0.6);
     box-shadow:
       0 1px 3px rgba(0, 0, 0, 0.04),

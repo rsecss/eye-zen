@@ -65,10 +65,11 @@ impl TrayService {
                 if let TrayIconEvent::Click {
                     button: MouseButton::Left,
                     button_state: MouseButtonState::Up,
+                    rect,
                     ..
                 } = event
                 {
-                    Self::toggle_tray_panel(tray.app_handle());
+                    Self::toggle_tray_panel(tray.app_handle(), &rect);
                 }
             })
             .build(app)
@@ -111,7 +112,7 @@ impl TrayService {
         }
     }
 
-    pub(crate) fn toggle_tray_panel(app: &AppHandle) {
+    pub(crate) fn toggle_tray_panel(app: &AppHandle, icon_rect: &tauri::Rect) {
         if let Some(panel) = app.get_webview_window("tray-panel") {
             match panel.is_visible() {
                 Ok(true) => {
@@ -120,6 +121,7 @@ impl TrayService {
                     }
                 }
                 Ok(false) => {
+                    Self::position_near_tray(&panel, icon_rect);
                     if let Err(err) = panel.show() {
                         warn!("failed to show tray panel: {err}");
                         return;
@@ -132,6 +134,62 @@ impl TrayService {
             }
         } else {
             warn!("tray-panel window not found");
+        }
+    }
+
+    /// Position the tray panel near the system tray icon.
+    ///
+    /// - Windows (taskbar bottom): panel above icon, horizontally centered
+    /// - macOS (menu bar top): panel below icon, horizontally centered
+    /// - Clamps to screen bounds to prevent off-screen rendering
+    fn position_near_tray(panel: &tauri::WebviewWindow, icon_rect: &tauri::Rect) {
+        let Ok(panel_size) = panel.outer_size() else {
+            return;
+        };
+
+        let scale = panel.scale_factor().unwrap_or(1.0);
+
+        let (icon_x, icon_y) = match &icon_rect.position {
+            tauri::Position::Physical(p) => (f64::from(p.x), f64::from(p.y)),
+            tauri::Position::Logical(p) => (p.x * scale, p.y * scale),
+        };
+
+        let (icon_w, icon_h) = match &icon_rect.size {
+            tauri::Size::Physical(s) => (f64::from(s.width), f64::from(s.height)),
+            tauri::Size::Logical(s) => (s.width * scale, s.height * scale),
+        };
+
+        let panel_w = f64::from(panel_size.width);
+        let panel_h = f64::from(panel_size.height);
+
+        // Center horizontally on the tray icon
+        let mut x = icon_x + (icon_w / 2.0) - (panel_w / 2.0);
+
+        // Determine vertical position based on icon's screen location
+        let (screen_w, screen_h) = panel
+            .current_monitor()
+            .ok()
+            .flatten()
+            .map(|m| (f64::from(m.size().width), f64::from(m.size().height)))
+            .unwrap_or((1920.0, 1080.0));
+
+        let y = if icon_y < screen_h / 2.0 {
+            icon_y + icon_h + 4.0
+        } else {
+            icon_y - panel_h - 4.0
+        };
+
+        // Clamp horizontal position to screen bounds
+        if x < 0.0 {
+            x = 8.0;
+        } else if x + panel_w > screen_w {
+            x = screen_w - panel_w - 8.0;
+        }
+
+        if let Err(err) =
+            panel.set_position(tauri::PhysicalPosition::new(x as i32, y as i32))
+        {
+            warn!("failed to position tray panel: {err}");
         }
     }
 
