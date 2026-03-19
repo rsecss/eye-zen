@@ -10,11 +10,12 @@
 
 ## 项目状态
 
-**当前阶段：重建 -- 脚手架已初始化，准备进入后端服务实现。**
+**当前阶段：重建 -- 后端 MVP 已实现，准备进入前端原型与集成测试。**
 
 - Phase 1 MVP 代码已废弃，仅保留架构经验和设计决策
 - 脚手架已就绪：Tauri v2 + Svelte 5 + Vite 6 + TailwindCSS v4
-- 下一步：规划后端切片（ConfigService → TimerService → ...），同步做前端原型
+- 后端 MVP 已实现：6 个核心服务 + Commands + Events + Platform + Models
+- 下一步：前端原型（tip-window / tray / settings）、集成测试、代码审查
 
 ---
 
@@ -28,10 +29,10 @@
 | CSS | TailwindCSS | v4 (`~4.x`) | `~4.2.1` | 工具类优先 |
 | 图表 | ECharts | tree-shaken | 未安装 (P2) | |
 | 数据库 | SQLite | via sqlx | 未安装 (P2) | |
-| 配置 | TOML | 人类可读 | 未安装 | |
+| 配置 | TOML | 人类可读 | `~0.8` | |
 | 类型桥接 | ts-rs | 最新稳定 | 未安装 | Rust → TS |
-| 日志 | tracing + 日轮转 | -- | 未安装 | |
-| 音频 | rodio | 独立线程 | 未安装 | |
+| 日志 | tracing + 日轮转 | -- | `~0.1` / `~0.3` / `~0.2` | tracing + subscriber + appender |
+| 音频 | rodio | 独立线程 | `~0.20` | |
 | 序列化 | serde + serde_json | `~1.0` | `~1.0` | |
 | 异步 | tokio | `~1.x` | `~1.50` (full) | |
 | 测试 | Vitest | `~3.x` | `~3.2.4` | |
@@ -84,18 +85,21 @@ graph TD
 
 | 模块 | 路径 | 状态 | 职责 |
 |------|------|------|------|
-| Rust 入口 | `src-tauri/src/main.rs`, `lib.rs` | 已存在 | Tauri Builder 启动 |
-| ConfigService | `src-tauri/src/services/config.rs` | 计划 | TOML 配置读写 |
-| TimerService | `src-tauri/src/services/timer.rs` | 计划 | 状态机 + timer loop |
-| DetectorService | `src-tauri/src/services/detector.rs` | 计划 | 全屏检测 |
-| WindowService | `src-tauri/src/services/window.rs` | 计划 | tip-window 管理 |
-| SoundService | `src-tauri/src/services/sound.rs` | 计划 | 音频播放 |
-| TrayService | `src-tauri/src/services/tray.rs` | 计划 | 托盘菜单 |
+| Rust 入口 | `src-tauri/src/main.rs`, `lib.rs` | 已实现 | Tauri Builder 启动 + 服务编排 |
+| ConfigService | `src-tauri/src/services/config.rs` | 已实现 | TOML 配置读写 + arc-swap 热更新 |
+| TimerService | `src-tauri/src/services/timer/` | 已实现 | 纯函数状态机 + tokio timer loop |
+| DetectorService | `src-tauri/src/services/detector.rs` | 已实现 | 全屏检测 (平台委托) |
+| WindowService | `src-tauri/src/services/window.rs` | 已实现 | 多显示器 tip-window 管理 |
+| SoundService | `src-tauri/src/services/sound.rs` | 已实现 | rodio 独立线程 + mpsc |
+| TrayService | `src-tauri/src/services/tray.rs` | 已实现 | 托盘菜单 + tooltip |
 | StatService | `src-tauri/src/services/stat.rs` | 计划 (P2) | SQLite 统计 |
 | I18nService | `src-tauri/src/services/i18n.rs` | 计划 (P2) | 语言切换 |
-| PlatformApi | `src-tauri/src/platform/` | 计划 | 跨平台抽象 |
-| Commands | `src-tauri/src/commands/` | 计划 | Tauri command 薄层 |
-| Models | `src-tauri/src/models/` | 计划 | 共享类型 + IPC events + 内部 channels |
+| PlatformApi | `src-tauri/src/platform/` | 已实现 | 跨平台抽象 (Windows/macOS/Linux) |
+| Commands | `src-tauri/src/commands/` | 已实现 | Tauri command 薄层 (9 个 commands) |
+| Models | `src-tauri/src/models/` | 已实现 | 共享类型 + IPC events + 配置模型 |
+| Error | `src-tauri/src/error.rs` | 已实现 | AppError + IPC 序列化 |
+| Logging | `src-tauri/src/logging.rs` | 已实现 | tracing + 日志轮转 |
+| ServiceContext | `src-tauri/src/services/context.rs` | 已实现 | 服务间通信上下文 |
 | HTML 入口 | `*.html` (根目录) | 已存在 | Vite 多入口 |
 | 前端 entries | `src/entries/` | 已存在 | 窗口 TS 入口 |
 | 前端 pages | `src/pages/` | 已存在 | 窗口页面组件 |
@@ -218,6 +222,15 @@ Open risks:        已知风险
 ---
 
 ## 变更记录
+
+### 2026-03-19 -- 后端 MVP 实现
+
+- 实现 6 个核心服务：Config / Timer / Detector / Window / Sound / Tray
+- 实现基础设施：AppError / Logging / ServiceContext / Events
+- 实现 IPC 层：9 个 Commands + 3 个 capability 文件 + 权限 TOML
+- 实现跨平台层：Windows / macOS / Linux 全屏检测
+- 新增依赖：toml, tracing, tracing-subscriber, tracing-appender, rodio, arc-swap, windows, core-foundation, core-graphics, x11rb
+- 合并 dev-codex 分支，清理所有 worktree
 
 ### 2026-03-19 -- 文档重构：规则抽离
 
