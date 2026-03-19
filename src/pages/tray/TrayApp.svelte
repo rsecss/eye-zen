@@ -148,7 +148,11 @@
   async function handleSettings(): Promise<void> {
     try {
       const win = await WebviewWindow.getByLabel('main-window');
-      await win?.show();
+      if (win) {
+        await win.unminimize();
+        await win.show();
+        await win.setFocus();
+      }
     } catch (e) {
       console.error('Failed to open settings:', e);
     }

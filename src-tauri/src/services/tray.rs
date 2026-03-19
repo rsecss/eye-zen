@@ -6,7 +6,7 @@ use std::sync::Mutex;
 use tauri::{
     menu::{Menu, MenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
-    AppHandle, Manager, Wry,
+    AppHandle, Emitter, Manager, Wry,
 };
 use tokio::sync::watch;
 use tracing::{info, warn};
@@ -98,11 +98,11 @@ impl TrayService {
             }
             "settings" => {
                 info!("tray: settings clicked");
-                Self::show_main_window(app);
+                Self::show_main_window(app, "Settings");
             }
             "about" => {
                 info!("tray: about clicked");
-                Self::show_main_window(app);
+                Self::show_main_window(app, "About");
             }
             "quit" => {
                 info!("tray: quit clicked");
@@ -251,8 +251,9 @@ impl TrayService {
         }
     }
 
-    fn show_main_window(app: &AppHandle) {
+    fn show_main_window(app: &AppHandle, tab: &str) {
         if let Some(window) = app.get_webview_window("main-window") {
+            let _ = window.emit("navigate_tab", tab);
             let _ = window.unminimize();
             if let Err(err) = window.show() {
                 warn!("failed to show main window: {err}");

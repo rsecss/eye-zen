@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { listen } from '@tauri-apps/api/event';
   import { configStore } from '$lib/stores/config.svelte';
   import SettingsPage from './SettingsPage.svelte';
   import AboutPage from './AboutPage.svelte';
@@ -10,7 +11,16 @@
 
   onMount(() => {
     configStore.init().catch((err) => console.error('Failed to init config store:', err));
-    return () => configStore.destroy();
+
+    const unlistenNav = listen<string>('navigate_tab', (event) => {
+      const tab = event.payload as Tab;
+      if (tabs.includes(tab)) activeTab = tab;
+    });
+
+    return () => {
+      configStore.destroy();
+      unlistenNav.then((fn) => fn());
+    };
   });
 </script>
 

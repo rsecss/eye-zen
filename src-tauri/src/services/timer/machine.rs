@@ -63,7 +63,7 @@ pub(crate) fn step_time(inner: &Inner, now: Instant, skip_flags: &SkipFlags) -> 
         }),
         Alerting => (elapsed >= inner.alert_timeout).then_some(Transition {
             from: Alerting,
-            to: Working,
+            to: Resting,
         }),
         Resting => (elapsed >= inner.rest_duration).then_some(Transition {
             from: Resting,
@@ -374,7 +374,7 @@ mod tests {
     }
 
     #[test]
-    fn alerting_timeout_auto_dismiss() {
+    fn alerting_timeout_auto_rest() {
         let mut inner = make_inner(Alerting);
         inner.state_entered_at = past_instant(61);
 
@@ -383,7 +383,7 @@ mod tests {
             transition,
             Some(Transition {
                 from: Alerting,
-                to: Working,
+                to: Resting,
             })
         );
     }

@@ -19,7 +19,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 #[cfg(not(test))]
-use tauri::{Manager, RunEvent};
+use tauri::{Manager, RunEvent, WindowEvent};
 #[cfg(not(test))]
 use tracing::{error, info, warn};
 
@@ -99,15 +99,23 @@ pub fn run() -> Result<(), tauri::Error> {
                 services.config.start(&handle).await?;
                 services.detector.start(&handle).await?;
                 services.sound.start(&handle).await?;
-                services.timer.start(&handle).await?;
                 services.window.start(&handle).await?;
                 services.tray.start(&handle).await?;
+                services.timer.start(&handle).await?;
                 Ok::<(), crate::error::AppError>(())
             })
             .map_err(|err| Box::new(err) as Box<dyn std::error::Error>)?;
 
             info!("all services initialized");
             Ok(())
+        })
+        .on_window_event(|window, event| {
+            if let WindowEvent::CloseRequested { api, .. } = event {
+                if window.label() == "main-window" {
+                    api.prevent_close();
+                    let _ = window.hide();
+                }
+            }
         })
         .build(tauri::generate_context!())?;
 
