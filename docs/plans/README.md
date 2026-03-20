@@ -65,3 +65,4 @@
 | 007 | [tray-service](007-tray-service.md) | Implemented | 托盘菜单 + tooltip + 面板切换 |
 | 008 | [integration](008-integration.md) | Implemented | AppServices 接线 + commands + events + 优雅关闭 |
 | 009 | [frontend-prototype](009-frontend-prototype.md) | Implemented | 前端最小闭环：ts-rs 类型桥接 + IPC stores + tray-panel + tip-window |
+| 010 | [main-window-settings-about](010-main-window-settings-about.md) | Implemented | Settings UI + About 页面，完成 MVP 前端 |
