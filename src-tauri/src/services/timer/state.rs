@@ -118,7 +118,7 @@ impl Inner {
 
             if let Some(remaining) = self.paused_remaining {
                 let elapsed = target_duration.saturating_sub(remaining);
-                self.state_entered_at = now - elapsed;
+                self.state_entered_at = now.checked_sub(elapsed).unwrap_or(now);
             } else {
                 self.state_entered_at = now;
             }

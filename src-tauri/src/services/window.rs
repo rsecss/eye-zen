@@ -17,6 +17,7 @@ impl WindowService {
 
     /// Create fullscreen tip windows on every monitor.
     pub(crate) fn show_tip_windows(&self, app: &AppHandle) {
+        let _ = &self; // WindowService may hold state in future phases
         let monitors = match app.available_monitors() {
             Ok(monitors) => monitors,
             Err(err) => {
@@ -83,6 +84,7 @@ impl WindowService {
 
     /// Close every dynamically created tip window.
     pub(crate) fn hide_tip_windows(&self, app: &AppHandle) {
+        let _ = &self;
         let labels_to_close: Vec<String> = app
             .webview_windows()
             .keys()

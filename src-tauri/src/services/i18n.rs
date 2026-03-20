@@ -95,7 +95,7 @@ impl I18nService {
             ("zh-CN", "tray.tooltip.paused") => "已暂停",
             ("zh-CN", "tray.tooltip.alerting") => "该休息了",
             ("zh-CN", "tray.tooltip.pre_alert") => "即将休息",
-            ("zh-CN", "tray.tooltip.app_name") => "Eyezen",
+            (_, "tray.tooltip.app_name") => "Eyezen",
             (_, "tray.settings") => "Settings",
             (_, "tray.about") => "About",
             (_, "tray.pause") => "Pause",
@@ -106,7 +106,6 @@ impl I18nService {
             (_, "tray.tooltip.paused") => "Paused",
             (_, "tray.tooltip.alerting") => "Time to rest",
             (_, "tray.tooltip.pre_alert") => "Break soon",
-            (_, "tray.tooltip.app_name") => "Eyezen",
             _ => "???",
         }
     }

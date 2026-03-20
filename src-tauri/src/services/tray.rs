@@ -208,6 +208,7 @@ impl TrayService {
         let panel_w = f64::from(panel_size.width);
         let panel_h = f64::from(panel_size.height);
 
+        #[allow(clippy::option_if_let_else, clippy::map_unwrap_or)]
         let (mon_x, mon_y, mon_w, mon_h) = panel
             .available_monitors()
             .ok()
@@ -237,7 +238,7 @@ impl TrayService {
                     .primary_monitor()
                     .ok()
                     .flatten()
-                    .map(|m| {
+                    .map_or((0.0, 0.0, 1920.0, 1080.0), |m| {
                         let pos = m.position();
                         let size = m.size();
                         (
@@ -247,7 +248,6 @@ impl TrayService {
                             f64::from(size.height),
                         )
                     })
-                    .unwrap_or((0.0, 0.0, 1920.0, 1080.0))
             });
 
         let mut x = icon_x + (icon_w / 2.0) - (panel_w / 2.0);
@@ -261,6 +261,7 @@ impl TrayService {
         x = x.clamp(mon_x + margin, mon_x + mon_w - panel_w - margin);
         y = y.clamp(mon_y + margin, mon_y + mon_h - panel_h - margin);
 
+        #[allow(clippy::cast_possible_truncation)]
         if let Err(err) = panel.set_position(tauri::PhysicalPosition::new(x as i32, y as i32)) {
             warn!("failed to position tray panel: {err}");
         }

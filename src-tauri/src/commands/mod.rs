@@ -37,6 +37,7 @@ pub(crate) async fn resume_timer(services: Services<'_>) -> CmdResult<()> {
     services.timer.handle_user_event(UserEvent::Resume).await
 }
 
+#[allow(clippy::unnecessary_wraps)]
 #[tauri::command]
 pub(crate) fn get_config(services: Services<'_>) -> CmdResult<Config> {
     Ok((*services.config.current()).clone())
