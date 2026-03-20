@@ -67,10 +67,10 @@ Eyezen automates this process — it quietly runs in the background and gently r
 
 | Platform | Installer | Portable |
 |----------|-----------|----------|
-| Windows x64 | `Eyezen_x.y.z_x64-setup.exe` / `_x64_en-US.msi` | NSIS installer works without admin |
-| macOS ARM (M1+) | `Eyezen_x.y.z_aarch64.dmg` | — |
-| macOS Intel | `Eyezen_x.y.z_x64.dmg` | — |
-| Linux x64 | `Eyezen_x.y.z_amd64.deb` | `Eyezen_x.y.z_amd64.AppImage` |
+| Windows x64 | `Eyezen_{ver}_x64-setup.exe` / `.msi` | `Eyezen_{ver}_x64-portable.zip` |
+| macOS ARM (M1+) | `Eyezen_{ver}_aarch64.dmg` | — |
+| macOS Intel | `Eyezen_{ver}_x64.dmg` | — |
+| Linux x64 | `Eyezen_{ver}_amd64.deb` | `Eyezen_{ver}_amd64.AppImage` |
 
 Download from [GitHub Releases](https://github.com/rsecss/eye-zen/releases/latest).
 

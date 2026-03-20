@@ -72,14 +72,14 @@ jobs:
           releaseBody: |
             See [CHANGELOG.md](https://github.com/rsecss/eye-zen/blob/main/CHANGELOG.md) for details.
 
-            ### Download Guide
+            ### Downloads
 
             | Platform | Installer | Portable |
             |----------|-----------|----------|
-            | Windows x64 | `Eyezen_x.y.z_x64-setup.exe` / `.msi` | `Eyezen_x.y.z_x64-setup.exe` (no install needed) |
-            | macOS ARM (M1+) | `Eyezen_x.y.z_aarch64.dmg` | — |
-            | macOS Intel | `Eyezen_x.y.z_x64.dmg` | — |
-            | Linux x64 | `Eyezen_x.y.z_amd64.deb` | `Eyezen_x.y.z_amd64.AppImage` |
+            | Windows x64 | `_x64-setup.exe` / `_x64_en-US.msi` | `_x64-portable.zip` |
+            | macOS ARM (M1+) | `_aarch64.dmg` | — |
+            | macOS Intel | `_x64.dmg` | — |
+            | Linux x64 | `_amd64.deb` | `_amd64.AppImage` |
 
             ### Platform Test Status
 
@@ -92,3 +92,21 @@ jobs:
           prerelease: false
           includeRelease: true
           args: ${{ matrix.args }}
+
+      - name: Create Windows portable zip
+        if: matrix.platform == 'windows-latest'
+        shell: bash
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          cd src-tauri/target/release
+          7z a -tzip "Eyezen_${VERSION}_x64-portable.zip" eyezen.exe
+          echo "PORTABLE_PATH=src-tauri/target/release/Eyezen_${VERSION}_x64-portable.zip" >> $GITHUB_ENV
+
+      - name: Upload portable to release
+        if: matrix.platform == 'windows-latest'
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          gh release upload "v${VERSION}" "${{ env.PORTABLE_PATH }}" --clobber
