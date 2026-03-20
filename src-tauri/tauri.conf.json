@@ -40,6 +40,12 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "copyright": "Copyright (c) 2026 Maple",
+    "license": "MIT",
+    "licenseFile": "../LICENSE",
+    "publisher": "Maple",
+    "shortDescription": "Cross-platform desktop eye care app based on the 20-20-20 rule",
+    "category": "Utility",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
