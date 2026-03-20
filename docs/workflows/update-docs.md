@@ -24,6 +24,7 @@ Automatically check code changes since last tag and synchronize all documentatio
 | `README.zh-CN.md` | Public-facing (Chinese) | Must stay consistent with README.md |
 | `CHANGELOG.md` | Release history | Version entries with categorized changes |
 | `docs/plans/README.md` | Plan tracker | Plan status table (Pending/Implemented) |
+| `.claude/index.json` | Machine-readable project index | Status, tech stack, files, modules, gaps, next steps |
 
 ## Execution Flow
 
@@ -91,16 +92,27 @@ for plan in docs/plans/[0-9]*.md; do
 done
 ```
 
-### 6. Check Memory Files
+### 6. Check .claude/index.json
 
 ```
-- [ ] memory/MEMORY.md project state is current
+- [ ] project.status reflects current phase
+- [ ] techStack entries match Cargo.toml + package.json (installed flags accurate)
+- [ ] files section lists all source files (services, pages, components, lib, tests)
+- [ ] modules section has correct service/command counts and test counts
+- [ ] gaps reflect only remaining unimplemented items
+- [ ] nextSteps are current
+```
+
+### 7. Check Memory Files
+
+```
+- [ ] MEMORY.md project state is current
 - [ ] Plan completion status is accurate
 - [ ] Technical decisions reflect recent changes
 - [ ] Bug fix experience captures new findings
 ```
 
-### 7. Generate Update Report
+### 8. Generate Update Report
 
 ```markdown
 ## Documentation Update Report
@@ -124,7 +136,7 @@ done
 [Detailed list with file:line references]
 ```
 
-### 8. Apply Updates
+### 9. Apply Updates
 
 For each identified inconsistency:
 1. Read the current documentation file
@@ -132,7 +144,7 @@ For each identified inconsistency:
 3. Apply the targeted update
 4. Do NOT rewrite entire sections — only fix the specific inconsistency
 
-### 9. Validation
+### 10. Validation
 
 ```
 - [ ] All updated files have valid Markdown
@@ -142,10 +154,10 @@ For each identified inconsistency:
 - [ ] No placeholder text remains (e.g., "TODO", "user/repo")
 ```
 
-### 10. Commit Updates
+### 11. Commit Updates
 
 ```bash
-git add CLAUDE.md README.md CHANGELOG.md docs/plans/README.md
+git add CLAUDE.md README.md CHANGELOG.md docs/plans/README.md .claude/index.json
 git commit -m "docs: synchronize documentation with codebase
 
 - [List specific updates made]"

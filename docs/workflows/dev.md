@@ -72,7 +72,7 @@
 - 过度设计（4 个服务不需要微服务架构）
 - 不验证就假设跨平台 API 可用
 
-**输出物**：方案说明（写入 `docs/.local/devlog.md` 或设计规格文档）
+**输出物**：方案说明（写入 `docs/devlog.md` 或设计规格文档）
 
 ---
 
@@ -584,7 +584,7 @@ Date: YYYY-MM-DD
 - ...
 ```
 
-写入 `docs/.local/devlog.md`，积累项目经验。
+写入 `docs/devlog.md`，积累项目经验。
 
 ---
 
@@ -682,10 +682,10 @@ Rust 侧建议在 `lib.rs` 或 `main.rs` 顶部加：
 |------|------|----------|
 | `README.md` | 用户视角：是什么、平台、下载、功能、截图 | 每次 release |
 | `CLAUDE.md` | AI 上下文：架构、模块索引、IPC 接口、开发命令、权限说明 | 每次架构变更 |
-| `docs/development-workflow.md` | 本文档（含测试策略、发布流程） | 流程变更时 |
+| `docs/workflows/dev.md` | 本文档（含测试策略、发布流程） | 流程变更时 |
 | `docs/plans/` | 实现计划，命名 `<NNN>-<scope>.md`（gitignored，本地保留） | 每个功能切片规划时 |
 | `docs/.local/experience-review.md` | 经验复盘与重建指南 | 阶段复盘时 |
-| `docs/.local/devlog.md` | 开发日志：关键决策、里程碑、会话摘要 | 每个切片/阶段完成时 |
+| `docs/devlog.md` | 开发日志：关键决策、里程碑、会话摘要 | 每个切片/阶段完成时 |
 | `docs/.local/specs/` | 设计规格文档 | 新功能设计时 |
 
 > 注意：不要拆出独立的 `testing-strategy.md`、`release-runbook.md`、`security-and-permissions.md` — 这些内容已分别覆盖在本文档的阶段 4/8/7 和 `CLAUDE.md` 中。单人项目维护 8 份独立文档不现实，会迅速过期。等团队扩展到 3+ 人时再拆分。

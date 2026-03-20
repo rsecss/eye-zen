@@ -61,8 +61,8 @@ Frontend (Svelte 5, per window)
                   ├── WindowService    多显示器 tip-window
                   ├── SoundService     rodio 独立线程
                   ├── TrayService      托盘菜单 + tooltip
-                  ├── StatService      SQLite (P2)
-                  └── I18nService      语言切换 (P2)
+                  ├── I18nService      语言切换 + 热切换
+                  └── StatService      SQLite (P2)
 ```
 
 详细架构约束见 → [`rules/01-architecture.md`](rules/01-architecture.md)
@@ -174,16 +174,32 @@ npm run build                # 前端构建检查
 |------|------|------|
 | 重建设计规格 | `docs/.local/specs/2026-03-18-eyezen-rebuild-design.md` | 核心参考 |
 | 前端原型设计规格 | `docs/.local/specs/2026-03-19-frontend-prototype-design.md` | tray-panel + tip-window 设计 |
+| Settings/About 设计规格 | `docs/.local/specs/2026-03-20-main-window-settings-about-design.md` | Settings UI + About 页面 |
+| i18n 设计规格 | `docs/.local/specs/2026-03-20-i18n-design.md` | 全栈 i18n 方案 |
+| Theme/Autostart 设计规格 | `docs/.local/specs/2026-03-20-theme-autostart-design.md` | 主题切换 + 开机自启动 |
 | 前端原型 mockup | `docs/.local/mockups/2026-03-19-tray-tip-v4.html` | 已采纳的 v4 视觉原型（浏览器打开） |
+| 主题对比 mockup | `docs/.local/mockups/2026-03-20-theme-comparison.html` | Dark/Light 主题视觉对比 |
 | 实现计划 | `docs/plans/` | 功能切片，命名 `<NNN>-<scope>.md` |
-| 开发工作流 | `docs/development-workflow.md` | 10 阶段全生命周期 |
+| 开发工作流 | `docs/workflows/dev.md` | 10 阶段全生命周期 |
+
+### 工作流与 CI
+
+| 文档 | 路径 | 说明 |
+|------|------|------|
+| Release 流程 | `docs/workflows/release.md` | 发布检查清单与步骤 |
+| Release 命名规范 | `docs/workflows/release-naming.md` | 制品命名约定 |
+| PR 流程 | `docs/workflows/pr.md` | Pull Request 模板与流程 |
+| 文档更新流程 | `docs/workflows/update-docs.md` | 文档同步工作流 |
+| CI 配置 | `.github/workflows/ci.yml` | 三平台 CI 矩阵 |
+| Release CI | `.github/workflows/release.yml` | 四目标 Release 构建 |
+| Release notes 模板 | `.github/release.yml` | GitHub 自动 release notes |
 
 ### 经验与调研
 
 | 文档 | 路径 | 说明 |
 |------|------|------|
 | Phase 1 复盘 | `docs/.local/experience-review.md` | 保留/改变的决策 |
-| 开发日志 | `docs/.local/devlog.md` | 关键决策记录 |
+| 开发日志 | `docs/devlog.md` | 关键决策记录 |
 | ProjectEye 调研 | `docs/.local/projecteye-research.md` | 竞品参考 |
 | Blink Eye 调研 | `docs/.local/blinkeye-research.md` | 竞品参考 |
 | UI 风格对比 | `docs/.local/style-comparison.html` | 视觉方向参考 |
