@@ -27,7 +27,7 @@ use tracing::{error, info, warn};
 use crate::services::Service;
 
 #[cfg(not(test))]
-#[allow(clippy::missing_errors_doc)]
+#[allow(clippy::missing_errors_doc, clippy::too_many_lines)]
 pub fn run() -> Result<(), tauri::Error> {
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())

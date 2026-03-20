@@ -29,8 +29,8 @@ function createI18nStore() {
       return locale;
     },
 
-    t(key: TranslationKey | string): string {
-      return translations[key as TranslationKey] ?? key;
+    t(key: TranslationKey): string {
+      return translations[key] ?? key;
     },
 
     setLocale(nextLocale: string) {

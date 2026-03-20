@@ -278,9 +278,7 @@ impl TrayService {
         }
     }
 
-    pub(crate) fn update_pause_item(&self, app: &AppHandle, state: TimerState) {
-        let _ = app;
-
+    pub(crate) fn update_pause_item(&self, state: TimerState) {
         let is_paused = state == TimerState::Paused;
         let mut tooltip = Self::current_tooltip(&self.current_tooltip);
         tooltip.state = state;

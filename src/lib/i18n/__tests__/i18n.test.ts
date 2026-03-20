@@ -35,7 +35,8 @@ describe('i18nStore', () => {
   });
 
   it('t returns key itself for missing key', () => {
-    expect(i18nStore.t('nonexistent.key')).toBe('nonexistent.key');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect(i18nStore.t('nonexistent.key' as any)).toBe('nonexistent.key');
   });
 });
 
