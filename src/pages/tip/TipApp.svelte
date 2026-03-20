@@ -1,14 +1,23 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { skipRest, startRest } from '$lib/commands';
+  import { i18nStore } from '$lib/i18n/index.svelte';
+  import { configStore } from '$lib/stores/config.svelte';
   import { timerStore } from '$lib/stores/timer.svelte';
-  import { startRest, skipRest } from '$lib/commands';
 
   onMount(() => {
     timerStore.init().catch((err) => console.error('Failed to init timer store:', err));
-    return () => timerStore.destroy();
+    configStore.init().catch((err) => console.error('Failed to init config store:', err));
+
+    return () => {
+      timerStore.destroy();
+      configStore.destroy();
+    };
   });
 
-  // --- Derived state ---
+  $effect(() => {
+    i18nStore.setLocale(configStore.current.display.language);
+  });
 
   const currentState = $derived(timerStore.current.state);
   const remainingSecs = $derived(timerStore.current.remaining_secs);
@@ -23,29 +32,25 @@
   const isAlerting = $derived(currentState === 'alerting');
   const isResting = $derived(currentState === 'resting');
 
-  // --- Helpers ---
-
   function formatTime(secs: number): string {
-    const m = Math.floor(secs / 60);
-    const s = secs % 60;
-    return `${m}:${String(s).padStart(2, '0')}`;
+    const minutes = Math.floor(secs / 60);
+    const seconds = secs % 60;
+    return `${minutes}:${String(seconds).padStart(2, '0')}`;
   }
-
-  // --- Button handlers ---
 
   async function handleStartRest(): Promise<void> {
     try {
       await startRest();
-    } catch (e) {
-      console.error('Failed to start rest:', e);
+    } catch (error) {
+      console.error('Failed to start rest:', error);
     }
   }
 
   async function handleSkip(): Promise<void> {
     try {
       await skipRest();
-    } catch (e) {
-      console.error('Failed to skip rest:', e);
+    } catch (error) {
+      console.error('Failed to skip rest:', error);
     }
   }
 </script>
@@ -71,14 +76,20 @@
     <div class="tip-inner">
       <div class="tip-card">
         {@render eyeIcon()}
-        <p class="tip-h">Time for a gentle break</p>
-        <p class="tip-sub">Look at something 20 feet away<br />and let your eyes rest</p>
+        <p class="tip-h">{i18nStore.t('tip.alerting.title')}</p>
+        <p class="tip-sub">{i18nStore.t('tip.alerting.subtitle')}</p>
         <p class="tip-time">{formattedTime}</p>
         <div class="tip-btns">
-          <button class="tip-btn glass" aria-label="Start rest" onclick={handleStartRest}
-            >Start Rest</button
+          <button
+            class="tip-btn glass"
+            aria-label={i18nStore.t('tip.startRest')}
+            onclick={handleStartRest}
           >
-          <button class="tip-btn ghost" aria-label="Skip rest" onclick={handleSkip}>Skip</button>
+            {i18nStore.t('tip.startRest')}
+          </button>
+          <button class="tip-btn ghost" aria-label={i18nStore.t('tip.skip')} onclick={handleSkip}>
+            {i18nStore.t('tip.skip')}
+          </button>
         </div>
       </div>
     </div>
@@ -88,29 +99,29 @@
     <div class="tip-inner">
       <div class="tip-card">
         {@render eyeIcon()}
-        <p class="tip-h">Resting</p>
-        <p class="tip-sub">Look at something 20 feet away</p>
+        <p class="tip-h">{i18nStore.t('tip.resting.title')}</p>
+        <p class="tip-sub">{i18nStore.t('tip.resting.subtitle')}</p>
         <p class="tip-time">{formattedTime}</p>
         <div class="tip-bar">
           <div class="tip-bar-fill" style:width="{progressPercent}%"></div>
         </div>
         <div class="tip-btns" style="margin-top: 28px;">
-          <button class="tip-btn ghost" aria-label="Skip rest" onclick={handleSkip}>Skip</button>
+          <button class="tip-btn ghost" aria-label={i18nStore.t('tip.skip')} onclick={handleSkip}>
+            {i18nStore.t('tip.skip')}
+          </button>
         </div>
       </div>
     </div>
   </main>
 {:else}
-  <!-- Fallback: window should not normally be visible in other states -->
   <main class="tip-screen fallback">
     <div class="tip-inner">
-      <p class="tip-fallback-text">Waiting...</p>
+      <p class="tip-fallback-text">{i18nStore.t('tip.waiting')}</p>
     </div>
   </main>
 {/if}
 
 <style>
-  /* --- Fullscreen tip container --- */
   .tip-screen {
     width: 100vw;
     height: 100vh;
@@ -121,7 +132,6 @@
     overflow: hidden;
   }
 
-  /* --- Alerting background: deep forest green gradient with aurora glow --- */
   .tip-screen.alerting {
     background: linear-gradient(155deg, #0c4a3e 0%, #0a2e28 30%, #0d1117 65%, #111318 100%);
   }
@@ -153,7 +163,6 @@
     filter: blur(30px);
   }
 
-  /* --- Resting background --- */
   .tip-screen.resting {
     background: linear-gradient(160deg, #064e3b 0%, #042f2e 35%, #0d1117 70%, #0f1115 100%);
   }
@@ -169,12 +178,10 @@
     filter: blur(25px);
   }
 
-  /* --- Fallback background --- */
   .tip-screen.fallback {
     background: #0d1117;
   }
 
-  /* --- Inner container --- */
   .tip-inner {
     text-align: center;
     color: #fff;
@@ -183,7 +190,6 @@
     max-width: 420px;
   }
 
-  /* --- Glassmorphic content card --- */
   .tip-card {
     background: var(--glass-tip-bg);
     backdrop-filter: blur(16px);
@@ -193,7 +199,6 @@
     padding: 40px 48px;
   }
 
-  /* --- Eye icon --- */
   .tip-icon {
     width: 36px;
     height: 36px;
@@ -202,7 +207,6 @@
     display: block;
   }
 
-  /* --- Title --- */
   .tip-h {
     font-size: 22px;
     font-weight: 500;
@@ -211,16 +215,15 @@
     letter-spacing: 0.3px;
   }
 
-  /* --- Subtitle --- */
   .tip-sub {
     font-size: 15px;
     font-weight: 400;
     opacity: 0.35;
     margin: 0 0 36px;
     line-height: 1.5;
+    white-space: pre-line;
   }
 
-  /* --- Countdown: green gradient text --- */
   .tip-time {
     font-size: 80px;
     font-weight: 200;
@@ -238,7 +241,6 @@
     line-height: 1;
   }
 
-  /* --- Progress bar (resting only) --- */
   .tip-bar {
     width: 120px;
     height: 3px;
@@ -255,7 +257,6 @@
     transition: width 0.4s ease;
   }
 
-  /* --- Buttons --- */
   .tip-btns {
     display: flex;
     gap: 12px;
@@ -302,7 +303,6 @@
     border-color: rgba(255, 255, 255, 0.12);
   }
 
-  /* --- Fallback text --- */
   .tip-fallback-text {
     font-size: 17px;
     color: rgba(255, 255, 255, 0.32);

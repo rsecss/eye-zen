@@ -87,9 +87,9 @@ impl ServiceContext {
                 }
             }
             Effect::UpdateTray(update) => match update {
-                TrayUpdate::Tooltip(text) => services.tray.update_tooltip(app, text),
+                TrayUpdate::Tooltip(tooltip) => services.tray.update_tooltip(app, *tooltip),
                 TrayUpdate::StateIcon(state) => {
-                    services.tray.update_pause_item(app, state == "paused");
+                    services.tray.update_pause_item(app, *state);
                 }
             },
             Effect::ResetWorkTimer(duration) => {

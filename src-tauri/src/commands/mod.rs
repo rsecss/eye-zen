@@ -71,7 +71,7 @@ fn validate_timer_config(config: &TimerConfig) -> CmdResult<()> {
 }
 
 fn validate_display_config(config: &DisplayConfig) -> CmdResult<()> {
-    let valid_languages = ["zh-CN", "en-US"];
+    let valid_languages = ["zh-CN", "en", "en-US"];
     if !valid_languages.contains(&config.language.as_str()) {
         return Err(AppError::ConfigInvalid {
             field: "language".to_string(),

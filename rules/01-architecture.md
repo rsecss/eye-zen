@@ -39,13 +39,15 @@ models/
 箭头表示"依赖于"，禁止循环：
 
 ```
-ConfigService  ←  TimerService  ←  WindowService
+ConfigService  ←  I18nService
+               ←  TimerService  ←  WindowService
                                 ←  TrayService
                                 ←  SoundService
                                 ←  StatService (P2)
                ←  DetectorService → TimerService (via mpsc)
                ←  SoundService
                ←  TrayService
+I18nService    ←  TrayService
 ```
 
 - **ConfigService** 是基础服务，MUST NOT 依赖其他服务
@@ -63,7 +65,7 @@ pub struct AppServices {
     pub stat: StatService,
     pub sound: SoundService,
     pub tray: TrayService,
-    pub i18n: I18nService,
+    pub i18n: Arc<I18nService>,
 }
 ```
 
@@ -94,7 +96,7 @@ hook `RunEvent::ExitRequested`，按依赖安全逆序：
 ```
 1. 停止事件源:     TrayService → TimerService → DetectorService
 2. 停止效果执行器:  WindowService → SoundService
-3. 停止基础设施:    StatService → ConfigService
+3. 停止基础设施:    StatService → I18nService → ConfigService
 ```
 
 - 每个 `shutdown()` MUST 有超时（建议 3 秒），超时后强制放弃

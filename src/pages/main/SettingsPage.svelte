@@ -1,13 +1,14 @@
 <script lang="ts">
-  import { configStore } from '$lib/stores/config.svelte';
-  import { updateTimerConfig, updateBehaviorConfig, updateDisplayConfig } from '$lib/commands';
-  import type { TimerConfig } from '$lib/bindings/TimerConfig';
   import type { BehaviorConfig } from '$lib/bindings/BehaviorConfig';
   import type { DisplayConfig } from '$lib/bindings/DisplayConfig';
-  import Stepper from './components/Stepper.svelte';
-  import Toggle from './components/Toggle.svelte';
+  import type { TimerConfig } from '$lib/bindings/TimerConfig';
+  import { updateBehaviorConfig, updateDisplayConfig, updateTimerConfig } from '$lib/commands';
+  import { i18nStore } from '$lib/i18n/index.svelte';
+  import { configStore } from '$lib/stores/config.svelte';
   import Select from './components/Select.svelte';
   import SettingsCard from './components/SettingsCard.svelte';
+  import Stepper from './components/Stepper.svelte';
+  import Toggle from './components/Toggle.svelte';
 
   const cfg = $derived(configStore.current);
 
@@ -32,143 +33,147 @@
 
   const languageOptions = [
     { value: 'zh-CN', label: '简体中文' },
-    { value: 'en-US', label: 'English' },
+    { value: 'en', label: 'English' },
   ];
 
-  const themeOptions = [
-    { value: 'light', label: 'Light' },
-    { value: 'dark', label: 'Dark' },
-  ];
+  const displayLanguage = $derived(
+    cfg.display.language === 'en' || cfg.display.language === 'en-US' ? 'en' : 'zh-CN',
+  );
+
+  const themeOptions = $derived([
+    { value: 'light', label: i18nStore.t('settings.display.theme.light') },
+    { value: 'dark', label: i18nStore.t('settings.display.theme.dark') },
+  ]);
 </script>
 
 <div class="settings-page">
-  <SettingsCard title="Timer">
+  <SettingsCard title={i18nStore.t('settings.timer.title')}>
     <div class="setting-row">
       <div class="setting-info">
-        <span class="setting-label">Work Duration</span>
-        <span class="setting-desc">工作时长，到时提醒休息</span>
+        <span class="setting-label">{i18nStore.t('settings.timer.workMinutes')}</span>
+        <span class="setting-desc">{i18nStore.t('settings.timer.workMinutes.desc')}</span>
       </div>
       <Stepper
         value={cfg.timer.work_minutes}
         min={1}
         max={120}
         step={1}
-        unit="min"
-        label="Work Duration"
+        unit={i18nStore.t('settings.timer.workMinutes.unit')}
+        label={i18nStore.t('settings.timer.workMinutes')}
         onchange={(v) => handleTimerChange('work_minutes', v)}
       />
     </div>
 
     <div class="setting-row separator">
       <div class="setting-info">
-        <span class="setting-label">Rest Duration</span>
-        <span class="setting-desc">每次休息时长</span>
+        <span class="setting-label">{i18nStore.t('settings.timer.restSeconds')}</span>
+        <span class="setting-desc">{i18nStore.t('settings.timer.restSeconds.desc')}</span>
       </div>
       <Stepper
         value={cfg.timer.rest_seconds}
         min={5}
         max={300}
         step={5}
-        unit="sec"
-        label="Rest Duration"
+        unit={i18nStore.t('settings.timer.restSeconds.unit')}
+        label={i18nStore.t('settings.timer.restSeconds')}
         onchange={(v) => handleTimerChange('rest_seconds', v)}
       />
     </div>
 
     <div class="setting-row separator">
       <div class="setting-info">
-        <span class="setting-label">Pre-alert</span>
-        <span class="setting-desc">休息前预提醒时间</span>
+        <span class="setting-label">{i18nStore.t('settings.timer.preAlertSeconds')}</span>
+        <span class="setting-desc">{i18nStore.t('settings.timer.preAlertSeconds.desc')}</span>
       </div>
       <Stepper
         value={cfg.timer.pre_alert_seconds}
         min={5}
         max={60}
         step={5}
-        unit="sec"
-        label="Pre-alert"
+        unit={i18nStore.t('settings.timer.preAlertSeconds.unit')}
+        label={i18nStore.t('settings.timer.preAlertSeconds')}
         onchange={(v) => handleTimerChange('pre_alert_seconds', v)}
       />
     </div>
 
     <div class="setting-row separator">
       <div class="setting-info">
-        <span class="setting-label">Alert Timeout</span>
-        <span class="setting-desc">提醒等待上限，超时自动休息</span>
+        <span class="setting-label">{i18nStore.t('settings.timer.alertTimeout')}</span>
+        <span class="setting-desc">{i18nStore.t('settings.timer.alertTimeout.desc')}</span>
       </div>
       <Stepper
         value={cfg.timer.alert_timeout_seconds}
         min={10}
         max={300}
         step={10}
-        unit="sec"
-        label="Alert Timeout"
+        unit={i18nStore.t('settings.timer.alertTimeout.unit')}
+        label={i18nStore.t('settings.timer.alertTimeout')}
         onchange={(v) => handleTimerChange('alert_timeout_seconds', v)}
       />
     </div>
   </SettingsCard>
 
-  <SettingsCard title="Behavior">
+  <SettingsCard title={i18nStore.t('settings.behavior.title')}>
     <div class="setting-row">
       <div class="setting-info">
-        <span class="setting-label">Sound</span>
-        <span class="setting-desc">休息提醒时播放音效</span>
+        <span class="setting-label">{i18nStore.t('settings.behavior.sound')}</span>
+        <span class="setting-desc">{i18nStore.t('settings.behavior.sound.desc')}</span>
       </div>
       <Toggle
         checked={cfg.behavior.sound_enabled}
-        label="Sound"
+        label={i18nStore.t('settings.behavior.sound')}
         onchange={(v) => handleBehaviorChange('sound_enabled', v)}
       />
     </div>
 
     <div class="setting-row separator">
       <div class="setting-info">
-        <span class="setting-label">Fullscreen Skip</span>
-        <span class="setting-desc">全屏应用时跳过提醒</span>
+        <span class="setting-label">{i18nStore.t('settings.behavior.fullscreenSkip')}</span>
+        <span class="setting-desc">{i18nStore.t('settings.behavior.fullscreenSkip.desc')}</span>
       </div>
       <Toggle
         checked={cfg.behavior.fullscreen_skip}
-        label="Fullscreen Skip"
+        label={i18nStore.t('settings.behavior.fullscreenSkip')}
         onchange={(v) => handleBehaviorChange('fullscreen_skip', v)}
       />
     </div>
 
     <div class="setting-row separator">
       <div class="setting-info">
-        <span class="setting-label">Auto Start</span>
-        <span class="setting-desc">系统启动时自动运行</span>
+        <span class="setting-label">{i18nStore.t('settings.behavior.autoStart')}</span>
+        <span class="setting-desc">{i18nStore.t('settings.behavior.autoStart.desc')}</span>
       </div>
       <Toggle
         checked={cfg.behavior.auto_start}
-        label="Auto Start"
+        label={i18nStore.t('settings.behavior.autoStart')}
         onchange={(v) => handleBehaviorChange('auto_start', v)}
       />
     </div>
   </SettingsCard>
 
-  <SettingsCard title="Display">
+  <SettingsCard title={i18nStore.t('settings.display.title')}>
     <div class="setting-row">
       <div class="setting-info">
-        <span class="setting-label">Language</span>
-        <span class="setting-desc">界面显示语言</span>
+        <span class="setting-label">{i18nStore.t('settings.display.language')}</span>
+        <span class="setting-desc">{i18nStore.t('settings.display.language.desc')}</span>
       </div>
       <Select
-        value={cfg.display.language}
+        value={displayLanguage}
         options={languageOptions}
-        label="Language"
+        label={i18nStore.t('settings.display.language')}
         onchange={(v) => handleDisplayChange('language', v)}
       />
     </div>
 
     <div class="setting-row separator">
       <div class="setting-info">
-        <span class="setting-label">Theme</span>
-        <span class="setting-desc">外观主题</span>
+        <span class="setting-label">{i18nStore.t('settings.display.theme')}</span>
+        <span class="setting-desc">{i18nStore.t('settings.display.theme.desc')}</span>
       </div>
       <Select
         value={cfg.display.theme}
         options={themeOptions}
-        label="Theme"
+        label={i18nStore.t('settings.display.theme')}
         onchange={(v) => handleDisplayChange('theme', v)}
       />
     </div>

@@ -4,7 +4,7 @@ import Select from '../Select.svelte';
 
 const options = [
   { value: 'zh-CN', label: '简体中文' },
-  { value: 'en-US', label: 'English' },
+  { value: 'en', label: 'English' },
 ];
 
 describe('Select', () => {
@@ -23,8 +23,8 @@ describe('Select', () => {
   it('calls onchange on selection', async () => {
     const onchange = vi.fn();
     render(Select, { props: { value: 'zh-CN', options, onchange } });
-    await fireEvent.change(screen.getByRole('combobox'), { target: { value: 'en-US' } });
-    expect(onchange).toHaveBeenCalledWith('en-US');
+    await fireEvent.change(screen.getByRole('combobox'), { target: { value: 'en' } });
+    expect(onchange).toHaveBeenCalledWith('en');
   });
 
   it('uses custom aria-label from label prop', () => {

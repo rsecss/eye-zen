@@ -1,16 +1,27 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { i18nStore } from '$lib/i18n/index.svelte';
+  import { configStore } from '$lib/stores/config.svelte';
   import { timerStore } from '$lib/stores/timer.svelte';
 
   onMount(() => {
     timerStore.init().catch((err) => console.error('Failed to init timer store:', err));
-    return () => timerStore.destroy();
+    configStore.init().catch((err) => console.error('Failed to init config store:', err));
+
+    return () => {
+      timerStore.destroy();
+      configStore.destroy();
+    };
+  });
+
+  $effect(() => {
+    i18nStore.setLocale(configStore.current.display.language);
   });
 
   const label = $derived(
     timerStore.current.state === 'resting'
-      ? 'Resting... look away from the screen'
-      : 'Take a break... look away from the screen',
+      ? i18nStore.t('tipMinimal.resting')
+      : i18nStore.t('tipMinimal.alerting'),
   );
 </script>
 
@@ -30,6 +41,7 @@
   .breathing {
     animation: breathe 5s ease-in-out infinite;
   }
+
   @keyframes breathe {
     0%,
     100% {

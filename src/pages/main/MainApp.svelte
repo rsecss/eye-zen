@@ -1,13 +1,18 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { onNavigateTab } from '$lib/events';
+  import { i18nStore } from '$lib/i18n/index.svelte';
   import { configStore } from '$lib/stores/config.svelte';
-  import SettingsPage from './SettingsPage.svelte';
   import AboutPage from './AboutPage.svelte';
+  import SettingsPage from './SettingsPage.svelte';
 
   const tabs = ['Settings', 'About'] as const;
   type Tab = (typeof tabs)[number];
   let activeTab = $state<Tab>('Settings');
+
+  $effect(() => {
+    i18nStore.setLocale(configStore.current.display.language);
+  });
 
   onMount(() => {
     configStore.init().catch((err) => console.error('Failed to init config store:', err));
@@ -25,7 +30,7 @@
 
 <main class="h-screen flex flex-col" style="background: var(--bg-primary);">
   <nav class="flex gap-1 px-5 pt-3 pb-0" style="border-bottom: 1px solid rgba(34, 197, 94, 0.06);">
-    {#each tabs as tab}
+    {#each tabs as tab (tab)}
       <button class="tab-button" class:active={activeTab === tab} onclick={() => (activeTab = tab)}>
         {#if tab === 'Settings'}
           <svg
@@ -55,7 +60,7 @@
             <line x1="12" y1="8" x2="12.01" y2="8" />
           </svg>
         {/if}
-        {tab}
+        {tab === 'Settings' ? i18nStore.t('tab.settings') : i18nStore.t('tab.about')}
       </button>
     {/each}
   </nav>

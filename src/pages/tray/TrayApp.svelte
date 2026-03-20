@@ -1,16 +1,25 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
   import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
-  import { timerStore } from '$lib/stores/timer.svelte';
-  import { pauseTimer, resumeTimer, startRest, skipRest } from '$lib/commands';
+  import { onMount } from 'svelte';
+  import { pauseTimer, resumeTimer, skipRest, startRest } from '$lib/commands';
   import { emitNavigateTab } from '$lib/events';
+  import { i18nStore } from '$lib/i18n/index.svelte';
+  import { configStore } from '$lib/stores/config.svelte';
+  import { timerStore } from '$lib/stores/timer.svelte';
 
   onMount(() => {
     timerStore.init().catch((err) => console.error('Failed to init timer store:', err));
-    return () => timerStore.destroy();
+    configStore.init().catch((err) => console.error('Failed to init config store:', err));
+
+    return () => {
+      timerStore.destroy();
+      configStore.destroy();
+    };
   });
 
-  // --- Derived state ---
+  $effect(() => {
+    i18nStore.setLocale(configStore.current.display.language);
+  });
 
   const currentState = $derived(timerStore.current.state);
   const remainingSecs = $derived(timerStore.current.remaining_secs);
@@ -30,7 +39,7 @@
         ? 's-pause'
         : currentState === 'resting'
           ? 's-rest'
-          : 's-alert', // pre_alert + alerting
+          : 's-alert',
   );
 
   const dotColor = $derived(
@@ -53,14 +62,14 @@
 
   const stateLabel = $derived(
     currentState === 'working'
-      ? 'Working'
+      ? i18nStore.t('tray.working')
       : currentState === 'paused'
-        ? 'Paused'
+        ? i18nStore.t('tray.paused')
         : currentState === 'resting'
-          ? 'Resting'
+          ? i18nStore.t('tray.resting')
           : currentState === 'pre_alert'
-            ? 'Break soon'
-            : 'Time for a break',
+            ? i18nStore.t('tray.preAlert')
+            : i18nStore.t('tray.alerting'),
   );
 
   const labelColor = $derived(
@@ -75,12 +84,10 @@
 
   const barFillStyle = $derived(computeBarFill(currentState, progressPercent));
 
-  // --- Helpers ---
-
   function formatTime(secs: number): string {
-    const m = Math.floor(secs / 60);
-    const s = secs % 60;
-    return `${m}:${String(s).padStart(2, '0')}`;
+    const minutes = Math.floor(secs / 60);
+    const seconds = secs % 60;
+    return `${minutes}:${String(seconds).padStart(2, '0')}`;
   }
 
   function computeProgress(
@@ -98,7 +105,6 @@
       if (restSecs <= 0) return 0;
       return Math.round(((restSecs - remaining) / restSecs) * 100);
     }
-    // pre_alert / alerting: bar is full
     return 100;
   }
 
@@ -112,37 +118,35 @@
     return `width: ${percent}%; background: linear-gradient(90deg, #34d399, #6ee7b7);`;
   }
 
-  // --- Button handlers ---
-
   async function handlePause(): Promise<void> {
     try {
       await pauseTimer();
-    } catch (e) {
-      console.error('Failed to pause timer:', e);
+    } catch (error) {
+      console.error('Failed to pause timer:', error);
     }
   }
 
   async function handleResume(): Promise<void> {
     try {
       await resumeTimer();
-    } catch (e) {
-      console.error('Failed to resume timer:', e);
+    } catch (error) {
+      console.error('Failed to resume timer:', error);
     }
   }
 
   async function handleStartRest(): Promise<void> {
     try {
       await startRest();
-    } catch (e) {
-      console.error('Failed to start rest:', e);
+    } catch (error) {
+      console.error('Failed to start rest:', error);
     }
   }
 
   async function handleSkip(): Promise<void> {
     try {
       await skipRest();
-    } catch (e) {
-      console.error('Failed to skip rest:', e);
+    } catch (error) {
+      console.error('Failed to skip rest:', error);
     }
   }
 
@@ -155,8 +159,8 @@
         await win.show();
         await win.setFocus();
       }
-    } catch (e) {
-      console.error('Failed to open settings:', e);
+    } catch (error) {
+      console.error('Failed to open settings:', error);
     }
   }
 </script>
@@ -171,7 +175,6 @@
 {/snippet}
 
 <main class="tray-card {stateClass}">
-  <!-- Status row -->
   <div class="status-row">
     <div class="status-left">
       <div
@@ -185,54 +188,66 @@
     <span class="countdown" class:dim={timeDimmed}>{formattedTime}</span>
   </div>
 
-  <!-- Progress bar -->
   <div class="progress-bar">
     <div class="progress-fill" style={barFillStyle}></div>
   </div>
 
-  <!-- Action buttons -->
   <div class="btn-row">
     {#if currentState === 'working'}
-      <button class="btn primary" aria-label="Pause timer" onclick={handlePause}>Pause</button>
+      <button class="btn primary" aria-label={i18nStore.t('tray.pause')} onclick={handlePause}>
+        {i18nStore.t('tray.pause')}
+      </button>
       <button
         class="btn icon-btn"
-        title="Settings"
-        aria-label="Open settings"
+        title={i18nStore.t('tray.settings')}
+        aria-label={i18nStore.t('tray.settings')}
         onclick={handleSettings}
       >
         {@render settingsIcon()}
       </button>
     {:else if currentState === 'paused'}
-      <button class="btn primary" aria-label="Resume timer" onclick={handleResume}>Resume</button>
+      <button class="btn primary" aria-label={i18nStore.t('tray.resume')} onclick={handleResume}>
+        {i18nStore.t('tray.resume')}
+      </button>
       <button
         class="btn icon-btn"
-        title="Settings"
-        aria-label="Open settings"
+        title={i18nStore.t('tray.settings')}
+        aria-label={i18nStore.t('tray.settings')}
         onclick={handleSettings}
       >
         {@render settingsIcon()}
       </button>
     {:else if currentState === 'pre_alert'}
-      <!-- pre_alert: user can still pause, no rest action yet -->
-      <button class="btn primary" aria-label="Pause timer" onclick={handlePause}>Pause</button>
+      <button class="btn primary" aria-label={i18nStore.t('tray.pause')} onclick={handlePause}>
+        {i18nStore.t('tray.pause')}
+      </button>
       <button
         class="btn icon-btn"
-        title="Settings"
-        aria-label="Open settings"
+        title={i18nStore.t('tray.settings')}
+        aria-label={i18nStore.t('tray.settings')}
         onclick={handleSettings}
       >
         {@render settingsIcon()}
       </button>
     {:else if currentState === 'alerting'}
-      <button class="btn solid" aria-label="Start rest" onclick={handleStartRest}>Start Rest</button
+      <button
+        class="btn solid"
+        aria-label={i18nStore.t('tray.startRest')}
+        onclick={handleStartRest}
       >
-      <button class="btn neutral" aria-label="Skip" onclick={handleSkip}>Skip</button>
+        {i18nStore.t('tray.startRest')}
+      </button>
+      <button class="btn neutral" aria-label={i18nStore.t('tray.skipRest')} onclick={handleSkip}>
+        {i18nStore.t('tray.skipRest')}
+      </button>
     {:else if currentState === 'resting'}
-      <button class="btn neutral" aria-label="Skip" onclick={handleSkip}>Skip</button>
+      <button class="btn neutral" aria-label={i18nStore.t('tray.skipRest')} onclick={handleSkip}>
+        {i18nStore.t('tray.skipRest')}
+      </button>
       <button
         class="btn icon-btn"
-        title="Settings"
-        aria-label="Open settings"
+        title={i18nStore.t('tray.settings')}
+        aria-label={i18nStore.t('tray.settings')}
         onclick={handleSettings}
       >
         {@render settingsIcon()}
@@ -242,7 +257,6 @@
 </main>
 
 <style>
-  /* --- Glassmorphic tray card --- */
   .tray-card {
     width: 100%;
     min-height: 100vh;
@@ -260,7 +274,6 @@
     box-sizing: border-box;
   }
 
-  /* Top accent bar */
   .tray-card::before {
     content: '';
     position: absolute;
@@ -287,7 +300,6 @@
     background: linear-gradient(90deg, #6ee7b7, #34d399, #a7f3d0);
   }
 
-  /* --- Status row --- */
   .status-row {
     display: flex;
     align-items: center;
@@ -301,7 +313,6 @@
     gap: 9px;
   }
 
-  /* --- Breathing dot --- */
   .dot {
     width: 9px;
     height: 9px;
@@ -327,14 +338,12 @@
     }
   }
 
-  /* --- State label --- */
   .state-label {
     font-size: 15px;
     font-weight: 650;
     letter-spacing: 0.1px;
   }
 
-  /* --- Countdown --- */
   .countdown {
     font-size: 32px;
     font-weight: 300;
@@ -347,7 +356,6 @@
     color: #c0c5ce;
   }
 
-  /* --- Progress bar --- */
   .progress-bar {
     width: 100%;
     height: 4px;
@@ -363,7 +371,6 @@
     transition: width 0.4s ease;
   }
 
-  /* --- Action buttons --- */
   .btn-row {
     display: flex;
     gap: 8px;
