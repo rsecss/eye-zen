@@ -21,9 +21,28 @@
 | `fix` | 先写失败测试，再修复 | **MUST** |
 | `feat` -- Rust 服务/状态机 | 覆盖关键状态转换、边界值、错误路径 | **MUST** |
 | `feat` -- Tauri command | 至少一条边界测试 | **MUST** |
-| `feat` -- Svelte 组件（有交互/分支） | 组件测试 | **SHOULD** |
+| `feat` -- Svelte 可复用组件 | 渲染 + props 响应 + 交互回调 + 边界值 | **MUST** |
+| `feat` -- Svelte 页面组件 | 关键交互路径 + store 集成 | **SHOULD** |
 | 纯样式/文案/文档 | 必须过构建 | **MUST** |
 | `refactor` | 现有测试全部通过 | **MUST** |
+
+### 前端组件测试标准
+
+可复用组件（如 Stepper, Toggle, Select）MUST 覆盖：
+
+| 测试维度 | 示例 |
+|---------|------|
+| 默认渲染 | 传入 props 后正确显示值 |
+| Props 响应 | 外部 props 变化后 UI 同步更新 |
+| 用户交互 | 点击按钮触发 onchange 回调，参数正确 |
+| 边界值 | min/max clamp、空值防御 |
+
+页面组件（如 SettingsPage, AboutPage）SHOULD 覆盖：
+
+| 测试维度 | 示例 |
+|---------|------|
+| 关键交互 | 修改配置后调用正确的 update command |
+| Store 集成 | mock store 后页面正确渲染配置值 |
 
 ## 质量门禁
 

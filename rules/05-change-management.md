@@ -63,10 +63,14 @@
 
 ### 新增前端页面/组件
 
-- [ ] 组件放在对应 `pages/` 或 `lib/components/` 目录
+- [ ] 组件放在对应 `pages/<window>/components/` 或 `lib/components/` 目录
 - [ ] 类型从 `$lib/bindings/` 导入
+- [ ] Props 使用 `$props()` + callback 模式，MUST NOT 使用 `bind:`
 - [ ] 超过 200 行时按职责评估是否需要拆分
-- [ ] 有交互/分支逻辑的组件 SHOULD 写组件测试
+- [ ] 可复用组件 MUST 写组件测试（渲染 + 交互 + 边界值）
+- [ ] 页面组件 SHOULD 写关键交互路径测试
+- [ ] CSS 颜色 MUST 使用 `app.css` 中的 CSS 变量，MUST NOT 硬编码色值
+- [ ] 确认 `npm run build` + `svelte-check` + `npm test` 全部通过
 
 ## 配置向后兼容
 

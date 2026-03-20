@@ -22,13 +22,21 @@ src/
 │   ├── tip-minimal.ts
 │   └── tray.ts
 ├── pages/               各窗口页面组件
-│   ├── main/MainApp.svelte
+│   ├── main/
+│   │   ├── MainApp.svelte
+│   │   ├── SettingsPage.svelte
+│   │   ├── AboutPage.svelte
+│   │   └── components/      窗口级可复用组件
+│   │       ├── Stepper.svelte
+│   │       ├── Toggle.svelte
+│   │       ├── Select.svelte
+│   │       └── SettingsCard.svelte
 │   ├── tip/TipApp.svelte
 │   ├── tip-minimal/TipMinimalApp.svelte
 │   └── tray/TrayApp.svelte
 ├── lib/
 │   ├── bindings/        ts-rs 生成类型（MUST NOT 手动编辑）
-│   ├── components/      共享组件
+│   ├── components/      跨窗口共享组件
 │   ├── stores/          Svelte stores
 │   ├── commands.ts      IPC command 封装
 │   └── events.ts        IPC event 封装
@@ -38,6 +46,17 @@ src/
 - HTML 入口 MUST 在项目根目录（Vite 多入口标准）
 - `src/lib/bindings/` MUST NOT 手动编辑，只由 ts-rs 生成覆盖
 - 新增窗口类型 MUST 同时添加：HTML 入口 → TS entry → Page 组件 → Vite rollupOptions
+
+### 组件放置原则
+
+| 位置 | 适用场景 | 示例 |
+|------|---------|------|
+| `pages/<window>/components/` | 仅该窗口使用的可复用组件 | Stepper, Toggle, SettingsCard |
+| `lib/components/` | 跨窗口共享的组件 | （当前为空，按需提升） |
+
+- 组件 MUST 先放在 `pages/<window>/components/`（就近原则）
+- 当两个以上窗口需要同一组件时，才提升到 `lib/components/`
+- MUST NOT 预设"可能被复用"而提前提升（YAGNI）
 
 ## 窗口定义
 
@@ -171,28 +190,116 @@ export async function onStateChanged(
 
 ## 视觉设计体系
 
-风格：Linear/Raycast 现代质感 + macOS 暖色干净 light
+风格：Linear/Raycast 现代质感 + 清新淡绿 light（护眼主题统一绿色体系）
+
+### 全局 CSS 变量（app.css）
 
 ```css
 :root {
-  --bg-primary: #fafbfc;
-  --bg-secondary: #f0f2f5;
+  /* 底色：极淡绿 */
+  --bg-primary: #f8faf9;
   --bg-card: #ffffff;
+
+  /* 文字：带绿调的灰阶 */
   --text-primary: #1a1d23;
-  --text-secondary: #6b7280;
-  --accent: #6366f1;
-  --accent-soft: rgba(99, 102, 241, 0.08);
-  --green: #22c55e;
-  --border: #e5e7eb;
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
+  --text-secondary: #5f6b6a;
+  --text-tertiary: #94a3a0;
+  --text-hint: #adb8b5;
+
+  /* 主色：清新翠绿 */
+  --accent: #22c55e;
+  --accent-deep: #16a34a;
+  --accent-soft: rgba(34, 197, 94, 0.07);
+  --accent-hover: rgba(34, 197, 94, 0.12);
+  --accent-glow: rgba(34, 197, 94, 0.05);
+  --accent-border: rgba(34, 197, 94, 0.12);
+
+  /* 边框与阴影 */
+  --border: #e5eae7;
+  --border-light: rgba(0, 0, 0, 0.03);
+  --separator: #f0f3f1;
+  --shadow-card: 0 1px 2px rgba(0,0,0,0.02), 0 2px 8px rgba(22,100,60,0.03);
+  --shadow-card-hover: 0 2px 4px rgba(0,0,0,0.03), 0 4px 16px rgba(22,100,60,0.05);
+
+  /* 布局 */
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 16px;
   --transition: 150ms ease;
+
+  /* Toggle */
+  --toggle-on: #22c55e;
+  --toggle-off: #d1d8d4;
+
+  /* Biophilic 状态色（tray + tip 窗口） */
+  --state-active: #10b981;
+  --state-active-label: #059669;
+  --state-alert: #f59e0b;
+  --state-alert-label: #b45309;
+  --state-paused: #9ca3af;
+
+  /* Glass effects */
+  --glass-tray-bg: rgba(255, 255, 255, 0.72);
+  --glass-tip-bg: rgba(255, 255, 255, 0.06);
 }
 ```
+
+### 色彩分层原则
+
+| 层 | 变量前缀 | 用途 |
+|----|---------|------|
+| 全局主色 | `--accent-*` | Tab 指示、按钮、链接、选中态 |
+| 状态色 | `--state-*` | tray/tip 窗口的运行状态映射 |
+| 玻璃效果 | `--glass-*` | tray/tip 的 backdrop-filter 背景 |
+
+- 全局主色和状态色是独立体系，互不依赖
+- 新增颜色 MUST 归入对应前缀层，MUST NOT 创建孤立变量
+
+### 规则
 
 - 颜色 MUST 使用 CSS 变量，MUST NOT 硬编码色值
 - 圆角、阴影、过渡 SHOULD 使用预定义变量
 - MVP 阶段只实现 light 主题；dark + system-auto 在 P2
+
+## 可复用组件设计原则
+
+### Props 接口设计
+
+- Props MUST 是组件行为的最小完备集——缺一不可，多一冗余
+- 回调命名 MUST 以 `on` 前缀：`onchange`, `onclick`（非 `handleChange`）
+- 数据向下（props），操作向上（callback），MUST NOT 在子组件内直接调用 commands
+
+```svelte
+<!-- 正确：数据 + 回调分离 -->
+<Stepper value={config.work_minutes} min={1} max={120} step={1}
+         unit="min" onchange={handleWorkMinutesChange} />
+
+<!-- 错误：子组件直接调用 IPC -->
+<Stepper bind:value={config.work_minutes}
+         onsave={() => updateTimerConfig(config)} />
+```
+
+### 组件封装边界
+
+| 封装为组件 | 不封装 |
+|-----------|-------|
+| 有独立交互逻辑（Stepper 的 ±/clamp） | 纯布局排列（setting-row 用 CSS 类即可） |
+| 被使用 ≥2 次 | 仅出现 1 次的特定结构 |
+| 有自己的状态生命周期 | 只是 props 透传 |
+
+- MUST NOT 为只用一次的结构创建组件（过度抽象）
+- MUST NOT 把所有行内样式都抽为组件（CSS 类足够）
+
+### 即时保存模式（Settings 页面）
+
+```
+控件值来源: configStore.current（只读，单一数据源）
+用户操作:   onchange → 构造完整 *Config → update*Config()
+后端处理:   validate → save TOML → emit config_changed
+前端更新:   configStore 收到事件 → UI 自动响应
+错误恢复:   command 失败 → store 未变 → 控件值自动回弹
+```
+
+- MUST NOT 在组件内维护配置的本地副本（buffer）
+- MUST NOT 做乐观更新
+- 每次 update 调用 MUST 传完整的子配置对象（不做 patch）

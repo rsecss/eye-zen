@@ -90,6 +90,50 @@ platform/ → PlatformError → service/ → AppError → command/ → IPC Resul
 - 超过 200 行 SHOULD 按职责拆分为子组件，如有合理理由可保留
 - 组件 MUST 职责单一
 
+### 组件 Props 规范
+
+- Props MUST 使用 `$props()` + 显式解构，MUST NOT 使用 `$$props` / `$$restProps`
+- 回调 prop 类型 MUST 精确定义（如 `onchange: (value: number) => void`），MUST NOT 使用 `any`
+- MUST NOT 使用 `bind:` 做父子双向绑定（打破单向数据流），callback 是唯一的向上通信方式
+- Snippet (`children`) 用于内容投射（替代 Svelte 4 slot），MUST 使用 `Snippet` 类型声明
+
+```svelte
+<!-- 正确 -->
+<script lang="ts">
+  import type { Snippet } from 'svelte';
+  let { value, min, max, step, unit, onchange }: {
+    value: number; min: number; max: number;
+    step: number; unit: string;
+    onchange: (value: number) => void;
+  } = $props();
+</script>
+
+<!-- 错误：bind 打破单向数据流 -->
+<script lang="ts">
+  let { value = $bindable() } = $props();
+</script>
+```
+
+### Store 初始化模式
+
+页面组件 MUST 遵循统一的 store 生命周期模式：
+
+```svelte
+<script lang="ts">
+  import { onMount } from 'svelte';
+  import { xxxStore } from '$lib/stores/xxx.svelte';
+
+  onMount(() => {
+    xxxStore.init().catch((err) => console.error('Failed to init:', err));
+    return () => xxxStore.destroy();
+  });
+</script>
+```
+
+- `init()` MUST 在 `onMount` 中调用（确保 DOM 已就绪）
+- `destroy()` MUST 在 `onMount` 返回的清理函数中调用
+- MUST NOT 在组件顶层（script 块外部）调用 `init()`
+
 ### 类型导入
 
 - 前端类型 MUST 从 `$lib/bindings/` 导入 ts-rs 生成类型
