@@ -70,27 +70,15 @@ jobs:
           tagName: v__VERSION__
           releaseName: "Eyezen v__VERSION__"
           releaseBody: |
-            ## Eyezen v__VERSION__
+            See [CHANGELOG.md](https://github.com/rsecss/eye-zen/blob/main/CHANGELOG.md) for details.
 
-            ### 下载
+            ### Platform Support
 
-            | 平台 | 测试状态 |
-            |------|---------|
-            | Windows | ✅ 已测试 |
-            | macOS | ⚠️ 未测试（欢迎反馈） |
-            | Linux | ⚠️ 未测试（欢迎反馈） |
-
-            ### 变更内容
-
-            首个公开发布版本，包含完整的 20-20-20 护眼功能：
-            - 可自定义工作/休息时长的计时器
-            - 多显示器休息提醒
-            - 全屏免打扰（Windows / Linux X11）
-            - 系统托盘 + 托盘面板
-            - Dark / Light 主题切换
-            - 开机自启动
-            - 中文 / English 国际化
-            - 休息提示音
+            | Platform | Status |
+            |----------|--------|
+            | Windows 10/11 | ✅ Tested |
+            | macOS (ARM/Intel) | ⚠️ Builds, untested — feedback welcome |
+            | Linux (X11/Wayland) | ⚠️ Builds, untested — feedback welcome |
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}
