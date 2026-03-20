@@ -36,10 +36,11 @@
   .select-pill {
     appearance: none;
     -webkit-appearance: none;
+    -moz-appearance: none;
     padding: 5px 28px 5px 12px;
     border: 1px solid var(--border, #e5eae7);
     border-radius: var(--radius-sm, 8px);
-    background: transparent;
+    background-color: var(--bg-card);
     color: var(--text-primary, #1a1d23);
     font-size: 13px;
     line-height: 1.4;
@@ -48,6 +49,11 @@
     transition:
       background var(--transition, 150ms ease),
       border-color var(--transition, 150ms ease);
+  }
+
+  .select-pill option {
+    background: var(--bg-card);
+    color: var(--text-primary);
   }
 
   .select-pill:hover {

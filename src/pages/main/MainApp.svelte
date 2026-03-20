@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { getCurrentWindow } from '@tauri-apps/api/window';
   import { onNavigateTab } from '$lib/events';
   import { i18nStore } from '$lib/i18n/index.svelte';
   import { configStore } from '$lib/stores/config.svelte';
@@ -16,7 +17,12 @@
 
   $effect(() => {
     if (configStore.loaded) {
-      document.documentElement.dataset.theme = configStore.current.display.theme;
+      const theme = configStore.current.display.theme === 'dark' ? 'dark' : 'light';
+      document.documentElement.dataset.theme = theme;
+      document.documentElement.style.colorScheme = theme;
+      getCurrentWindow()
+        .setTheme(theme)
+        .catch(() => {});
     }
   });
 

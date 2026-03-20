@@ -64,6 +64,8 @@
   }
 
   .stepper-btn {
+    appearance: none;
+    -webkit-appearance: none;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -72,8 +74,8 @@
     flex-shrink: 0;
     border: 1px solid var(--border);
     border-radius: 6px;
-    background: transparent;
-    color: var(--text-secondary, #5f6b6a);
+    background-color: var(--bg-card);
+    color: var(--text-secondary);
     font-size: 15px;
     cursor: pointer;
     transition:

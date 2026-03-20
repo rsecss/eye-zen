@@ -21,6 +21,7 @@
     "allow-update-timer-config",
     "allow-update-behavior-config",
     "allow-update-display-config",
+    "core:window:allow-set-theme",
     "autostart:allow-enable",
     "autostart:allow-disable",
     "autostart:allow-is-enabled"

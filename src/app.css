@@ -8,6 +8,8 @@
 }
 
 :root {
+  color-scheme: light;
+
   /* Fresh green theme */
   --bg-primary: #f8faf9;
   --bg-card: #ffffff;
@@ -53,6 +55,8 @@
 }
 
 [data-theme='dark'] {
+  color-scheme: dark;
+
   --bg-primary: #0f1513;
   --bg-card: #1a1f1d;
   --bg-tab: rgba(15, 21, 19, 0.85);
@@ -68,9 +72,9 @@
   --accent-glow: rgba(34, 197, 94, 0.08);
   --accent-border: rgba(34, 197, 94, 0.18);
 
-  --border: #2a332f;
-  --border-light: rgba(255, 255, 255, 0.04);
-  --separator: #1e2724;
+  --border: #222b27;
+  --border-light: rgba(255, 255, 255, 0.03);
+  --separator: #1c2421;
 
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.2), 0 2px 8px rgba(0, 0, 0, 0.15);
   --shadow-card-hover: 0 2px 4px rgba(0, 0, 0, 0.25), 0 4px 16px rgba(0, 0, 0, 0.2);
