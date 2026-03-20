@@ -19,6 +19,8 @@
 - E2E 测试通过：完整用户流程验证（Working → PreAlert → Alerting → Resting → Working）
 - Settings UI + About 页面已实现（Plan 010）
 - i18n 已实现：全栈 zh-CN/en 双语 + 热切换（Plan 011）
+- 主题切换已实现：Dark/Light CSS 变量 + 原生标题栏适配（Plan 012）
+- 开机自启动已实现：tauri-plugin-autostart 集成（Plan 013）
 - 下一步：Phase 2 继续（Statistics / 离席检测 / 工作日调度）
 
 ---
@@ -32,6 +34,7 @@
 | 构建 | Vite | `~6.x` | `~6.4.1` | 快速 HMR |
 | CSS | TailwindCSS | v4 (`~4.x`) | `~4.2.1` | 工具类优先 |
 | 图表 | ECharts | tree-shaken | 未安装 (P2) | |
+| 自启动 | tauri-plugin-autostart | `~2.2` | `~2.2` | 开机自启 |
 | 数据库 | SQLite | via sqlx | 未安装 (P2) | |
 | 配置 | TOML | 人类可读 | `~0.8` | |
 | 类型桥接 | ts-rs | 最新稳定 | `~10` (dev-dep) | Rust → TS |
@@ -119,11 +122,11 @@ Timer 状态机、多显示器 tip-window、系统托盘、全屏 DND、基础�
 
 ### Phase 2 -- 增强
 
-离席检测、进程白名单、SQLite 统计 + ECharts、i18n、工作日调度
+离席检测、进程白名单、SQLite 统计 + ECharts、工作日调度
 
 ### Phase 3 -- 高级
 
-健康分析、月度报告、番茄模式、主题系统、数据导出、全局快捷键
+健康分析、月度报告、番茄模式、数据导出、全局快捷键
 
 ---
 
@@ -228,6 +231,19 @@ Open risks:        已知风险
 ---
 
 ## 变更记录
+
+### 2026-03-21 -- 主题切换 + 开机自启动（Plan 012 + 013）
+
+- 新增 Dark/Light 主题切换：`[data-theme='dark']` CSS 变量覆盖 + `$effect` 同步
+- 新增 `color-scheme` 声明：`:root` light + dark 切换，WebView2 原生控件跟随
+- 新增 Windows 标题栏主题：`getCurrentWindow().setTheme()` + `core:window:allow-set-theme`
+- 修复原生控件暗色适配：Stepper/Select 添加 `appearance: none` + 显式 `bg-card` 背景
+- 新增 `configStore.loaded` 标志：解决 autostart 同步触发过早的竞态问题
+- 新增 tauri-plugin-autostart：Cargo + npm 依赖 + 插件注册 + 3 个权限
+- Settings toggle 集成 autostart API：enable/disable/isEnabled + 配置保存失败回滚
+- 新增 `<meta name="color-scheme" content="light dark">` 到 index.html
+- Codex 审查修复：loaded 守卫、双写不一致回滚、autoStartSynced 延迟置位、FOUC 防闪烁
+- 新增依赖：tauri-plugin-autostart ~2.2, @tauri-apps/plugin-autostart ~2.2
 
 ### 2026-03-20 -- i18n 全栈国际化（Plan 011）
 
