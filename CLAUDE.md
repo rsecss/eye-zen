@@ -10,14 +10,16 @@
 
 ## 项目状态
 
-**当前阶段：重建 -- 前端原型已实现并通过 E2E 测试，准备进入 Phase 2 增强。**
+**当前阶段：Phase 2 增强进行中。**
 
 - Phase 1 MVP 代码已废弃，仅保留架构经验和设计决策
 - 脚手架已就绪：Tauri v2 + Svelte 5 + Vite 6 + TailwindCSS v4
 - 后端 MVP 已实现：6 个核心服务 + Commands + Events + Platform + Models
 - 前端原型已实现：ts-rs 类型桥接 + IPC stores + tray-panel + tip-window + tip-minimal
 - E2E 测试通过：完整用户流程验证（Working → PreAlert → Alerting → Resting → Working）
-- 下一步：Phase 2 增强（Settings UI / Statistics / i18n / 离席检测）
+- Settings UI + About 页面已实现（Plan 010）
+- i18n 已实现：全栈 zh-CN/en 双语 + 热切换（Plan 011）
+- 下一步：Phase 2 继续（Statistics / 离席检测 / 工作日调度）
 
 ---
 
@@ -93,9 +95,9 @@ graph TD
 | DetectorService | `src-tauri/src/services/detector.rs` | 已实现 | 全屏检测 (平台委托) |
 | WindowService | `src-tauri/src/services/window.rs` | 已实现 | 多显示器 tip-window 管理 |
 | SoundService | `src-tauri/src/services/sound.rs` | 已实现 | rodio 独立线程 + mpsc |
-| TrayService | `src-tauri/src/services/tray.rs` | 已实现 | 托盘菜单 + tooltip |
+| TrayService | `src-tauri/src/services/tray.rs` | 已实现 | 托盘菜单 + tooltip + i18n 热切换 |
 | StatService | `src-tauri/src/services/stat.rs` | 计划 (P2) | SQLite 统计 |
-| I18nService | `src-tauri/src/services/i18n.rs` | 计划 (P2) | 语言切换 |
+| I18nService | `src-tauri/src/services/i18n.rs` | 已实现 | zh-CN/en 双语 + 托盘翻译 |
 | PlatformApi | `src-tauri/src/platform/` | 已实现 | 跨平台抽象 (Windows/macOS/Linux) |
 | Commands | `src-tauri/src/commands/` | 已实现 | Tauri command 薄层 (9 个 commands) |
 | Models | `src-tauri/src/models/` | 已实现 | 共享类型 + IPC events + 配置模型 |
@@ -104,8 +106,8 @@ graph TD
 | ServiceContext | `src-tauri/src/services/context.rs` | 已实现 | 服务间通信上下文 |
 | HTML 入口 | `*.html` (根目录) | 已存在 | Vite 多入口 |
 | 前端 entries | `src/entries/` | 已存在 | 窗口 TS 入口 |
-| 前端 pages | `src/pages/` | 已实现 | tray-panel / tip-window / tip-minimal 页面组件 |
-| 前端 lib | `src/lib/` | 已实现 | bindings / commands / events / stores |
+| 前端 pages | `src/pages/` | 已实现 | tray-panel / tip-window / tip-minimal / settings / about |
+| 前端 lib | `src/lib/` | 已实现 | bindings / commands / events / stores / i18n |
 
 ---
 
@@ -226,6 +228,17 @@ Open risks:        已知风险
 ---
 
 ## 变更记录
+
+### 2026-03-20 -- i18n 全栈国际化（Plan 011）
+
+- 新增 I18nService（Rust）：zh-CN/en 双语翻译，11 个托盘相关 key
+- 重构 TrayService：i18n 菜单文本 + TrayTooltip 类型化 + config watch 语言热切换
+- 重构 TrayUpdate：从 String 改为 TrayTooltip struct + TimerState enum
+- 新增前端 i18nStore：Svelte 5 Runes 响应式 + TranslationKey 编译时类型安全
+- 国际化所有前端页面：Settings / About / Tip / TipMinimal / Tray（~55 个翻译 key）
+- 语言标识符规范化：en-US → en
+- 架构文档更新：I18nService 依赖 DAG + 关闭顺序
+- 审计修复：移除死参数、收紧 t() 类型签名、clippy lint 允许
 
 ### 2026-03-20 -- 前端原型实现 + Codex 审查修复
 
