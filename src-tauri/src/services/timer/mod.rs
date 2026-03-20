@@ -5,6 +5,6 @@ pub(crate) mod service;
 pub(crate) mod state;
 
 pub(crate) use effect::{Effect, SoundType, TrayTooltip, TrayUpdate};
-pub(crate) use machine::{collect_effects, collect_tick_effects, resolve_user_event, step_time};
+pub(crate) use machine::{collect_effects, collect_tick_effects, step_time};
 pub(crate) use service::TimerService;
-pub(crate) use state::{Inner, SkipFlags, TimerState, Transition, UserEvent};
+pub(crate) use state::{Inner, SkipFlags, TimerState, UserEvent};

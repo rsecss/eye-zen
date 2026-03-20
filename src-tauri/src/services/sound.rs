@@ -18,7 +18,9 @@ use crate::services::ServiceContext;
 #[derive(Debug)]
 pub(crate) enum SoundCommand {
     Play(SoundAsset),
+    #[allow(dead_code)]
     Stop,
+    #[allow(dead_code)]
     SetEnabled(bool),
     Shutdown,
 }
@@ -78,14 +80,14 @@ impl SoundService {
         self.play(sound.into());
     }
 
-    /// Stop any currently playing sink.
+    #[allow(dead_code)]
     pub(crate) fn stop(&self) {
         if let Err(err) = self.tx.try_send(SoundCommand::Stop) {
             warn!("failed to send stop command: {err}");
         }
     }
 
-    /// Enable or disable future playback.
+    #[allow(dead_code)]
     pub(crate) fn set_enabled(&self, enabled: bool) {
         if let Err(err) = self.tx.try_send(SoundCommand::SetEnabled(enabled)) {
             warn!("failed to send enabled command: {err}");

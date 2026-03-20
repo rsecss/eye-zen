@@ -45,7 +45,7 @@ impl TimerService {
         }
     }
 
-    /// Single tick of the timer loop.
+    #[allow(dead_code)]
     pub(crate) async fn on_tick(&self, skip_flags: &SkipFlags) -> Vec<Effect> {
         let effects = {
             let mut inner = self.inner.lock().await;
@@ -96,7 +96,7 @@ impl TimerService {
         Ok(())
     }
 
-    /// Apply timer config to future cycles without resetting current state.
+    #[allow(dead_code)]
     pub(crate) async fn apply_config(&self, config: &Config) {
         let mut inner = self.inner.lock().await;
         Self::sync_runtime_config(&mut inner, config);

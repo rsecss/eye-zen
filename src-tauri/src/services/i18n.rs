@@ -8,6 +8,7 @@ use crate::services::{Service, ServiceContext};
 const DEFAULT_LOCALE: &str = "zh-CN";
 const ENGLISH_LOCALE: &str = "en";
 
+#[cfg(test)]
 const ALL_KEYS: [&str; 11] = [
     "tray.settings",
     "tray.about",

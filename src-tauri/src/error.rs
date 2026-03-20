@@ -9,7 +9,6 @@ pub type Result<T> = std::result::Result<T, AppError>;
 pub enum AppError {
     ConfigInvalid { field: String, reason: String },
     InvalidOperation { operation: String, reason: String },
-    ServiceNotReady { service: String },
     IoError { message: String },
 }
 
@@ -22,7 +21,6 @@ impl std::fmt::Display for AppError {
             Self::InvalidOperation { operation, reason } => {
                 write!(f, "invalid operation [{operation}]: {reason}")
             }
-            Self::ServiceNotReady { service } => write!(f, "service not ready: {service}"),
             Self::IoError { message } => write!(f, "I/O error: {message}"),
         }
     }
