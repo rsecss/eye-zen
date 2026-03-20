@@ -1,0 +1,38 @@
+changelog:
+  exclude:
+    labels:
+      - ignore-for-release
+    authors:
+      - dependabot[bot]
+  categories:
+    - title: "🚨 Breaking Changes"
+      labels:
+        - breaking-change
+    - title: "✨ New Features"
+      labels:
+        - enhancement
+        - feature
+    - title: "🐛 Bug Fixes"
+      labels:
+        - bug
+        - fix
+    - title: "🎨 UI/UX"
+      labels:
+        - ui
+        - theme
+        - i18n
+    - title: "📖 Documentation"
+      labels:
+        - documentation
+    - title: "🔧 Maintenance"
+      labels:
+        - chore
+        - refactor
+        - dependencies
+        - ci
+    - title: "🔒 Security"
+      labels:
+        - security
+    - title: "📦 Other Changes"
+      labels:
+        - "*"
