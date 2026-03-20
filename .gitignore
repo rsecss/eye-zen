@@ -25,6 +25,7 @@ src-tauri/gen/
 # Internal docs (research, devlog, design specs, plans — not for public repo)
 docs/.local/
 docs/plans/
+docs/devlog.md
 docs/superpowers/
 
 # Claude Code
