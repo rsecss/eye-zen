@@ -13,6 +13,7 @@
     "core:window:allow-set-focus",
     "core:window:allow-unminimize",
     "core:window:allow-get-all-windows",
+    "core:event:allow-emit",
     "allow-get-config",
     "allow-get-state-snapshot",
     "allow-start-rest",

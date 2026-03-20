@@ -1,9 +1,11 @@
 <script lang="ts">
   let {
     checked,
+    label = 'Toggle',
     onchange,
   }: {
     checked: boolean;
+    label?: string;
     onchange: (v: boolean) => void;
   } = $props();
 </script>
@@ -11,7 +13,7 @@
 <button
   role="switch"
   aria-checked={checked}
-  aria-label="Toggle"
+  aria-label={label}
   class="toggle-track"
   class:on={checked}
   onclick={() => onchange(!checked)}

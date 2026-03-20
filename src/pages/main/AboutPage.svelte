@@ -1,7 +1,7 @@
 <script lang="ts">
   import { open } from '@tauri-apps/plugin-shell';
 
-  const GITHUB_URL = 'https://github.com/user/eyezen';
+  const GITHUB_URL = 'https://github.com/rsecss/eye-zen';
   const RELEASES_URL = `${GITHUB_URL}/releases`;
 
   const platform = navigator.platform;

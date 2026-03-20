@@ -3,6 +3,7 @@
   import { WebviewWindow } from '@tauri-apps/api/webviewWindow';
   import { timerStore } from '$lib/stores/timer.svelte';
   import { pauseTimer, resumeTimer, startRest, skipRest } from '$lib/commands';
+  import { emitNavigateTab } from '$lib/events';
 
   onMount(() => {
     timerStore.init().catch((err) => console.error('Failed to init timer store:', err));
@@ -147,6 +148,7 @@
 
   async function handleSettings(): Promise<void> {
     try {
+      await emitNavigateTab('Settings');
       const win = await WebviewWindow.getByLabel('main-window');
       if (win) {
         await win.unminimize();

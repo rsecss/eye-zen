@@ -1,4 +1,4 @@
-import { listen, type UnlistenFn } from '@tauri-apps/api/event';
+import { emit, listen, type UnlistenFn } from '@tauri-apps/api/event';
 import type { StatePayload } from './bindings/StatePayload';
 import type { Config } from './bindings/Config';
 
@@ -8,4 +8,12 @@ export function onStateChanged(callback: (payload: StatePayload) => void): Promi
 
 export function onConfigChanged(callback: (payload: Config) => void): Promise<UnlistenFn> {
   return listen<Config>('config_changed', (e) => callback(e.payload));
+}
+
+export function onNavigateTab(callback: (tab: string) => void): Promise<UnlistenFn> {
+  return listen<string>('navigate_tab', (e) => callback(e.payload));
+}
+
+export function emitNavigateTab(tab: string): Promise<void> {
+  return emit('navigate_tab', tab);
 }

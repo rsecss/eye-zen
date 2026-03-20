@@ -5,6 +5,7 @@
     max,
     step,
     unit,
+    label = '',
     onchange,
   }: {
     value: number;
@@ -12,6 +13,7 @@
     max: number;
     step: number;
     unit: string;
+    label?: string;
     onchange: (v: number) => void;
   } = $props();
 
@@ -27,8 +29,11 @@
 </script>
 
 <div class="stepper-group">
-  <button class="stepper-btn" aria-label="Decrease" onclick={decrement} disabled={value <= min}
-    >−</button
+  <button
+    class="stepper-btn"
+    aria-label="Decrease {label}"
+    onclick={decrement}
+    disabled={value <= min}>−</button
   >
 
   <div class="stepper-value">
@@ -36,8 +41,11 @@
     <span class="value-unit">{unit}</span>
   </div>
 
-  <button class="stepper-btn" aria-label="Increase" onclick={increment} disabled={value >= max}
-    >+</button
+  <button
+    class="stepper-btn"
+    aria-label="Increase {label}"
+    onclick={increment}
+    disabled={value >= max}>+</button
   >
 </div>
 

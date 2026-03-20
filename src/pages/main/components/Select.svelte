@@ -2,16 +2,23 @@
   let {
     value,
     options,
+    label = '',
     onchange,
   }: {
     value: string;
     options: { value: string; label: string }[];
+    label?: string;
     onchange: (v: string) => void;
   } = $props();
 </script>
 
 <div class="select-wrapper">
-  <select class="select-pill" {value} onchange={(e) => onchange(e.currentTarget.value)}>
+  <select
+    class="select-pill"
+    aria-label={label}
+    {value}
+    onchange={(e) => onchange(e.currentTarget.value)}
+  >
     {#each options as opt (opt.value)}
       <option value={opt.value} selected={opt.value === value}>{opt.label}</option>
     {/each}

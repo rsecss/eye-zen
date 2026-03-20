@@ -54,6 +54,7 @@
         max={120}
         step={1}
         unit="min"
+        label="Work Duration"
         onchange={(v) => handleTimerChange('work_minutes', v)}
       />
     </div>
@@ -69,6 +70,7 @@
         max={300}
         step={5}
         unit="sec"
+        label="Rest Duration"
         onchange={(v) => handleTimerChange('rest_seconds', v)}
       />
     </div>
@@ -84,6 +86,7 @@
         max={60}
         step={5}
         unit="sec"
+        label="Pre-alert"
         onchange={(v) => handleTimerChange('pre_alert_seconds', v)}
       />
     </div>
@@ -99,6 +102,7 @@
         max={300}
         step={10}
         unit="sec"
+        label="Alert Timeout"
         onchange={(v) => handleTimerChange('alert_timeout_seconds', v)}
       />
     </div>
@@ -112,6 +116,7 @@
       </div>
       <Toggle
         checked={cfg.behavior.sound_enabled}
+        label="Sound"
         onchange={(v) => handleBehaviorChange('sound_enabled', v)}
       />
     </div>
@@ -123,6 +128,7 @@
       </div>
       <Toggle
         checked={cfg.behavior.fullscreen_skip}
+        label="Fullscreen Skip"
         onchange={(v) => handleBehaviorChange('fullscreen_skip', v)}
       />
     </div>
@@ -134,6 +140,7 @@
       </div>
       <Toggle
         checked={cfg.behavior.auto_start}
+        label="Auto Start"
         onchange={(v) => handleBehaviorChange('auto_start', v)}
       />
     </div>
@@ -148,6 +155,7 @@
       <Select
         value={cfg.display.language}
         options={languageOptions}
+        label="Language"
         onchange={(v) => handleDisplayChange('language', v)}
       />
     </div>
@@ -160,6 +168,7 @@
       <Select
         value={cfg.display.theme}
         options={themeOptions}
+        label="Theme"
         onchange={(v) => handleDisplayChange('theme', v)}
       />
     </div>

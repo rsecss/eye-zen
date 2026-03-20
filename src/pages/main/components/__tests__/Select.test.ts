@@ -26,4 +26,9 @@ describe('Select', () => {
     await fireEvent.change(screen.getByRole('combobox'), { target: { value: 'en-US' } });
     expect(onchange).toHaveBeenCalledWith('en-US');
   });
+
+  it('uses custom aria-label from label prop', () => {
+    render(Select, { props: { value: 'zh-CN', options, label: 'Language', onchange: vi.fn() } });
+    expect(screen.getByLabelText('Language')).toBeInTheDocument();
+  });
 });

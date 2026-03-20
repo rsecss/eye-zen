@@ -26,4 +26,9 @@ describe('Toggle', () => {
     await fireEvent.click(screen.getByRole('switch'));
     expect(onchange).toHaveBeenCalledWith(true);
   });
+
+  it('uses custom aria-label from label prop', () => {
+    render(Toggle, { props: { checked: true, label: 'Sound', onchange: vi.fn() } });
+    expect(screen.getByLabelText('Sound')).toBeInTheDocument();
+  });
 });
