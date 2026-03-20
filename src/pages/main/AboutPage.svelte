@@ -1,5 +1,6 @@
 <script lang="ts">
   import { open } from '@tauri-apps/plugin-shell';
+  import { i18nStore } from '$lib/i18n/index.svelte';
 
   const GITHUB_URL = 'https://github.com/rsecss/eye-zen';
   const RELEASES_URL = `${GITHUB_URL}/releases`;
@@ -12,7 +13,6 @@
 </script>
 
 <div class="about-page">
-  <!-- Logo -->
   <div class="logo">
     <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="white" stroke-width="1.5">
       <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
@@ -20,33 +20,26 @@
     </svg>
   </div>
 
-  <!-- App name -->
   <h1 class="app-name">Eyezen</h1>
+  <span class="version">{i18nStore.t('about.version')} 0.1.0</span>
+  <p class="description">{i18nStore.t('about.description')}</p>
+  <p class="sub-description">{i18nStore.t('about.rule')}</p>
 
-  <!-- Version -->
-  <span class="version">Version 0.1.0</span>
+  <button class="update-btn" onclick={() => openUrl(RELEASES_URL)}>
+    {i18nStore.t('about.checkUpdate')}
+  </button>
 
-  <!-- Description -->
-  <p class="description">基于 20-20-20 规则的跨平台桌面护眼工具</p>
-
-  <!-- Sub-description -->
-  <p class="sub-description">Every 20 min, look 20 feet away, for 20 seconds</p>
-
-  <!-- Update button -->
-  <button class="update-btn" onclick={() => openUrl(RELEASES_URL)}> Check for Updates </button>
-
-  <!-- Info card -->
   <div class="info-card">
     <div class="info-row">
-      <span class="info-label">Platform</span>
+      <span class="info-label">{i18nStore.t('about.platform')}</span>
       <span class="info-value">{platform}</span>
     </div>
     <div class="info-row separator">
-      <span class="info-label">License</span>
+      <span class="info-label">{i18nStore.t('about.license')}</span>
       <span class="info-value">MIT</span>
     </div>
     <div class="info-row separator">
-      <span class="info-label">Source</span>
+      <span class="info-label">{i18nStore.t('about.source')}</span>
       <button class="link-btn" onclick={() => openUrl(GITHUB_URL)}>GitHub</button>
     </div>
   </div>

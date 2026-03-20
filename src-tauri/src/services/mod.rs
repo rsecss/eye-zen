@@ -1,6 +1,7 @@
 pub(crate) mod config;
 pub(crate) mod context;
 pub(crate) mod detector;
+pub(crate) mod i18n;
 pub(crate) mod sound;
 pub(crate) mod timer;
 #[cfg(not(test))]
@@ -21,6 +22,7 @@ pub(crate) struct AppServices {
     pub(crate) window: window::WindowService,
     pub(crate) sound: sound::SoundService,
     pub(crate) tray: tray::TrayService,
+    pub(crate) i18n: Arc<i18n::I18nService>,
 }
 
 #[cfg(not(test))]

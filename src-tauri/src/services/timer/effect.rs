@@ -4,6 +4,8 @@ use std::time::Duration;
 
 use crate::models::types::StatePayload;
 
+use super::state::TimerState;
+
 /// Side effects collected by the pure timer core.
 #[derive(Debug, Clone)]
 pub(crate) enum Effect {
@@ -25,6 +27,12 @@ pub(crate) enum SoundType {
 /// Tray updates consumed by the tray service.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) enum TrayUpdate {
-    Tooltip(String),
-    StateIcon(String),
+    Tooltip(TrayTooltip),
+    StateIcon(TimerState),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) struct TrayTooltip {
+    pub(crate) state: TimerState,
+    pub(crate) remaining_secs: Option<u32>,
 }

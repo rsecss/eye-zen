@@ -7,8 +7,9 @@
     "core:event:allow-unlisten",
     {
       "identifier": "core:event:allow-listen",
-      "allow": [{ "event": "state_changed" }]
+      "allow": [{ "event": "state_changed" }, { "event": "config_changed" }]
     },
+    "allow-get-config",
     "allow-get-state-snapshot",
     "allow-start-rest",
     "allow-skip-rest"

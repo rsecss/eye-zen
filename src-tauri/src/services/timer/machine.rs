@@ -2,7 +2,7 @@ use std::time::Instant;
 
 use crate::models::types::StatePayload;
 
-use super::effect::{Effect, SoundType, TrayUpdate};
+use super::effect::{Effect, SoundType, TrayTooltip, TrayUpdate};
 use super::state::{Inner, SkipFlags, TimerState, Transition, UserEvent};
 
 /// Resolve a user action into a valid state transition.
@@ -88,38 +88,28 @@ pub(crate) fn collect_effects(transition: Transition, inner: &Inner, now: Instan
             effects.push(Effect::ShowTipWindows);
         }
         (Alerting, Resting) => {
-            effects.push(Effect::UpdateTray(TrayUpdate::StateIcon(
-                "resting".to_string(),
-            )));
+            effects.push(Effect::UpdateTray(TrayUpdate::StateIcon(Resting)));
         }
         (Alerting, Working) => {
             effects.push(Effect::HideTipWindows);
             effects.push(Effect::ResetWorkTimer(inner.work_duration));
-            effects.push(Effect::UpdateTray(TrayUpdate::StateIcon(
-                "working".to_string(),
-            )));
+            effects.push(Effect::UpdateTray(TrayUpdate::StateIcon(Working)));
         }
         (Resting, Working) => {
             effects.push(Effect::HideTipWindows);
             effects.push(Effect::PlaySound(SoundType::RestComplete));
             effects.push(Effect::ResetWorkTimer(inner.work_duration));
-            effects.push(Effect::UpdateTray(TrayUpdate::StateIcon(
-                "working".to_string(),
-            )));
+            effects.push(Effect::UpdateTray(TrayUpdate::StateIcon(Working)));
         }
         (_, Paused) => {
             if matches!(transition.from, Alerting | Resting) {
                 effects.push(Effect::HideTipWindows);
             }
-            effects.push(Effect::UpdateTray(TrayUpdate::StateIcon(
-                "paused".to_string(),
-            )));
+            effects.push(Effect::UpdateTray(TrayUpdate::StateIcon(Paused)));
         }
         (Paused, Working) => {
             effects.push(Effect::ResetWorkTimer(inner.work_duration));
-            effects.push(Effect::UpdateTray(TrayUpdate::StateIcon(
-                "working".to_string(),
-            )));
+            effects.push(Effect::UpdateTray(TrayUpdate::StateIcon(Working)));
         }
         (Working, Working) => {
             effects.push(Effect::ResetWorkTimer(inner.work_duration));
@@ -127,9 +117,9 @@ pub(crate) fn collect_effects(transition: Transition, inner: &Inner, now: Instan
         _ => {}
     }
 
-    effects.push(Effect::UpdateTray(TrayUpdate::Tooltip(
-        format_tray_tooltip(inner, now),
-    )));
+    effects.push(Effect::UpdateTray(TrayUpdate::Tooltip(tray_tooltip(
+        inner, now,
+    ))));
 
     effects
 }
@@ -139,7 +129,7 @@ pub(crate) fn collect_effects(transition: Transition, inner: &Inner, now: Instan
 pub(crate) fn collect_tick_effects(inner: &Inner, now: Instant) -> Vec<Effect> {
     vec![
         Effect::EmitStateChanged(state_payload(inner, now)),
-        Effect::UpdateTray(TrayUpdate::Tooltip(format_tray_tooltip(inner, now))),
+        Effect::UpdateTray(TrayUpdate::Tooltip(tray_tooltip(inner, now))),
     ]
 }
 
@@ -159,15 +149,16 @@ fn state_payload(inner: &Inner, now: Instant) -> StatePayload {
 }
 
 #[must_use]
-fn format_tray_tooltip(inner: &Inner, now: Instant) -> String {
-    let remaining = format_remaining(inner.remaining(now));
+fn tray_tooltip(inner: &Inner, now: Instant) -> TrayTooltip {
+    let remaining_secs = if inner.state == TimerState::Paused {
+        None
+    } else {
+        Some(duration_to_secs(inner.remaining(now)))
+    };
 
-    match inner.state {
-        TimerState::Working => format!("Eyezen - Working {remaining}"),
-        TimerState::PreAlert => format!("Eyezen - Break soon {remaining}"),
-        TimerState::Alerting => format!("Eyezen - Break now {remaining}"),
-        TimerState::Resting => format!("Eyezen - Resting {remaining}"),
-        TimerState::Paused => "Eyezen - Paused".to_string(),
+    TrayTooltip {
+        state: inner.state,
+        remaining_secs,
     }
 }
 
@@ -179,13 +170,6 @@ fn duration_to_secs(duration: Option<std::time::Duration>) -> u32 {
 
 fn duration_minutes_to_u32(duration: std::time::Duration) -> u32 {
     u32::try_from(duration.as_secs() / 60).unwrap_or(u32::MAX)
-}
-
-fn format_remaining(duration: Option<std::time::Duration>) -> String {
-    let total_secs = duration_to_secs(duration);
-    let minutes = total_secs / 60;
-    let seconds = total_secs % 60;
-    format!("{minutes:02}:{seconds:02}")
 }
 
 #[cfg(test)]
@@ -453,7 +437,10 @@ mod tests {
         )));
         assert!(effects.iter().any(|effect| matches!(
             effect,
-            Effect::UpdateTray(TrayUpdate::Tooltip(text)) if text.starts_with("Eyezen - Resting 00:")
+            Effect::UpdateTray(TrayUpdate::Tooltip(TrayTooltip {
+                state: Resting,
+                remaining_secs: Some(14..=15),
+            }))
         )));
     }
 

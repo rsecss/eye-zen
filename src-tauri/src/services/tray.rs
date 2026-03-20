@@ -1,7 +1,6 @@
 #![allow(clippy::module_name_repetitions)]
 
-use std::sync::Arc;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 use tauri::{
     menu::{Menu, MenuItem},
@@ -9,25 +8,44 @@ use tauri::{
     AppHandle, Emitter, Manager, Wry,
 };
 use tokio::sync::watch;
+use tokio::task::JoinHandle;
 use tracing::{info, warn};
 
 use crate::error::{AppError, Result};
 use crate::models::config::Config;
-use crate::services::timer::UserEvent;
+use crate::services::i18n::I18nService;
+use crate::services::timer::{TimerState, TrayTooltip, UserEvent};
 use crate::services::{Service, ServiceContext, SharedAppServices};
+
+#[derive(Clone, Default)]
+struct MenuItems {
+    pause: Option<MenuItem<Wry>>,
+    settings: Option<MenuItem<Wry>>,
+    about: Option<MenuItem<Wry>>,
+    quit: Option<MenuItem<Wry>>,
+}
 
 pub(crate) struct TrayService {
     #[cfg_attr(test, allow(dead_code))]
     config_rx: watch::Receiver<Arc<Config>>,
-    pause_item: Mutex<Option<MenuItem<Wry>>>,
+    i18n: Arc<I18nService>,
+    menu_items: Arc<Mutex<MenuItems>>,
+    current_tooltip: Arc<Mutex<TrayTooltip>>,
+    watch_handle: Mutex<Option<JoinHandle<()>>>,
 }
 
 impl TrayService {
     #[must_use]
-    pub(crate) fn new(config_rx: watch::Receiver<Arc<Config>>) -> Self {
+    pub(crate) fn new(config_rx: watch::Receiver<Arc<Config>>, i18n: Arc<I18nService>) -> Self {
         Self {
             config_rx,
-            pause_item: Mutex::new(None),
+            i18n,
+            menu_items: Arc::new(Mutex::new(MenuItems::default())),
+            current_tooltip: Arc::new(Mutex::new(TrayTooltip {
+                state: TimerState::Working,
+                remaining_secs: Some(20 * 60),
+            })),
+            watch_handle: Mutex::new(None),
         }
     }
 
@@ -37,26 +55,52 @@ impl TrayService {
     ///
     /// Returns an error when tray menu items or the tray icon cannot be created.
     pub(crate) fn create_tray(&self, app: &AppHandle) -> Result<()> {
-        let pause_item =
-            MenuItem::with_id(app, "pause", "Pause", true, None::<&str>).map_err(Self::io_error)?;
-        let settings_item = MenuItem::with_id(app, "settings", "Settings", true, None::<&str>)
-            .map_err(Self::io_error)?;
-        let about_item =
-            MenuItem::with_id(app, "about", "About", true, None::<&str>).map_err(Self::io_error)?;
+        let pause_item = MenuItem::with_id(
+            app,
+            "pause",
+            self.i18n.get("tray.pause"),
+            true,
+            None::<&str>,
+        )
+        .map_err(Self::io_error)?;
+        let settings_item = MenuItem::with_id(
+            app,
+            "settings",
+            self.i18n.get("tray.settings"),
+            true,
+            None::<&str>,
+        )
+        .map_err(Self::io_error)?;
+        let about_item = MenuItem::with_id(
+            app,
+            "about",
+            self.i18n.get("tray.about"),
+            true,
+            None::<&str>,
+        )
+        .map_err(Self::io_error)?;
         let quit_item =
-            MenuItem::with_id(app, "quit", "Quit", true, None::<&str>).map_err(Self::io_error)?;
+            MenuItem::with_id(app, "quit", self.i18n.get("tray.quit"), true, None::<&str>)
+                .map_err(Self::io_error)?;
 
         let menu = Menu::with_items(app, &[&pause_item, &settings_item, &about_item, &quit_item])
             .map_err(Self::io_error)?;
 
-        if let Ok(mut item) = self.pause_item.lock() {
-            *item = Some(pause_item.clone());
-        }
+        Self::store_menu_items(
+            &self.menu_items,
+            MenuItems {
+                pause: Some(pause_item.clone()),
+                settings: Some(settings_item.clone()),
+                about: Some(about_item.clone()),
+                quit: Some(quit_item.clone()),
+            },
+        );
 
+        let tooltip = Self::current_tooltip(&self.current_tooltip);
         let app_for_menu = app.clone();
 
         TrayIconBuilder::with_id("main")
-            .tooltip("Eyezen - Working")
+            .tooltip(self.render_tooltip_text(tooltip))
             .menu(&menu)
             .on_menu_event(move |_app, event| {
                 Self::handle_menu_event(&app_for_menu, event.id().as_ref());
@@ -164,7 +208,6 @@ impl TrayService {
         let panel_w = f64::from(panel_size.width);
         let panel_h = f64::from(panel_size.height);
 
-        // Find the monitor that contains the tray icon
         let (mon_x, mon_y, mon_w, mon_h) = panel
             .available_monitors()
             .ok()
@@ -190,7 +233,6 @@ impl TrayService {
                 )
             })
             .unwrap_or_else(|| {
-                // Fallback to primary monitor
                 panel
                     .primary_monitor()
                     .ok()
@@ -208,17 +250,13 @@ impl TrayService {
                     .unwrap_or((0.0, 0.0, 1920.0, 1080.0))
             });
 
-        // Center horizontally on the tray icon
         let mut x = icon_x + (icon_w / 2.0) - (panel_w / 2.0);
-
-        // Vertical: above icon if in bottom half, below if in top half
         let mut y = if icon_y - mon_y > mon_h / 2.0 {
             icon_y - panel_h - 4.0
         } else {
             icon_y + icon_h + 4.0
         };
 
-        // Clamp to monitor bounds (both axes)
         let margin = 8.0;
         x = x.clamp(mon_x + margin, mon_x + mon_w - panel_w - margin);
         y = y.clamp(mon_y + margin, mon_y + mon_h - panel_h - margin);
@@ -228,9 +266,11 @@ impl TrayService {
         }
     }
 
-    pub(crate) fn update_tooltip(&self, app: &AppHandle, text: &str) {
+    pub(crate) fn update_tooltip(&self, app: &AppHandle, tooltip: TrayTooltip) {
+        Self::store_tooltip(&self.current_tooltip, tooltip);
+
         if let Some(tray) = app.tray_by_id("main") {
-            if let Err(err) = tray.set_tooltip(Some(text)) {
+            if let Err(err) = tray.set_tooltip(Some(self.render_tooltip_text(tooltip))) {
                 warn!("failed to update tray tooltip: {err}");
             }
         } else {
@@ -238,15 +278,172 @@ impl TrayService {
         }
     }
 
-    pub(crate) fn update_pause_item(&self, app: &AppHandle, is_paused: bool) {
-        let text = if is_paused { "Resume" } else { "Pause" };
-        let _ = app;
+    pub(crate) fn update_pause_item(&self, state: TimerState) {
+        let is_paused = state == TimerState::Paused;
+        let mut tooltip = Self::current_tooltip(&self.current_tooltip);
+        tooltip.state = state;
+        Self::store_tooltip(&self.current_tooltip, tooltip);
 
-        if let Ok(guard) = self.pause_item.lock() {
-            if let Some(item) = guard.as_ref() {
-                if let Err(err) = item.set_text(text) {
-                    warn!("failed to update pause item text: {err}");
+        let text = if is_paused {
+            self.i18n.get("tray.resume")
+        } else {
+            self.i18n.get("tray.pause")
+        };
+
+        let items = Self::menu_items_snapshot(&self.menu_items);
+        if let Some(item) = items.pause {
+            if let Err(err) = item.set_text(text) {
+                warn!("failed to update pause item text: {err}");
+            }
+        }
+    }
+
+    fn spawn_config_watch(&self, app: &AppHandle) {
+        let mut rx = self.config_rx.clone();
+        let app_handle = app.clone();
+        let i18n = Arc::clone(&self.i18n);
+        let menu_items = Arc::clone(&self.menu_items);
+        let current_tooltip = Arc::clone(&self.current_tooltip);
+
+        let handle = tokio::spawn(async move {
+            loop {
+                if rx.changed().await.is_err() {
+                    info!("tray config watch closed");
+                    break;
                 }
+
+                let config = Arc::clone(&rx.borrow_and_update());
+                i18n.set_locale(&config.display.language);
+
+                let tooltip = Self::current_tooltip(&current_tooltip);
+                let is_paused = tooltip.state == TimerState::Paused;
+                Self::apply_menu_texts(&menu_items, &i18n, is_paused);
+                Self::apply_tooltip(&app_handle, &i18n, tooltip);
+            }
+        });
+
+        match self.watch_handle.lock() {
+            Ok(mut guard) => {
+                if let Some(existing) = guard.replace(handle) {
+                    existing.abort();
+                }
+            }
+            Err(err) => {
+                warn!("tray watch handle mutex poisoned: {err}");
+                if let Some(existing) = err.into_inner().replace(handle) {
+                    existing.abort();
+                }
+            }
+        }
+    }
+
+    fn render_tooltip_text(&self, tooltip: TrayTooltip) -> String {
+        Self::render_tooltip(&self.i18n, tooltip)
+    }
+
+    fn render_tooltip(i18n: &I18nService, tooltip: TrayTooltip) -> String {
+        let app_name = i18n.get("tray.tooltip.app_name");
+        let label = match tooltip.state {
+            TimerState::Working => i18n.get("tray.tooltip.working"),
+            TimerState::PreAlert => i18n.get("tray.tooltip.pre_alert"),
+            TimerState::Alerting => i18n.get("tray.tooltip.alerting"),
+            TimerState::Resting => i18n.get("tray.tooltip.resting"),
+            TimerState::Paused => i18n.get("tray.tooltip.paused"),
+        };
+
+        match tooltip.remaining_secs {
+            Some(remaining_secs) => format!(
+                "{app_name} - {label} {}",
+                Self::format_remaining(remaining_secs)
+            ),
+            None => format!("{app_name} - {label}"),
+        }
+    }
+
+    fn format_remaining(total_secs: u32) -> String {
+        let minutes = total_secs / 60;
+        let seconds = total_secs % 60;
+        format!("{minutes:02}:{seconds:02}")
+    }
+
+    fn apply_tooltip(app: &AppHandle, i18n: &I18nService, tooltip: TrayTooltip) {
+        if let Some(tray) = app.tray_by_id("main") {
+            if let Err(err) = tray.set_tooltip(Some(Self::render_tooltip(i18n, tooltip))) {
+                warn!("failed to update tray tooltip: {err}");
+            }
+        }
+    }
+
+    fn apply_menu_texts(menu_items: &Arc<Mutex<MenuItems>>, i18n: &I18nService, is_paused: bool) {
+        let items = Self::menu_items_snapshot(menu_items);
+
+        if let Some(item) = items.pause {
+            let text = if is_paused {
+                i18n.get("tray.resume")
+            } else {
+                i18n.get("tray.pause")
+            };
+            if let Err(err) = item.set_text(text) {
+                warn!("failed to update pause item text: {err}");
+            }
+        }
+        if let Some(item) = items.settings {
+            if let Err(err) = item.set_text(i18n.get("tray.settings")) {
+                warn!("failed to update settings item text: {err}");
+            }
+        }
+        if let Some(item) = items.about {
+            if let Err(err) = item.set_text(i18n.get("tray.about")) {
+                warn!("failed to update about item text: {err}");
+            }
+        }
+        if let Some(item) = items.quit {
+            if let Err(err) = item.set_text(i18n.get("tray.quit")) {
+                warn!("failed to update quit item text: {err}");
+            }
+        }
+    }
+
+    fn menu_items_snapshot(menu_items: &Arc<Mutex<MenuItems>>) -> MenuItems {
+        match menu_items.lock() {
+            Ok(guard) => guard.clone(),
+            Err(err) => {
+                warn!("tray menu items mutex poisoned: {err}");
+                err.into_inner().clone()
+            }
+        }
+    }
+
+    fn current_tooltip(current_tooltip: &Arc<Mutex<TrayTooltip>>) -> TrayTooltip {
+        match current_tooltip.lock() {
+            Ok(guard) => *guard,
+            Err(err) => {
+                warn!("tray tooltip mutex poisoned: {err}");
+                *err.into_inner()
+            }
+        }
+    }
+
+    fn store_menu_items(menu_items: &Arc<Mutex<MenuItems>>, next: MenuItems) {
+        match menu_items.lock() {
+            Ok(mut guard) => {
+                *guard = next;
+            }
+            Err(err) => {
+                warn!("tray menu items mutex poisoned while storing: {err}");
+                *err.into_inner() = next;
+            }
+        }
+    }
+
+    fn store_tooltip(current_tooltip: &Arc<Mutex<TrayTooltip>>, next: TrayTooltip) {
+        match current_tooltip.lock() {
+            Ok(mut guard) => {
+                *guard = next;
+            }
+            Err(err) => {
+                warn!("tray tooltip mutex poisoned while storing: {err}");
+                *err.into_inner() = next;
             }
         }
     }
@@ -293,17 +490,40 @@ impl Service for TrayService {
             return Ok(());
         };
 
-        self.create_tray(&app_handle)?;
-        let config = self.config_rx.borrow();
-        self.update_tooltip(
-            &app_handle,
-            &format!("Eyezen - {} min", config.timer.work_minutes),
+        let mut config_rx = self.config_rx.clone();
+        let config = Arc::clone(&config_rx.borrow_and_update());
+        self.i18n.set_locale(&config.display.language);
+        Self::store_tooltip(
+            &self.current_tooltip,
+            TrayTooltip {
+                state: TimerState::Working,
+                remaining_secs: Some(config.timer.work_minutes.saturating_mul(60)),
+            },
         );
+
+        self.create_tray(&app_handle)?;
+        self.update_tooltip(&app_handle, Self::current_tooltip(&self.current_tooltip));
+        self.spawn_config_watch(&app_handle);
+
         info!("tray service started");
         Ok(())
     }
 
     async fn shutdown(&self) -> Result<()> {
+        match self.watch_handle.lock() {
+            Ok(mut guard) => {
+                if let Some(handle) = guard.take() {
+                    handle.abort();
+                }
+            }
+            Err(err) => {
+                warn!("tray watch handle mutex poisoned during shutdown: {err}");
+                if let Some(handle) = err.into_inner().take() {
+                    handle.abort();
+                }
+            }
+        }
+
         info!("tray service shutdown");
         Ok(())
     }

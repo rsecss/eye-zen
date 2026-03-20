@@ -27,7 +27,7 @@ use tracing::{error, info, warn};
 use crate::services::Service;
 
 #[cfg(not(test))]
-#[allow(clippy::missing_errors_doc)]
+#[allow(clippy::missing_errors_doc, clippy::too_many_lines)]
 pub fn run() -> Result<(), tauri::Error> {
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
@@ -70,11 +70,17 @@ pub fn run() -> Result<(), tauri::Error> {
                 services::detector::DetectorService::new(platform::create_platform());
             let timer_service = services::timer::TimerService::new(config_service.subscribe());
             let window_service = services::window::WindowService::new();
-            let tray_service = services::tray::TrayService::new(config_service.subscribe());
+            let initial_locale = config_service.current().display.language.clone();
+            let i18n_service = Arc::new(services::i18n::I18nService::new(&initial_locale));
+            let tray_service = services::tray::TrayService::new(
+                config_service.subscribe(),
+                Arc::clone(&i18n_service),
+            );
 
             let handle = services::ServiceContext::from(app.handle().clone());
             tauri::async_runtime::block_on(async {
                 config_service.init(&handle).await?;
+                i18n_service.init(&handle).await?;
                 detector_service.init(&handle).await?;
                 sound_service.init(&handle).await?;
                 timer_service.init(&handle).await?;
@@ -91,12 +97,14 @@ pub fn run() -> Result<(), tauri::Error> {
                 window: window_service,
                 sound: sound_service,
                 tray: tray_service,
+                i18n: i18n_service,
             });
 
             app.manage(Arc::clone(&services));
 
             tauri::async_runtime::block_on(async {
                 services.config.start(&handle).await?;
+                services.i18n.start(&handle).await?;
                 services.detector.start(&handle).await?;
                 services.sound.start(&handle).await?;
                 services.window.start(&handle).await?;
@@ -132,6 +140,7 @@ pub fn run() -> Result<(), tauri::Error> {
                     shutdown_service("detector", services.detector.shutdown()).await;
                     shutdown_service("window", services.window.shutdown()).await;
                     shutdown_service("sound", services.sound.shutdown()).await;
+                    shutdown_service("i18n", services.i18n.shutdown()).await;
                     shutdown_service("config", services.config.shutdown()).await;
                     info!("all services shut down");
                 });
