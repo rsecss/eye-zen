@@ -5,7 +5,7 @@
 <h1 align="center">Eyezen</h1>
 
 <p align="center">
-  <strong>基于 20-20-20 规则的跨平台桌面护眼工具</strong>
+  <strong>Cross-platform desktop eye care app based on the 20-20-20 rule</strong>
 </p>
 
 <p align="center">
@@ -16,127 +16,134 @@
 </p>
 
 <p align="center">
-  <a href="#功能">功能</a> •
-  <a href="#截图">截图</a> •
-  <a href="#从源码构建">从源码构建</a> •
-  <a href="#技术栈">技术栈</a> •
-  <a href="#路线图">路线图</a> •
-  <a href="#贡献">贡献</a> •
-  <a href="#许可证">许可证</a>
+  <a href="README.zh-CN.md">简体中文</a> •
+  <a href="#features">Features</a> •
+  <a href="#download">Download</a> •
+  <a href="#build-from-source">Build from Source</a> •
+  <a href="#tech-stack">Tech Stack</a> •
+  <a href="#roadmap">Roadmap</a> •
+  <a href="#credits">Credits</a> •
+  <a href="#license">License</a>
 </p>
 
-> **项目状态**: v0.1.0 开发中，尚未发布预编译安装包。当前请[从源码构建](#从源码构建)运行。
+> **Status**: v0.1.0 in development. Pre-built installers are not yet available — please [build from source](#build-from-source) for now.
 
 ---
 
-## 什么是 20-20-20 规则？
+## What is the 20-20-20 Rule?
 
-每工作 **20** 分钟，看向 **20** 英尺（约 6 米）外的物体，持续 **20** 秒。这个简单的习惯可以有效缓解长时间用屏带来的眼部疲劳。
+Every **20** minutes, look at something **20** feet (~6 meters) away for **20** seconds. This simple habit effectively reduces eye strain caused by prolonged screen time.
 
-Eyezen 帮你自动化这个过程——安静地在后台计时，时间到了温和提醒你休息。
+Eyezen automates this process — it quietly runs in the background and gently reminds you to rest when it's time.
 
-## 功能
+## Features
 
-- **20-20-20 定时器** — 可自定义工作/休息时长，完整状态机（工作 → 预提醒 → 提醒 → 休息）
-- **多显示器支持** — 在所有显示器上同时显示休息提醒窗口
-- **全屏免打扰** — 检测全屏应用时自动跳过提醒（Windows / Linux X11；macOS 与 Wayland 有限支持）
-- **系统托盘** — 常驻托盘，快捷查看状态和操作
-- **Dark / Light 主题** — 跟随设置切换，包括原生标题栏
-- **开机自启动** — 系统启动时自动运行
-- **国际化** — 中文 / English 热切换
-- **提示音** — 休息提醒时播放柔和音效
-- **基于 Rust + Tauri 的轻量桌面栈** — 原生 WebView，资源消耗低
+- **20-20-20 Timer** — Customizable work/rest durations with full state machine (Working → PreAlert → Alerting → Resting)
+- **Multi-monitor Support** — Break reminder windows appear on all connected displays
+- **Fullscreen Detection** — Auto-skip reminders during fullscreen apps (Windows / Linux X11; limited on macOS & Wayland)
+- **System Tray** — Persistent tray icon with status, quick actions, and glassmorphic panel
+- **Dark / Light Theme** — Follows your preference including native title bar
+- **Auto Start** — Launch at system startup
+- **i18n** — Chinese / English with hot switching
+- **Sound Alerts** — Gentle audio cue on break reminders
+- **Lightweight** — Rust backend + native WebView via Tauri, minimal resource usage
 
-## 截图
+## Screenshots
 
-> 截图即将添加。欢迎提交 PR！
+> Screenshots coming soon. PRs welcome!
 
-<!-- TODO: 添加截图
+<!-- TODO: Add screenshots
 ![Settings - Light](screenshots/settings-light.png)
 ![Settings - Dark](screenshots/settings-dark.png)
 ![Tray Panel](screenshots/tray-panel.png)
 ![Tip Window](screenshots/tip-window.png)
 -->
 
-## 从源码构建
+## Download
 
-### 环境要求
+### Release Artifacts
+
+> Pre-built installers will be available after the first release.
+
+| Platform | Installer | Portable |
+|----------|-----------|----------|
+| Windows x64 | `Eyezen_x.y.z_x64-setup.exe` / `_x64_en-US.msi` | NSIS installer works without admin |
+| macOS ARM (M1+) | `Eyezen_x.y.z_aarch64.dmg` | — |
+| macOS Intel | `Eyezen_x.y.z_x64.dmg` | — |
+| Linux x64 | `Eyezen_x.y.z_amd64.deb` | `Eyezen_x.y.z_amd64.AppImage` |
+
+Download from [GitHub Releases](https://github.com/rsecss/eye-zen/releases/latest).
+
+## Build from Source
+
+### Prerequisites
 
 - [Node.js](https://nodejs.org/) v18+
 - [Rust](https://www.rust-lang.org/tools/install) (stable)
-- 各平台系统依赖请参考 [Tauri v2 Prerequisites](https://v2.tauri.app/start/prerequisites/)
+- Platform-specific dependencies: see [Tauri v2 Prerequisites](https://v2.tauri.app/start/prerequisites/)
 
-### 构建步骤
+### Steps
 
 ```bash
-# 克隆仓库
 git clone https://github.com/rsecss/eye-zen.git
 cd eye-zen
 
-# 安装前端依赖
 npm install
-
-# 开发模式（热重载）
-npm run tauri dev
-
-# 生产构建
-npm run tauri build
+npm run tauri dev    # Development mode (hot reload)
+npm run tauri build  # Production build
 ```
 
-构建产物位于 `src-tauri/target/release/bundle/`。
+Build output: `src-tauri/target/release/bundle/`.
 
-### 开发验证
+### Development
 
 ```bash
-# 前端类型检查
-npx svelte-check --tsconfig ./tsconfig.json
-
-# 前端测试
-npm test
-
-# Rust lint
+npx svelte-check --tsconfig ./tsconfig.json  # Type check
+npm test                                      # Frontend tests
 cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
-
-# 代码格式化检查
-npm run format:check
+npm run format:check                          # Prettier check
 cargo fmt --all --manifest-path src-tauri/Cargo.toml --check
 ```
 
-## 技术栈
+## Tech Stack
 
-| 层 | 选型 | 说明 |
-|---|------|------|
-| 框架 | [Tauri v2](https://v2.tauri.app/) | Rust 后端 + 原生 WebView |
-| 前端 | [Svelte 5](https://svelte.dev/) | Runes 响应式，零运行时 |
-| 构建 | [Vite 6](https://vite.dev/) | 极速 HMR |
-| 样式 | [TailwindCSS v4](https://tailwindcss.com/) | 工具类优先 |
-| 配置 | TOML | 人类可读 |
-| 音频 | rodio | Rust 原生，独立线程 |
-| 类型桥接 | ts-rs | Rust → TypeScript 自动生成 |
+| Layer | Choice | Description |
+|-------|--------|-------------|
+| Framework | [Tauri v2](https://v2.tauri.app/) | Rust backend + native WebView |
+| Frontend | [Svelte 5](https://svelte.dev/) | Runes reactivity, zero runtime |
+| Build | [Vite 6](https://vite.dev/) | Fast HMR |
+| Styling | [TailwindCSS v4](https://tailwindcss.com/) | Utility-first |
+| Config | TOML | Human-readable |
+| Audio | rodio | Rust-native, dedicated thread |
+| Type Bridge | ts-rs | Rust → TypeScript auto-generation |
 
-## 路线图
+## Roadmap
 
-- [x] **v0.1** — 核心 MVP（定时器、托盘、多显示器、全屏检测、设置、主题、自启动、i18n）
-- [ ] **v0.2** — 使用统计 + 可视化图表
-- [ ] **v0.3** — 离席检测 + 工作日调度
-- [ ] **v1.0** — 功能完整 + 稳定发布
+- [x] **v0.1** — Core MVP (timer, tray, multi-monitor, fullscreen detection, settings, theme, auto-start, i18n)
+- [ ] **v0.2** — Usage statistics + charts
+- [ ] **v0.3** — Away detection + workday scheduling
+- [ ] **v1.0** — Feature complete + stable release
 
-## 配置文件
+## Configuration
 
-配置存储于系统应用数据目录下的 `config.toml`：
+Config is stored as `config.toml` in the system app data directory:
 
-| 平台 | 路径 |
-|------|------|
+| Platform | Path |
+|----------|------|
 | Windows | `%APPDATA%\com.eyezen.app\config.toml` |
 | macOS | `~/Library/Application Support/com.eyezen.app/config.toml` |
 | Linux | `~/.config/com.eyezen.app/config.toml` |
 
-所有设置均可通过应用内设置界面修改，无需手动编辑配置文件。
+All settings can be modified through the in-app Settings UI.
 
-## 贡献
+## Credits
 
-欢迎任何形式的贡献！请先阅读 [CONTRIBUTING.md](CONTRIBUTING.md) 了解详细的贡献指南和开发规范。
+Eyezen is inspired by **[ProjectEye](https://github.com/Jeremyyang920/ProjectEye)** — a smart eye protection tool for Windows that inspired Eyezen's core timer and break reminder design.
 
-## 许可证
+## Contributing
 
-[MIT](LICENSE) — 自由使用、修改和分发。
+Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+## License
+
+[MIT](LICENSE) — free to use, modify, and distribute.

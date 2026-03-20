@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - "v*"
+      - 'v*'
 
 concurrency:
   group: release-${{ github.ref }}
@@ -19,16 +19,16 @@ jobs:
       matrix:
         include:
           - platform: macos-latest
-            args: "--target aarch64-apple-darwin"
+            args: '--target aarch64-apple-darwin'
             label: macOS (ARM)
           - platform: macos-latest
-            args: "--target x86_64-apple-darwin"
+            args: '--target x86_64-apple-darwin'
             label: macOS (Intel)
           - platform: ubuntu-22.04
-            args: ""
+            args: ''
             label: Linux
           - platform: windows-latest
-            args: ""
+            args: ''
             label: Windows
 
     runs-on: ${{ matrix.platform }}
@@ -68,11 +68,20 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: v__VERSION__
-          releaseName: "Eyezen v__VERSION__"
+          releaseName: 'Eyezen v__VERSION__'
           releaseBody: |
             See [CHANGELOG.md](https://github.com/rsecss/eye-zen/blob/main/CHANGELOG.md) for details.
 
-            ### Platform Support
+            ### Download Guide
+
+            | Platform | Installer | Portable |
+            |----------|-----------|----------|
+            | Windows x64 | `Eyezen_x.y.z_x64-setup.exe` / `.msi` | `Eyezen_x.y.z_x64-setup.exe` (no install needed) |
+            | macOS ARM (M1+) | `Eyezen_x.y.z_aarch64.dmg` | — |
+            | macOS Intel | `Eyezen_x.y.z_x64.dmg` | — |
+            | Linux x64 | `Eyezen_x.y.z_amd64.deb` | `Eyezen_x.y.z_amd64.AppImage` |
+
+            ### Platform Test Status
 
             | Platform | Status |
             |----------|--------|
@@ -81,4 +90,5 @@ jobs:
             | Linux (X11/Wayland) | ⚠️ Builds, untested — feedback welcome |
           releaseDraft: true
           prerelease: false
+          includeRelease: true
           args: ${{ matrix.args }}
