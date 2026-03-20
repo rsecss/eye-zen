@@ -23,6 +23,7 @@ const DEFAULT_CONFIG: Config = {
 let config = $state<Config>({ ...DEFAULT_CONFIG });
 let unlisten: (() => void) | null = null;
 let version = $state(0);
+let loaded = $state(false);
 
 export const configStore = {
   get current(): Config {
@@ -31,6 +32,10 @@ export const configStore = {
 
   get version(): number {
     return version;
+  },
+
+  get loaded(): boolean {
+    return loaded;
   },
 
   async init(): Promise<void> {
@@ -43,6 +48,7 @@ export const configStore = {
     const newUnlisten = await onConfigChanged((payload) => {
       version++;
       config = payload;
+      loaded = true;
     });
 
     try {
@@ -51,6 +57,7 @@ export const configStore = {
       if (version === initVersion) {
         config = snapshot;
       }
+      loaded = true;
     } catch (err) {
       // Rollback listener on failure
       newUnlisten();

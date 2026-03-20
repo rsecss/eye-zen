@@ -15,7 +15,9 @@
   });
 
   $effect(() => {
-    document.documentElement.dataset.theme = configStore.current.display.theme;
+    if (configStore.loaded) {
+      document.documentElement.dataset.theme = configStore.current.display.theme;
+    }
   });
 
   onMount(() => {

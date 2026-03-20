@@ -30,6 +30,22 @@
         console.error('Failed to toggle autostart:', err);
         return;
       }
+      try {
+        const updated: BehaviorConfig = { ...cfg.behavior, auto_start: value };
+        await updateBehaviorConfig(updated);
+      } catch (err) {
+        console.error('Failed to save autostart config, rolling back:', err);
+        try {
+          if (value) {
+            await disable();
+          } else {
+            await enable();
+          }
+        } catch (_) {
+          /* best-effort rollback */
+        }
+      }
+      return;
     }
     const updated: BehaviorConfig = { ...cfg.behavior, [field]: value };
     updateBehaviorConfig(updated).catch((err) =>
@@ -61,10 +77,10 @@
   let autoStartSynced = false;
 
   $effect(() => {
-    if (configStore.version > 0 && !autoStartSynced) {
-      autoStartSynced = true;
+    if (configStore.loaded && !autoStartSynced) {
       isEnabled()
         .then((enabled) => {
+          autoStartSynced = true;
           if (enabled !== cfg.behavior.auto_start) {
             const updated: BehaviorConfig = { ...cfg.behavior, auto_start: enabled };
             updateBehaviorConfig(updated).catch((err) =>
