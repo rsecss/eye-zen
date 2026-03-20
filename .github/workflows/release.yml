@@ -70,7 +70,7 @@ jobs:
           tagName: v__VERSION__
           releaseName: 'Eyezen v__VERSION__'
           releaseBody: |
-            See [CHANGELOG.md](https://github.com/rsecss/eye-zen/blob/main/CHANGELOG.md) for details.
+            See [CHANGELOG.md](https://github.com/rsecss/eye-zen/blob/v__VERSION__/CHANGELOG.md) for details.
 
             ### Downloads
 
@@ -90,7 +90,6 @@ jobs:
             | Linux (X11/Wayland) | ⚠️ Builds, untested — feedback welcome |
           releaseDraft: true
           prerelease: false
-          includeRelease: true
           args: ${{ matrix.args }}
 
       - name: Create Windows portable zip

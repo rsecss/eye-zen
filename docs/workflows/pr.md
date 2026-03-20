@@ -95,8 +95,8 @@ Template:
 
 ## Testing
 
-- [ ] `cargo test` passes (73 tests)
-- [ ] `npm test` passes (28 tests)
+- [ ] `cargo test` passes
+- [ ] `npm test` passes
 - [ ] `cargo clippy -- -D warnings` clean
 - [ ] `npx svelte-check` clean
 - [ ] `npm run format:check` clean

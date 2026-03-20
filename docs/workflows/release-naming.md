@@ -12,6 +12,8 @@ Eyezen_{version}_{arch}[-setup].{ext}
 - **[-setup]**: Only for NSIS Windows installer
 - **{ext}**: Platform-specific file extension
 
+Note: MSI files include a locale suffix (`_en-US`) appended by the Tauri bundler. This is expected and not part of the customizable template.
+
 ## Architecture Identifiers
 
 | Architecture | Windows | macOS | Linux (DEB) | Linux (AppImage/RPM) |

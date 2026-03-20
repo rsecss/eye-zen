@@ -60,6 +60,19 @@ Eyezen 帮你自动化这个过程——安静地在后台计时，时间到了�
 ![Tip Window](screenshots/tip-window.png)
 -->
 
+## 下载
+
+> 首个版本发布后，此处将提供直接下载链接。
+
+| 平台 | 安装包 | 便携版 |
+|------|--------|--------|
+| Windows x64 | `Eyezen_{ver}_x64-setup.exe` / `.msi` | `Eyezen_{ver}_x64-portable.zip` |
+| macOS ARM (M1+) | `Eyezen_{ver}_aarch64.dmg` | — |
+| macOS Intel | `Eyezen_{ver}_x64.dmg` | — |
+| Linux x64 | `Eyezen_{ver}_amd64.deb` | `Eyezen_{ver}_amd64.AppImage` |
+
+从 [GitHub Releases](https://github.com/rsecss/eye-zen/releases/latest) 下载。
+
 ## 从源码构建
 
 ### 环境要求

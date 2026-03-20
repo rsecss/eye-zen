@@ -12,7 +12,7 @@ Automatically check code changes since last tag and synchronize all documentatio
 
 - Analyze code changes since last Git tag or last documentation update
 - Ensure documentation matches actual implementation
-- Maintain consistency across CLAUDE.md, README.md, CHANGELOG.md, and memory files
+- Maintain consistency across CLAUDE.md, README.md, README.zh-CN.md, CHANGELOG.md, and memory files
 - Check that module index, tech stack, and feature lists are accurate
 
 ## Documentation Files to Sync
@@ -20,10 +20,10 @@ Automatically check code changes since last tag and synchronize all documentatio
 | File | Scope | Key Sections |
 |------|-------|-------------|
 | `CLAUDE.md` | Project context for AI | Status, tech stack, architecture, module index, changelog |
-| `README.md` | Public-facing | Features, install, tech stack, roadmap |
+| `README.md` | Public-facing (English) | Features, download, tech stack, roadmap |
+| `README.zh-CN.md` | Public-facing (Chinese) | Must stay consistent with README.md |
 | `CHANGELOG.md` | Release history | Version entries with categorized changes |
 | `docs/plans/README.md` | Plan tracker | Plan status table (Pending/Implemented) |
-| `memory/MEMORY.md` | Cross-session AI memory | Project state, technical decisions, gotchas |
 
 ## Execution Flow
 

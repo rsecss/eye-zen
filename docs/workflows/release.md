@@ -30,6 +30,14 @@ Automate version release for the Eyezen Tauri v2 desktop app.
 | `src-tauri/Cargo.toml` | `version` under `[package]` | `"0.1.0"` |
 | `src-tauri/tauri.conf.json` | `"version"` | `"0.1.0"` |
 
+### Additional Version References (update manually)
+
+| File | Location | Notes |
+|------|----------|-------|
+| `README.md` | Version badge | Static shield.io badge |
+| `README.zh-CN.md` | Version badge | Same as above |
+| `src/pages/main/AboutPage.svelte` | `APP_VERSION` | Displayed in About page |
+
 ## Execution Flow
 
 ### 1. Parameter Parsing
