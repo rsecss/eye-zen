@@ -22,11 +22,15 @@ const DEFAULT_CONFIG: Config = {
 
 let config = $state<Config>({ ...DEFAULT_CONFIG });
 let unlisten: (() => void) | null = null;
-let version = 0;
+let version = $state(0);
 
 export const configStore = {
   get current(): Config {
     return config;
+  },
+
+  get version(): number {
+    return version;
   },
 
   async init(): Promise<void> {

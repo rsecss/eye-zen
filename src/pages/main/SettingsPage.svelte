@@ -3,6 +3,7 @@
   import type { DisplayConfig } from '$lib/bindings/DisplayConfig';
   import type { TimerConfig } from '$lib/bindings/TimerConfig';
   import { updateBehaviorConfig, updateDisplayConfig, updateTimerConfig } from '$lib/commands';
+  import { enable, disable, isEnabled } from '@tauri-apps/plugin-autostart';
   import { i18nStore } from '$lib/i18n/index.svelte';
   import { configStore } from '$lib/stores/config.svelte';
   import Select from './components/Select.svelte';
@@ -17,7 +18,19 @@
     updateTimerConfig(updated).catch((err) => console.error('Failed to update timer config:', err));
   }
 
-  function handleBehaviorChange(field: keyof BehaviorConfig, value: boolean) {
+  async function handleBehaviorChange(field: keyof BehaviorConfig, value: boolean) {
+    if (field === 'auto_start') {
+      try {
+        if (value) {
+          await enable();
+        } else {
+          await disable();
+        }
+      } catch (err) {
+        console.error('Failed to toggle autostart:', err);
+        return;
+      }
+    }
     const updated: BehaviorConfig = { ...cfg.behavior, [field]: value };
     updateBehaviorConfig(updated).catch((err) =>
       console.error('Failed to update behavior config:', err),
@@ -44,6 +57,24 @@
     { value: 'light', label: i18nStore.t('settings.display.theme.light') },
     { value: 'dark', label: i18nStore.t('settings.display.theme.dark') },
   ]);
+
+  let autoStartSynced = false;
+
+  $effect(() => {
+    if (configStore.version > 0 && !autoStartSynced) {
+      autoStartSynced = true;
+      isEnabled()
+        .then((enabled) => {
+          if (enabled !== cfg.behavior.auto_start) {
+            const updated: BehaviorConfig = { ...cfg.behavior, auto_start: enabled };
+            updateBehaviorConfig(updated).catch((err) =>
+              console.error('Failed to sync autostart config:', err),
+            );
+          }
+        })
+        .catch((err) => console.error('Failed to check autostart status:', err));
+    }
+  });
 </script>
 
 <div class="settings-page">
