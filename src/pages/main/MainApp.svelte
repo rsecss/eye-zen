@@ -14,6 +14,10 @@
     i18nStore.setLocale(configStore.current.display.language);
   });
 
+  $effect(() => {
+    document.documentElement.dataset.theme = configStore.current.display.theme;
+  });
+
   onMount(() => {
     configStore.init().catch((err) => console.error('Failed to init config store:', err));
 
