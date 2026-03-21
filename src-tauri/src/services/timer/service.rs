@@ -205,50 +205,41 @@ mod tests {
 
     #[tokio::test]
     async fn on_tick_resting_emits_decreasing_remaining_secs() {
+        use crate::services::timer::machine::collect_tick_effects;
+
         let (service, _tx) = make_test_service();
-        let entered = past_instant(5);
-        if entered >= Instant::now() {
-            return;
-        }
+        let future_now = Instant::now() + Duration::from_secs(5);
         {
             let mut inner = service.inner.lock().await;
             inner.state = TimerState::Resting;
-            inner.state_entered_at = entered;
+            let effects = collect_tick_effects(&inner, future_now);
+            let payload = effects.iter().find_map(|effect| match effect {
+                Effect::EmitStateChanged(payload) => Some(payload),
+                _ => None,
+            });
+
+            assert!(matches!(
+                payload,
+                Some(StatePayload {
+                    state,
+                    remaining_secs: 14..=15,
+                    ..
+                }) if state == "resting"
+            ));
         }
-
-        let effects = service.on_tick(&SkipFlags::default()).await;
-        let payload = effects.iter().find_map(|effect| match effect {
-            Effect::EmitStateChanged(payload) => Some(payload),
-            _ => None,
-        });
-
-        assert!(matches!(
-            payload,
-            Some(StatePayload {
-                state,
-                remaining_secs: 14..=15,
-                ..
-            }) if state == "resting"
-        ));
     }
 
     #[tokio::test]
     async fn on_tick_transitions_after_timeout() {
+        use crate::services::timer::machine::step_time;
+
         let (service, _tx) = make_test_service();
-        let entered = past_instant(20 * 60);
-        // Skip if system uptime < 20min (CI VMs may have just booted)
-        if entered >= Instant::now() {
-            return;
-        }
-        {
-            let mut inner = service.inner.lock().await;
-            inner.state_entered_at = entered;
-        }
+        let future_now = Instant::now() + Duration::from_secs(20 * 60);
 
-        let effects = service.on_tick(&SkipFlags::default()).await;
-        assert!(!effects.is_empty());
-
-        let inner = service.inner.lock().await;
+        let mut inner = service.inner.lock().await;
+        if let Some(transition) = step_time(&inner, future_now, &SkipFlags::default()) {
+            inner.apply_transition(transition);
+        }
         assert_eq!(inner.state, TimerState::PreAlert);
     }
 
