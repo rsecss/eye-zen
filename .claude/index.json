@@ -203,7 +203,7 @@
     ],
     "docs": [
       "docs/devlog.md",
-      "docs/workflows/dev.md",
+      "docs/.local/dev-workflow.md",
       "docs/workflows/release.md",
       "docs/workflows/release-naming.md",
       "docs/workflows/pr.md",

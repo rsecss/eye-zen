@@ -180,7 +180,7 @@ npm run build                # 前端构建检查
 | 前端原型 mockup | `docs/.local/mockups/2026-03-19-tray-tip-v4.html` | 已采纳的 v4 视觉原型（浏览器打开） |
 | 主题对比 mockup | `docs/.local/mockups/2026-03-20-theme-comparison.html` | Dark/Light 主题视觉对比 |
 | 实现计划 | `docs/plans/` | 功能切片，命名 `<NNN>-<scope>.md` |
-| 开发工作流 | `docs/workflows/dev.md` | 10 阶段全生命周期 |
+| 开发工作流 | `docs/.local/dev-workflow.md` | 10 阶段全生命周期 |
 
 ### 工作流与 CI
 
