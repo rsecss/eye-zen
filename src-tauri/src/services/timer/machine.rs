@@ -185,9 +185,8 @@ mod tests {
         inner
     }
 
-    fn past_instant(seconds: u64) -> Instant {
-        let dur = Duration::from_secs(seconds);
-        Instant::now().checked_sub(dur).unwrap_or_else(Instant::now)
+    fn future_instant(seconds: u64) -> Instant {
+        Instant::now() + Duration::from_secs(seconds)
     }
 
     #[test]
@@ -301,10 +300,9 @@ mod tests {
 
     #[test]
     fn working_timeout_enters_pre_alert() {
-        let mut inner = make_inner(Working);
-        inner.state_entered_at = past_instant(20 * 60);
+        let inner = make_inner(Working);
 
-        let transition = step_time(&inner, Instant::now(), &SkipFlags::default());
+        let transition = step_time(&inner, future_instant(20 * 60), &SkipFlags::default());
         assert_eq!(
             transition,
             Some(Transition {
@@ -325,13 +323,12 @@ mod tests {
 
     #[test]
     fn working_timeout_with_fullscreen_skip_resets() {
-        let mut inner = make_inner(Working);
-        inner.state_entered_at = past_instant(20 * 60);
+        let inner = make_inner(Working);
         let flags = SkipFlags {
             fullscreen_active: true,
         };
 
-        let transition = step_time(&inner, Instant::now(), &flags);
+        let transition = step_time(&inner, future_instant(20 * 60), &flags);
         assert_eq!(
             transition,
             Some(Transition {
@@ -343,10 +340,9 @@ mod tests {
 
     #[test]
     fn pre_alert_timeout_enters_alerting() {
-        let mut inner = make_inner(PreAlert);
-        inner.state_entered_at = past_instant(16);
+        let inner = make_inner(PreAlert);
 
-        let transition = step_time(&inner, Instant::now(), &SkipFlags::default());
+        let transition = step_time(&inner, future_instant(16), &SkipFlags::default());
         assert_eq!(
             transition,
             Some(Transition {
@@ -358,10 +354,9 @@ mod tests {
 
     #[test]
     fn alerting_timeout_auto_rest() {
-        let mut inner = make_inner(Alerting);
-        inner.state_entered_at = past_instant(61);
+        let inner = make_inner(Alerting);
 
-        let transition = step_time(&inner, Instant::now(), &SkipFlags::default());
+        let transition = step_time(&inner, future_instant(61), &SkipFlags::default());
         assert_eq!(
             transition,
             Some(Transition {
@@ -373,10 +368,9 @@ mod tests {
 
     #[test]
     fn resting_timeout_returns_to_working() {
-        let mut inner = make_inner(Resting);
-        inner.state_entered_at = past_instant(21);
+        let inner = make_inner(Resting);
 
-        let transition = step_time(&inner, Instant::now(), &SkipFlags::default());
+        let transition = step_time(&inner, future_instant(21), &SkipFlags::default());
         assert_eq!(
             transition,
             Some(Transition {
@@ -388,10 +382,9 @@ mod tests {
 
     #[test]
     fn paused_never_times_out() {
-        let mut inner = make_inner(Paused);
-        inner.state_entered_at = past_instant(3_600);
+        let inner = make_inner(Paused);
         assert_eq!(
-            step_time(&inner, Instant::now(), &SkipFlags::default()),
+            step_time(&inner, future_instant(3_600), &SkipFlags::default()),
             None
         );
     }
@@ -421,10 +414,9 @@ mod tests {
 
     #[test]
     fn tick_effects_emit_state_and_countdown_tooltip() {
-        let mut inner = make_inner(Resting);
-        inner.state_entered_at = past_instant(5);
+        let inner = make_inner(Resting);
 
-        let effects = collect_tick_effects(&inner, Instant::now());
+        let effects = collect_tick_effects(&inner, future_instant(5));
 
         assert!(effects.iter().any(|effect| matches!(
             effect,
