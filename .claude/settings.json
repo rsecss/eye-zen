@@ -4,7 +4,6 @@
     "typescript-lsp@claude-plugins-official": true,
     "rust-analyzer-lsp@claude-plugins-official": true,
     "superpowers@superpowers-dev": true,
-    "claude-api@anthropic-agent-skills": true,
     "example-skills@anthropic-agent-skills": true
   }
 }
