@@ -186,9 +186,10 @@ mod tests {
     }
 
     fn past_instant(seconds: u64) -> Instant {
+        let dur = Duration::from_secs(seconds);
         Instant::now()
-            .checked_sub(Duration::from_secs(seconds))
-            .expect("duration should fit in Instant subtraction")
+            .checked_sub(dur)
+            .unwrap_or_else(Instant::now)
     }
 
     #[test]

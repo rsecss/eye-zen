@@ -79,7 +79,6 @@ struct X11Session {
 
 impl X11Session {
     fn connect() -> Result<Self, String> {
-        use x11rb::connection::Connection;
         use x11rb::protocol::xproto::ConnectionExt;
 
         let (connection, screen_num) =
@@ -164,12 +163,7 @@ fn detect_fullscreen_x11(session: &Mutex<X11Session>) -> Result<bool, String> {
 
     let is_fullscreen = state_reply
         .value32()
-        .map(|atoms| {
-            atoms
-                .into_iter()
-                .any(|atom| atom == session.fullscreen_atom)
-        })
-        .unwrap_or(false);
+        .is_some_and(|atoms| atoms.into_iter().any(|atom| atom == session.fullscreen_atom));
 
     Ok(is_fullscreen)
 }
