@@ -49,11 +49,11 @@ Eyezen is inspired by [ProjectEye](https://github.com/Jeremyyang920/ProjectEye),
 |---|--------|------------|
 | Platform | Windows / macOS / Linux | Windows only |
 | Tech Stack | Rust + Tauri v2 + Svelte 5 | C# + WPF |
-| Memory Usage | ~15 MB | ~50 MB |
+| Memory Usage | ~15 MB | ~170 MB |
 | Theme | Dark / Light + native title bar | Light only |
 | i18n | Chinese / English hot switch | Chinese only |
 | Multi-monitor | All displays show reminder | Primary display only |
-| Maintenance | Active | Archived |
+| Maintenance | Active | Unmaintained |
 
 ## Screenshots
 

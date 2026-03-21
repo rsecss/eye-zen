@@ -49,11 +49,11 @@ Eyezen 的灵感来自 [ProjectEye](https://github.com/Jeremyyang920/ProjectEye)
 |---|--------|------------|
 | 平台 | Windows / macOS / Linux | 仅 Windows |
 | 技术栈 | Rust + Tauri v2 + Svelte 5 | C# + WPF |
-| 内存占用 | ~15 MB | ~50 MB |
+| 内存占用 | ~15 MB | ~170 MB |
 | 主题 | Dark / Light + 原生标题栏适配 | 仅浅色 |
 | 国际化 | 中文 / English 热切换 | 仅中文 |
 | 多显示器 | 所有显示器同时提醒 | 仅主显示器 |
-| 维护状态 | 活跃开发中 | 已归档 |
+| 维护状态 | 活跃开发中 | 长期未维护 |
 
 ## 截图
 
