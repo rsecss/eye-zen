@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="src-tauri/icons/128x128@2x.png" alt="Eyezen" width="128" />
+  <img src="docs/public/logo.svg" alt="Eyezen" width="128" />
 </p>
 
 <h1 align="center">Eyezen</h1>
@@ -57,14 +57,9 @@ Eyezen is inspired by [ProjectEye](https://github.com/Jeremyyang920/ProjectEye),
 
 ## Screenshots
 
-> Screenshots coming soon. PRs welcome!
-
-<!-- TODO: Add screenshots
-![Settings - Light](screenshots/settings-light.png)
-![Settings - Dark](screenshots/settings-dark.png)
-![Tray Panel](screenshots/tray-panel.png)
-![Tip Window](screenshots/tip-window.png)
--->
+| Resting | Settings | About | Tip Window |
+|:---:|:---:|:---:|:---:|
+| ![Resting](docs/public/screenshots/resting.png) | ![Settings](docs/public/screenshots/settings.png) | ![About](docs/public/screenshots/about.png) | ![Tip Window](docs/public/screenshots/tip_window.png) |
 
 ## Download
 

@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="src-tauri/icons/128x128@2x.png" alt="Eyezen" width="128" />
+  <img src="docs/public/logo.svg" alt="Eyezen" width="128" />
 </p>
 
 <h1 align="center">Eyezen</h1>
@@ -57,14 +57,9 @@ Eyezen 的灵感来自 [ProjectEye](https://github.com/Jeremyyang920/ProjectEye)
 
 ## 截图
 
-> 截图即将添加。欢迎提交 PR！
-
-<!-- TODO: 添加截图
-![Settings - Light](screenshots/settings-light.png)
-![Settings - Dark](screenshots/settings-dark.png)
-![Tray Panel](screenshots/tray-panel.png)
-![Tip Window](screenshots/tip-window.png)
--->
+| 休息中 | 设置 | 关于 | 提醒窗口 |
+|:---:|:---:|:---:|:---:|
+| ![休息中](docs/public/screenshots/resting.png) | ![设置](docs/public/screenshots/settings.png) | ![关于](docs/public/screenshots/about.png) | ![提醒窗口](docs/public/screenshots/tip_window.png) |
 
 ## 下载
 
