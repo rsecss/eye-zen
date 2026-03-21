@@ -5,34 +5,34 @@ changelog:
     authors:
       - dependabot[bot]
   categories:
-    - title: "🚨 Breaking Changes"
+    - title: '🚨 Breaking Changes'
       labels:
         - breaking-change
-    - title: "✨ New Features"
+    - title: '✨ New Features'
       labels:
         - enhancement
         - feature
-    - title: "🐛 Bug Fixes"
+    - title: '🐛 Bug Fixes'
       labels:
         - bug
         - fix
-    - title: "🎨 UI/UX"
+    - title: '🎨 UI/UX'
       labels:
         - ui
         - theme
         - i18n
-    - title: "📖 Documentation"
+    - title: '📖 Documentation'
       labels:
         - documentation
-    - title: "🔧 Maintenance"
+    - title: '🔧 Maintenance'
       labels:
         - chore
         - refactor
         - dependencies
         - ci
-    - title: "🔒 Security"
+    - title: '🔒 Security'
       labels:
         - security
-    - title: "📦 Other Changes"
+    - title: '📦 Other Changes'
       labels:
-        - "*"
+        - '*'

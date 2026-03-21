@@ -7,63 +7,63 @@
 
 # Change types (pick one)
 - name: breaking-change
-  color: "d73a4a"
-  description: "Breaking change requiring user attention"
+  color: 'd73a4a'
+  description: 'Breaking change requiring user attention'
 
 - name: enhancement
-  color: "a2eeef"
-  description: "New feature or improvement"
+  color: 'a2eeef'
+  description: 'New feature or improvement'
 
 - name: feature
-  color: "0075ca"
-  description: "New functionality"
+  color: '0075ca'
+  description: 'New functionality'
 
 - name: bug
-  color: "d73a4a"
-  description: "Bug fix"
+  color: 'd73a4a'
+  description: 'Bug fix'
 
 - name: fix
-  color: "e4e669"
-  description: "Non-critical fix"
+  color: 'e4e669'
+  description: 'Non-critical fix'
 
 # Scope labels (optional, pick any)
 - name: ui
-  color: "7057ff"
-  description: "UI/UX related changes"
+  color: '7057ff'
+  description: 'UI/UX related changes'
 
 - name: theme
-  color: "5319e7"
-  description: "Theme/visual changes"
+  color: '5319e7'
+  description: 'Theme/visual changes'
 
 - name: i18n
-  color: "bfd4f2"
-  description: "Internationalization"
+  color: 'bfd4f2'
+  description: 'Internationalization'
 
 - name: documentation
-  color: "0075ca"
-  description: "Documentation updates"
+  color: '0075ca'
+  description: 'Documentation updates'
 
 - name: chore
-  color: "fef2c0"
-  description: "Maintenance and tooling"
+  color: 'fef2c0'
+  description: 'Maintenance and tooling'
 
 - name: refactor
-  color: "d4c5f9"
-  description: "Code refactoring"
+  color: 'd4c5f9'
+  description: 'Code refactoring'
 
 - name: dependencies
-  color: "0366d6"
-  description: "Dependency updates"
+  color: '0366d6'
+  description: 'Dependency updates'
 
 - name: ci
-  color: "ededed"
-  description: "CI/CD changes"
+  color: 'ededed'
+  description: 'CI/CD changes'
 
 - name: security
-  color: "b60205"
-  description: "Security related"
+  color: 'b60205'
+  description: 'Security related'
 
 # Exclusion
 - name: ignore-for-release
-  color: "eeeeee"
-  description: "Exclude from release notes"
+  color: 'eeeeee'
+  description: 'Exclude from release notes'

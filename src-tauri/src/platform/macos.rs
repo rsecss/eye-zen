@@ -43,6 +43,7 @@ impl PlatformApi for MacosPlatform {
     }
 }
 
+#[allow(dead_code)]
 enum FullscreenStatus {
     Detected(bool),
     DegradedFalse,
