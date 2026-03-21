@@ -1,5 +1,6 @@
 #![deny(clippy::all)]
 #![warn(clippy::pedantic)]
+#![cfg_attr(test, allow(unused_imports, dead_code, clippy::unused_self))]
 
 #[cfg(not(test))]
 pub(crate) mod commands;

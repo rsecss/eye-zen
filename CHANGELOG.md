@@ -24,7 +24,7 @@ First public release. A fully functional 20-20-20 eye care desktop app.
 - **Typed IPC** — ts-rs auto-generated TypeScript bindings, typed commands (5s timeout) and event listeners
 - **Reactive stores** — Svelte 5 Runes stores with race condition protection (`version` counter + `loaded` flag)
 - **Config persistence** — TOML config with arc-swap hot reload and file watcher
-- **CI/CD** — GitHub Actions CI (three-platform matrix) + Release workflow (four-target build via `tauri-action@v1`)
+- **CI/CD** — GitHub Actions CI (three-platform matrix) + Release workflow (four-target build via `tauri-action@v0`)
 
 ### Known Limitations
 
