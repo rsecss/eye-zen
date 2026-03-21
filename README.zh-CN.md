@@ -19,7 +19,7 @@
   <a href="README.md">English</a> | 简体中文
 </p>
 
-> **项目状态**: v0.1.0 开发中，尚未发布预编译安装包。当前请[从源码构建](#从源码构建)运行。
+> **项目状态**: v0.1.0 已发布。从 [GitHub Releases](https://github.com/rsecss/eye-zen/releases/latest) 下载预编译安装包。
 
 ---
 
@@ -54,16 +54,14 @@ Eyezen 帮你自动化这个过程——安静地在后台计时，时间到了�
 
 ## 下载
 
-> 首个版本发布后，此处将提供直接下载链接。
+从 [GitHub Releases](https://github.com/rsecss/eye-zen/releases/latest) 下载。
 
 | 平台 | 安装包 | 便携版 |
 |------|--------|--------|
-| Windows x64 | `Eyezen_{ver}_x64-setup.exe` / `.msi` | `Eyezen_{ver}_x64-portable.zip` |
-| macOS ARM (M1+) | `Eyezen_{ver}_aarch64.dmg` | — |
-| macOS Intel | `Eyezen_{ver}_x64.dmg` | — |
-| Linux x64 | `Eyezen_{ver}_amd64.deb` | `Eyezen_{ver}_amd64.AppImage` |
-
-从 [GitHub Releases](https://github.com/rsecss/eye-zen/releases/latest) 下载。
+| Windows x64 | `Eyezen_0.1.0_x64-setup.exe` / `.msi` | — |
+| macOS ARM (M1+) | `Eyezen_0.1.0_aarch64.dmg` | — |
+| macOS Intel | `Eyezen_0.1.0_x64.dmg` | — |
+| Linux x64 | `Eyezen_0.1.0_amd64.deb` | `Eyezen_0.1.0_amd64.AppImage` |
 
 ## 从源码构建
 
@@ -150,4 +148,4 @@ Eyezen 的灵感来自 **[ProjectEye](https://github.com/Jeremyyang920/ProjectEy
 
 ## 许可证
 
-[MIT](LICENSE) — 自由使用、修改和分发。
+[MIT License](LICENSE)

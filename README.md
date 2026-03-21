@@ -19,7 +19,7 @@
   English | <a href="README.zh-CN.md">简体中文</a>
 </p>
 
-> **Status**: v0.1.0 in development. Pre-built installers are not yet available — please [build from source](#build-from-source) for now.
+> **Status**: v0.1.0 released. Download pre-built installers from [GitHub Releases](https://github.com/rsecss/eye-zen/releases/latest).
 
 ---
 
@@ -54,18 +54,14 @@ Eyezen automates this process — it quietly runs in the background and gently r
 
 ## Download
 
-### Release Artifacts
-
-> Pre-built installers will be available after the first release.
+Download from [GitHub Releases](https://github.com/rsecss/eye-zen/releases/latest).
 
 | Platform | Installer | Portable |
 |----------|-----------|----------|
-| Windows x64 | `Eyezen_{ver}_x64-setup.exe` / `.msi` | `Eyezen_{ver}_x64-portable.zip` |
-| macOS ARM (M1+) | `Eyezen_{ver}_aarch64.dmg` | — |
-| macOS Intel | `Eyezen_{ver}_x64.dmg` | — |
-| Linux x64 | `Eyezen_{ver}_amd64.deb` | `Eyezen_{ver}_amd64.AppImage` |
-
-Download from [GitHub Releases](https://github.com/rsecss/eye-zen/releases/latest).
+| Windows x64 | `Eyezen_0.1.0_x64-setup.exe` / `.msi` | — |
+| macOS ARM (M1+) | `Eyezen_0.1.0_aarch64.dmg` | — |
+| macOS Intel | `Eyezen_0.1.0_x64.dmg` | — |
+| Linux x64 | `Eyezen_0.1.0_amd64.deb` | `Eyezen_0.1.0_amd64.AppImage` |
 
 ## Build from Source
 
@@ -139,4 +135,4 @@ Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for gu
 
 ## License
 
-[MIT](LICENSE) — free to use, modify, and distribute.
+[MIT License](LICENSE)
