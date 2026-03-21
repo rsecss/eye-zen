@@ -66,13 +66,37 @@ npm run build
 
 ### CI (GitHub Actions)
 
-在 `push` / `pull_request` 到 `dev` / `main` 时触发：
+在 `push` / `pull_request` 到 `dev` / `main` 时触发（`.github/workflows/ci.yml`）：
 
-- Rust: `fmt --check` → `clippy` → `test`
-- Frontend: `svelte-check` → `vitest run` → `vite build`
-- Security: `cargo audit`（SHOULD）
+- Rust: `check` → `clippy --all-targets` → `test` → `fmt --check`
+- Frontend: `svelte-check` → `vitest run` → `format:check` → `vite build`
+- 三平台矩阵：Windows / macOS / Linux
+- 额外 Tauri build 验证（`tauri-action@v0`）
+- Security: `cargo audit`（SHOULD，尚未配置）
 
-> CI 配置文件尚未创建。
+#### 平台特定注意事项
+
+| 平台 | 注意事项 |
+|------|---------|
+| Linux | `libasound2-dev` 是 rodio/ALSA 必需依赖，MUST 包含在 `apt-get install` 中 |
+| Linux | `#[cfg(target_os = "linux")]` 代码仅在 Linux CI 被 clippy 检查 |
+| macOS | CI 仅构建单架构（ARM 或 Intel），非 universal binary |
+| Windows | `Instant` 算术可能在短 uptime CI runner 上下溢（见下方） |
+| 全平台 | `--all-targets` MUST 用于 clippy，否则 test-target 警告会被遗漏 |
+
+#### Instant 测试陷阱
+
+`std::time::Instant` 是单调时钟，从系统启动开始计时。CI runner 可能 uptime 极短，`Instant::now() - Duration::from_secs(large_value)` 会 panic。
+
+```rust
+// BAD: CI runner uptime 可能不足 1200 秒
+let started = Instant::now() - Duration::from_secs(1200);
+
+// GOOD: future_instant 模式，永远安全
+let started = Instant::now() + Duration::from_secs(100);
+```
+
+**规则**：测试中构造 `Instant` 时，MUST 使用 `Instant::now() + Duration`（未来时间点），MUST NOT 使用 `Instant::now() - Duration`（过去时间点）。
 
 ## 性能预算（SHOULD 级别，Release 构建）
 

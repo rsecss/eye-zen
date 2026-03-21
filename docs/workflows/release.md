@@ -52,13 +52,28 @@ Default: `patch`.
 - [ ] Working directory is clean (no uncommitted changes)
 - [ ] On `dev` branch
 - [ ] All tests pass: cargo test + npm test
-- [ ] No Rust warnings: cargo clippy -- -D warnings
+- [ ] No Rust warnings: cargo clippy --all-targets -- -D warnings
+- [ ] Rust formatted: cargo fmt --all --check
 - [ ] Frontend type check: npx svelte-check
-- [ ] Format check: npm run format:check + cargo fmt --check
-- [ ] Production build succeeds: npm run tauri build
+- [ ] Frontend format check: npm run format:check
+- [ ] Production build succeeds: npm run build
+- [ ] ts-rs bindings up-to-date (cargo test regenerates them)
 ```
 
-### 3. Analyze Changes Since Last Release
+> **v0.1.0 教训**：本地跳过 pre-flight 导致 9 次 CI 修复循环。MUST 完整执行。
+> clippy MUST 使用 `--all-targets` 以覆盖 test target 代码。
+
+### 3. Push Dev and Wait for CI
+
+```bash
+git push origin dev
+# MUST wait for three-platform CI to ALL pass before proceeding
+# Check: https://github.com/<owner>/<repo>/actions
+```
+
+> **v0.1.0 教训**：MUST NOT 跳过此步。直接合并到 main 会在 CI 失败后导致反复修复循环。
+
+### 4. Analyze Changes Since Last Release
 
 ```bash
 LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
@@ -206,3 +221,18 @@ Review the draft release on GitHub, then click **Publish**.
 - **No npm publish**: This is a desktop app, not a library.
 - Always update `CHANGELOG.md` before release.
 - Always run full test suite before starting release.
+- **MUST NOT 直接 merge dev → main**：MUST 使用 PR 工作流，等 CI 通过后再合并。
+
+## v0.1.0 CI 踩坑记录
+
+以下问题在首次发版中遇到，已修复并固化为规则，供后续参考：
+
+| 问题 | 根因 | 修复 |
+|------|------|------|
+| `tauri-action@v1` 不存在 | 上游删除 v1 tag | 使用 `@v0` |
+| Linux 编译失败 | 缺 `libasound2-dev` | 加入 apt-get install |
+| clippy 通过但 CI 失败 | 本地未用 `--all-targets` | 统一使用 `--all-targets` |
+| Linux clippy lint | `#[cfg(target_os)]` 代码仅在对应平台编译 | 跨平台代码需各平台验证 |
+| Windows 测试 panic | `Instant::now() - Duration` 下溢 | 用 `future_instant` 模式 |
+| SVG 导入类型错误 | Vite 缺 SVG 模块声明 | 切换为 PNG 或加 `vite-env.d.ts` |
+| ts-rs 格式漂移 | 不同版本输出格式不同 | 注意 ts-rs 版本一致性 |

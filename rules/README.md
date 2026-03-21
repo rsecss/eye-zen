@@ -9,8 +9,8 @@
 | [01-architecture.md](01-architecture.md) | 分层依赖、服务 DAG、生命周期、可见性、通信、关闭顺序 |
 | [02-ipc-and-state.md](02-ipc-and-state.md) | Commands/Events 定义、状态机、错误类型、边界验证 |
 | [03-coding-standards.md](03-coding-standards.md) | 命名规范、Rust/Svelte 规范、错误传播、日志、注释 |
-| [04-testing-quality.md](04-testing-quality.md) | 测试要求、质量门禁、性能预算 |
-| [05-change-management.md](05-change-management.md) | 变更清单、配置兼容、破坏性变更、依赖管理 |
+| [04-testing-quality.md](04-testing-quality.md) | 测试要求、质量门禁、CI 配置、性能预算 |
+| [05-change-management.md](05-change-management.md) | 变更清单、发版清单、配置兼容、破坏性变更、依赖管理 |
 | [06-frontend.md](06-frontend.md) | 前端架构、状态管理、窗口、权限、视觉设计 |
 | [07-platform-storage.md](07-platform-storage.md) | 平台抽象、降级原则、配置读写、数据存储 |
 

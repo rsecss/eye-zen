@@ -10,17 +10,19 @@
 
 ## 项目状态
 
-**当前阶段：Phase 2 增强进行中。**
+**当前阶段：v0.1.0 已发布，Phase 2 增强进行中。**
 
 - Phase 1 MVP 代码已废弃，仅保留架构经验和设计决策
 - 脚手架已就绪：Tauri v2 + Svelte 5 + Vite 6 + TailwindCSS v4
-- 后端 MVP 已实现：6 个核心服务 + Commands + Events + Platform + Models
+- 后端 MVP 已实现：7 个核心服务 + Commands + Events + Platform + Models
 - 前端原型已实现：ts-rs 类型桥接 + IPC stores + tray-panel + tip-window + tip-minimal
 - E2E 测试通过：完整用户流程验证（Working → PreAlert → Alerting → Resting → Working）
 - Settings UI + About 页面已实现（Plan 010）
 - i18n 已实现：全栈 zh-CN/en 双语 + 热切换（Plan 011）
 - 主题切换已实现：Dark/Light CSS 变量 + 原生标题栏适配（Plan 012）
 - 开机自启动已实现：tauri-plugin-autostart 集成（Plan 013）
+- CI/CD 已就绪：三平台 CI 矩阵 + 四目标 Release 构建（Plan 014）
+- v0.1.0 已发布：GitHub Release + 跨平台制品
 - 下一步：Phase 2 继续（Statistics / 离席检测 / 工作日调度）
 
 ---
@@ -247,6 +249,18 @@ Open risks:        已知风险
 ---
 
 ## 变更记录
+
+### 2026-03-21 -- v0.1.0 Release + CI/CD 基础设施
+
+- 新增 CI workflow（`.github/workflows/ci.yml`）：三平台矩阵，Rust + 前端全量检查 + Tauri 构建
+- 新增 Release workflow（`.github/workflows/release.yml`）：四目标构建 + Windows portable zip
+- 新增 release notes 模板（`.github/release.yml`）：PR label 自动分类
+- 新增文档：CHANGELOG.md / README 双语 / CONTRIBUTING.md / 4 篇工作流规范
+- 新增品牌资源：Eyezen logo v4 + 全平台图标更新
+- 修复 CI 问题（9 轮）：tauri-action@v0 / libasound2-dev / clippy --all-targets / Instant 下溢 / SVG→PNG
+- 更新 rules/04：CI 实际配置 + 平台特定注意事项 + Instant 测试陷阱规则
+- 更新 rules/05：新增发版清单（本地验证→CI 绿灯→PR 合并→版本同步→Tag→验证）
+- 经验教训：发版 MUST 使用 PR 工作流，MUST NOT 直接合并
 
 ### 2026-03-21 -- 主题切换 + 开机自启动（Plan 012 + 013）
 

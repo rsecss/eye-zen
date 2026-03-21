@@ -111,6 +111,74 @@ fn migrate_if_needed(config: &mut Config) {
 3. 同时变更的前端代码 MUST 在同一 PR 中
 4. MUST 更新对应的 rules 文档
 
+## 发版清单
+
+每次发版 MUST 按顺序完成以下清单，MUST NOT 跳步。
+
+### 1. 本地验证（在 dev 分支上）
+
+```bash
+cargo fmt --all --manifest-path src-tauri/Cargo.toml --check
+cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
+cargo test --manifest-path src-tauri/Cargo.toml
+npx svelte-check --tsconfig ./tsconfig.json
+npm test -- --run
+npm run format:check
+npm run build
+```
+
+全部通过后才可进入下一步。
+
+### 2. 推送 dev 并等待 CI 绿灯
+
+```bash
+git push origin dev
+# 等待三平台 CI 全部通过
+```
+
+MUST NOT 在 CI 未通过时合并到 main。
+
+### 3. 使用 PR 工作流合并
+
+- MUST 通过 PR 合并到 main（`docs/workflows/pr.md`）
+- MUST NOT 直接 `git merge dev` 到 main
+- PR 描述 MUST 包含版本号和变更摘要
+- 推荐 squash merge 保持 main 历史干净
+
+### 4. 版本号同步
+
+三个文件 MUST 同步更新（`docs/workflows/release.md`）：
+
+| 文件 | 字段 |
+|------|------|
+| `package.json` | `"version"` |
+| `src-tauri/Cargo.toml` | `version` under `[package]` |
+| `src-tauri/tauri.conf.json` | `"version"` |
+
+额外引用（手动更新）：README badge、AboutPage 版本号。
+
+### 5. Tag 和 Release
+
+```bash
+git checkout main && git pull origin main
+git tag v<VERSION>
+git push origin v<VERSION>
+```
+
+Tag MUST 在 main 上创建，MUST NOT 在 dev 上创建。
+
+### 6. 验证 Release 制品
+
+- 等待 `release.yml` 四目标构建完成
+- 检查 Draft Release 中所有制品命名正确
+- 手动 Publish Release
+
+### 第三方 Action 版本管理
+
+- `tauri-apps/tauri-action` MUST 使用 `@v0`（v1 tag 已被上游删除）
+- SHOULD 在 dependabot 或手动检查中定期验证 Action 版本可用性
+- 关键 Action SHOULD 考虑 pin 到具体 commit SHA
+
 ## 依赖管理
 
 ### 引入新依赖前 MUST 评估
