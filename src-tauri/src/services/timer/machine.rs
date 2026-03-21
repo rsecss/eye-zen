@@ -187,9 +187,7 @@ mod tests {
 
     fn past_instant(seconds: u64) -> Instant {
         let dur = Duration::from_secs(seconds);
-        Instant::now()
-            .checked_sub(dur)
-            .unwrap_or_else(Instant::now)
+        Instant::now().checked_sub(dur).unwrap_or_else(Instant::now)
     }
 
     #[test]

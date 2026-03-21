@@ -161,9 +161,11 @@ fn detect_fullscreen_x11(session: &Mutex<X11Session>) -> Result<bool, String> {
         .reply()
         .map_err(|error| format!("reply state property: {error}"))?;
 
-    let is_fullscreen = state_reply
-        .value32()
-        .is_some_and(|atoms| atoms.into_iter().any(|atom| atom == session.fullscreen_atom));
+    let is_fullscreen = state_reply.value32().is_some_and(|atoms| {
+        atoms
+            .into_iter()
+            .any(|atom| atom == session.fullscreen_atom)
+    });
 
     Ok(is_fullscreen)
 }
