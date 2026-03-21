@@ -1,6 +1,7 @@
 <script lang="ts">
   import { open } from '@tauri-apps/plugin-shell';
   import { i18nStore } from '$lib/i18n/index.svelte';
+  import logoSvg from '../../assets/logo.svg';
 
   const GITHUB_URL = 'https://github.com/rsecss/eye-zen';
   const RELEASES_URL = `${GITHUB_URL}/releases`;
@@ -14,10 +15,7 @@
 
 <div class="about-page">
   <div class="logo">
-    <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="white" stroke-width="1.5">
-      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
-      <circle cx="12" cy="12" r="3" fill="white" />
-    </svg>
+    <img src={logoSvg} alt="Eyezen Logo" width="80" height="80" />
   </div>
 
   <h1 class="app-name">Eyezen</h1>
@@ -57,11 +55,11 @@
   .logo {
     width: 80px;
     height: 80px;
-    background: linear-gradient(135deg, #22c55e, #4ade80, #86efac);
     border-radius: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
+    overflow: hidden;
     box-shadow:
       0 4px 16px rgba(34, 197, 94, 0.2),
       0 8px 32px rgba(34, 197, 94, 0.08);
