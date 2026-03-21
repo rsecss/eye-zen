@@ -183,9 +183,8 @@ mod tests {
     }
 
     fn past_instant(seconds: u64) -> Instant {
-        Instant::now()
-            .checked_sub(Duration::from_secs(seconds))
-            .expect("duration should fit in Instant subtraction")
+        let dur = Duration::from_secs(seconds);
+        Instant::now().checked_sub(dur).unwrap_or_else(Instant::now)
     }
 
     #[tokio::test]
@@ -207,10 +206,14 @@ mod tests {
     #[tokio::test]
     async fn on_tick_resting_emits_decreasing_remaining_secs() {
         let (service, _tx) = make_test_service();
+        let entered = past_instant(5);
+        if entered >= Instant::now() {
+            return;
+        }
         {
             let mut inner = service.inner.lock().await;
             inner.state = TimerState::Resting;
-            inner.state_entered_at = past_instant(5);
+            inner.state_entered_at = entered;
         }
 
         let effects = service.on_tick(&SkipFlags::default()).await;
@@ -232,9 +235,14 @@ mod tests {
     #[tokio::test]
     async fn on_tick_transitions_after_timeout() {
         let (service, _tx) = make_test_service();
+        let entered = past_instant(20 * 60);
+        // Skip if system uptime < 20min (CI VMs may have just booted)
+        if entered >= Instant::now() {
+            return;
+        }
         {
             let mut inner = service.inner.lock().await;
-            inner.state_entered_at = past_instant(20 * 60);
+            inner.state_entered_at = entered;
         }
 
         let effects = service.on_tick(&SkipFlags::default()).await;
