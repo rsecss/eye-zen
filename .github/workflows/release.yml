@@ -1,0 +1,111 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  release:
+    permissions:
+      contents: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-latest
+            args: '--target aarch64-apple-darwin'
+            label: macOS (ARM)
+          - platform: macos-latest
+            args: '--target x86_64-apple-darwin'
+            label: macOS (Intel)
+          - platform: ubuntu-22.04
+            args: ''
+            label: Linux
+          - platform: windows-latest
+            args: ''
+            label: Windows
+
+    runs-on: ${{ matrix.platform }}
+    name: ${{ matrix.label }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install system dependencies (Linux)
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build and release
+        uses: tauri-apps/tauri-action@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: v__VERSION__
+          releaseName: 'Eyezen v__VERSION__'
+          releaseBody: |
+            See [CHANGELOG.md](https://github.com/rsecss/eye-zen/blob/v__VERSION__/CHANGELOG.md) for details.
+
+            ### Downloads
+
+            | Platform | Installer | Portable |
+            |----------|-----------|----------|
+            | Windows x64 | `_x64-setup.exe` / `_x64_en-US.msi` | `_x64-portable.zip` |
+            | macOS ARM (M1+) | `_aarch64.dmg` | — |
+            | macOS Intel | `_x64.dmg` | — |
+            | Linux x64 | `_amd64.deb` | `_amd64.AppImage` |
+
+            ### Platform Test Status
+
+            | Platform | Status |
+            |----------|--------|
+            | Windows 10/11 | ✅ Tested |
+            | macOS (ARM/Intel) | ⚠️ Builds, untested — feedback welcome |
+            | Linux (X11/Wayland) | ⚠️ Builds, untested — feedback welcome |
+          releaseDraft: true
+          prerelease: false
+          args: ${{ matrix.args }}
+
+      - name: Create Windows portable zip
+        if: matrix.platform == 'windows-latest'
+        shell: bash
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          cd src-tauri/target/release
+          7z a -tzip "Eyezen_${VERSION}_x64-portable.zip" eyezen.exe
+          echo "PORTABLE_PATH=src-tauri/target/release/Eyezen_${VERSION}_x64-portable.zip" >> $GITHUB_ENV
+
+      - name: Upload portable to release
+        if: matrix.platform == 'windows-latest'
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          gh release upload "v${VERSION}" "${{ env.PORTABLE_PATH }}" --clobber

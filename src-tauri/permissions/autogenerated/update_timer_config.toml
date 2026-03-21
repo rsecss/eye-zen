@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-update-timer-config"
+description = "Enables the update_timer_config command without any pre-configured scope."
+commands.allow = ["update_timer_config"]
+
+[[permission]]
+identifier = "deny-update-timer-config"
+description = "Denies the update_timer_config command without any pre-configured scope."
+commands.deny = ["update_timer_config"]

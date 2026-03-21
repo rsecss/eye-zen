@@ -5,3 +5,29 @@ node_modules/
 dist/
 build/
 out/
+
+# Rust
+src-tauri/target/
+src-tauri/gen/
+
+# Secrets and credentials
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.crt
+*.cer
+*.jks
+*.keystore
+*.mobileprovision
+
+# Internal docs (research, devlog, design specs, plans — not for public repo)
+docs/.local/
+docs/plans/
+docs/devlog.md
+docs/superpowers/
+
+# Claude Code
+.ace-tool/
+.superpowers/

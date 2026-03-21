@@ -1,0 +1,68 @@
+import type { TranslationDict } from './zh-CN';
+
+const en: TranslationDict = {
+  'tab.settings': 'Settings',
+  'tab.about': 'About',
+
+  'settings.timer.title': 'Timer',
+  'settings.timer.workMinutes': 'Work Duration',
+  'settings.timer.workMinutes.desc': 'Work time before rest reminder',
+  'settings.timer.workMinutes.unit': 'min',
+  'settings.timer.restSeconds': 'Rest Duration',
+  'settings.timer.restSeconds.desc': 'Duration of each rest break',
+  'settings.timer.restSeconds.unit': 'sec',
+  'settings.timer.preAlertSeconds': 'Pre-alert',
+  'settings.timer.preAlertSeconds.desc': 'Heads-up before rest starts',
+  'settings.timer.preAlertSeconds.unit': 'sec',
+  'settings.timer.alertTimeout': 'Alert Timeout',
+  'settings.timer.alertTimeout.desc': 'Auto-rest after timeout',
+  'settings.timer.alertTimeout.unit': 'sec',
+
+  'settings.behavior.title': 'Behavior',
+  'settings.behavior.sound': 'Sound',
+  'settings.behavior.sound.desc': 'Play sound on rest reminder',
+  'settings.behavior.fullscreenSkip': 'Fullscreen Skip',
+  'settings.behavior.fullscreenSkip.desc': 'Skip reminders in fullscreen apps',
+  'settings.behavior.autoStart': 'Auto Start',
+  'settings.behavior.autoStart.desc': 'Launch at system startup',
+
+  'settings.display.title': 'Display',
+  'settings.display.language': 'Language',
+  'settings.display.language.desc': 'Interface language',
+  'settings.display.theme': 'Theme',
+  'settings.display.theme.desc': 'Appearance theme',
+  'settings.display.theme.light': 'Light',
+  'settings.display.theme.dark': 'Dark',
+
+  'about.version': 'Version',
+  'about.description': 'Cross-platform eye health tool based on the 20-20-20 rule',
+  'about.rule': 'Every 20 min, look 20 feet away, for 20 seconds',
+  'about.checkUpdate': 'Check for Updates',
+  'about.platform': 'Platform',
+  'about.license': 'License',
+  'about.source': 'Source',
+
+  'tray.working': 'Working',
+  'tray.resting': 'Resting',
+  'tray.paused': 'Paused',
+  'tray.alerting': 'Time for a break',
+  'tray.preAlert': 'Break soon',
+  'tray.pause': 'Pause',
+  'tray.resume': 'Resume',
+  'tray.skipRest': 'Skip',
+  'tray.startRest': 'Start Rest',
+  'tray.settings': 'Settings',
+
+  'tip.alerting.title': 'Time for a gentle break',
+  'tip.alerting.subtitle': 'Look at something 20 feet away\nand let your eyes rest',
+  'tip.resting.title': 'Resting',
+  'tip.resting.subtitle': 'Look at something 20 feet away',
+  'tip.startRest': 'Start Rest',
+  'tip.skip': 'Skip',
+  'tip.waiting': 'Waiting...',
+
+  'tipMinimal.resting': 'Resting... look away from the screen',
+  'tipMinimal.alerting': 'Take a break... look away from the screen',
+};
+
+export default en;

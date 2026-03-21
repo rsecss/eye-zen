@@ -1,0 +1,24 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "tray-panel",
+  "description": "Tray panel capabilities",
+  "windows": ["tray-panel"],
+  "permissions": [
+    "core:event:allow-unlisten",
+    {
+      "identifier": "core:event:allow-listen",
+      "allow": [{ "event": "config_changed" }, { "event": "state_changed" }]
+    },
+    "core:window:allow-show",
+    "core:window:allow-set-focus",
+    "core:window:allow-unminimize",
+    "core:window:allow-get-all-windows",
+    "core:event:allow-emit",
+    "allow-get-config",
+    "allow-get-state-snapshot",
+    "allow-start-rest",
+    "allow-skip-rest",
+    "allow-pause-timer",
+    "allow-resume-timer"
+  ]
+}
