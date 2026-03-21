@@ -1,7 +1,7 @@
 <script lang="ts">
   import { open } from '@tauri-apps/plugin-shell';
   import { i18nStore } from '$lib/i18n/index.svelte';
-  import logoSvg from '../../assets/logo.svg';
+  import logoPng from '../../assets/logo.png';
 
   const GITHUB_URL = 'https://github.com/rsecss/eye-zen';
   const RELEASES_URL = `${GITHUB_URL}/releases`;
@@ -15,7 +15,7 @@
 
 <div class="about-page">
   <div class="logo">
-    <img src={logoSvg} alt="Eyezen Logo" width="80" height="80" />
+    <img src={logoPng} alt="Eyezen Logo" width="80" height="80" />
   </div>
 
   <h1 class="app-name">Eyezen</h1>
