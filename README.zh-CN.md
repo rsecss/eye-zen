@@ -41,6 +41,20 @@ Eyezen 帮你自动化这个过程——安静地在后台计时，时间到了�
 - **提示音** — 休息提醒时播放柔和音效
 - **基于 Rust + Tauri 的轻量桌面栈** — 原生 WebView，资源消耗低
 
+### 为什么选择 Eyezen 而不是 ProjectEye？
+
+Eyezen 的灵感来自 [ProjectEye](https://github.com/Jeremyyang920/ProjectEye)，但使用现代技术栈从零构建：
+
+| | Eyezen | ProjectEye |
+|---|--------|------------|
+| 平台 | Windows / macOS / Linux | 仅 Windows |
+| 技术栈 | Rust + Tauri v2 + Svelte 5 | C# + WPF |
+| 内存占用 | ~15 MB | ~50 MB |
+| 主题 | Dark / Light + 原生标题栏适配 | 仅浅色 |
+| 国际化 | 中文 / English 热切换 | 仅中文 |
+| 多显示器 | 所有显示器同时提醒 | 仅主显示器 |
+| 维护状态 | 活跃开发中 | 已归档 |
+
 ## 截图
 
 > 截图即将添加。欢迎提交 PR！
@@ -54,14 +68,26 @@ Eyezen 帮你自动化这个过程——安静地在后台计时，时间到了�
 
 ## 下载
 
-从 [GitHub Releases](https://github.com/rsecss/eye-zen/releases/latest) 下载。
+### 从 Release 下载（推荐）
 
-| 平台 | 安装包 | 便携版 |
-|------|--------|--------|
-| Windows x64 | `Eyezen_0.1.0_x64-setup.exe` / `.msi` | — |
-| macOS ARM (M1+) | `Eyezen_0.1.0_aarch64.dmg` | — |
-| macOS Intel | `Eyezen_0.1.0_x64.dmg` | — |
-| Linux x64 | `Eyezen_0.1.0_amd64.deb` | `Eyezen_0.1.0_amd64.AppImage` |
+前往 [Releases](https://github.com/rsecss/eye-zen/releases/latest) 下载对应平台安装包：
+
+| 平台 | 安装包 |
+|------|--------|
+| Windows | `.exe` (NSIS) 或 `.msi` |
+| macOS | `.dmg` |
+| Linux | `.deb` / `.AppImage` |
+
+<details>
+<summary>macOS 安全提示</summary>
+
+macOS 可能会阻止未签名的应用。下载后打开终端执行：
+
+```bash
+xattr -cr /Applications/Eyezen.app
+```
+
+</details>
 
 ## 从源码构建
 

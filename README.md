@@ -41,6 +41,20 @@ Eyezen automates this process — it quietly runs in the background and gently r
 - **Sound Alerts** — Gentle audio cue on break reminders
 - **Lightweight** — Rust backend + native WebView via Tauri, minimal resource usage
 
+### Why Eyezen over ProjectEye?
+
+Eyezen is inspired by [ProjectEye](https://github.com/Jeremyyang920/ProjectEye), but built from scratch with a modern stack:
+
+| | Eyezen | ProjectEye |
+|---|--------|------------|
+| Platform | Windows / macOS / Linux | Windows only |
+| Tech Stack | Rust + Tauri v2 + Svelte 5 | C# + WPF |
+| Memory Usage | ~15 MB | ~50 MB |
+| Theme | Dark / Light + native title bar | Light only |
+| i18n | Chinese / English hot switch | Chinese only |
+| Multi-monitor | All displays show reminder | Primary display only |
+| Maintenance | Active | Archived |
+
 ## Screenshots
 
 > Screenshots coming soon. PRs welcome!
@@ -54,14 +68,26 @@ Eyezen automates this process — it quietly runs in the background and gently r
 
 ## Download
 
-Download from [GitHub Releases](https://github.com/rsecss/eye-zen/releases/latest).
+### From Release (Recommended)
 
-| Platform | Installer | Portable |
-|----------|-----------|----------|
-| Windows x64 | `Eyezen_0.1.0_x64-setup.exe` / `.msi` | — |
-| macOS ARM (M1+) | `Eyezen_0.1.0_aarch64.dmg` | — |
-| macOS Intel | `Eyezen_0.1.0_x64.dmg` | — |
-| Linux x64 | `Eyezen_0.1.0_amd64.deb` | `Eyezen_0.1.0_amd64.AppImage` |
+Go to [Releases](https://github.com/rsecss/eye-zen/releases/latest) to download the installer for your platform:
+
+| Platform | Installer |
+|----------|-----------|
+| Windows | `.exe` (NSIS) or `.msi` |
+| macOS | `.dmg` |
+| Linux | `.deb` / `.AppImage` |
+
+<details>
+<summary>macOS Security Notice</summary>
+
+macOS may block unsigned apps. After downloading, open Terminal and run:
+
+```bash
+xattr -cr /Applications/Eyezen.app
+```
+
+</details>
 
 ## Build from Source
 
