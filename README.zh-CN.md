@@ -16,15 +16,7 @@
 </p>
 
 <p align="center">
-  <a href="README.md">English</a> •
-  <a href="#功能">功能</a> •
-  <a href="#截图">截图</a> •
-  <a href="#从源码构建">从源码构建</a> •
-  <a href="#技术栈">技术栈</a> •
-  <a href="#路线图">路线图</a> •
-  <a href="#致谢">致谢</a> •
-  <a href="#贡献">贡献</a> •
-  <a href="#许可证">许可证</a>
+  <a href="README.md">English</a> | 简体中文
 </p>
 
 > **项目状态**: v0.1.0 开发中，尚未发布预编译安装包。当前请[从源码构建](#从源码构建)运行。

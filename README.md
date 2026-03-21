@@ -16,14 +16,7 @@
 </p>
 
 <p align="center">
-  <a href="README.zh-CN.md">简体中文</a> •
-  <a href="#features">Features</a> •
-  <a href="#download">Download</a> •
-  <a href="#build-from-source">Build from Source</a> •
-  <a href="#tech-stack">Tech Stack</a> •
-  <a href="#roadmap">Roadmap</a> •
-  <a href="#credits">Credits</a> •
-  <a href="#license">License</a>
+  English | <a href="README.zh-CN.md">简体中文</a>
 </p>
 
 > **Status**: v0.1.0 in development. Pre-built installers are not yet available — please [build from source](#build-from-source) for now.
