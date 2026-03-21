@@ -6,3 +6,4 @@ src-tauri/target/
 src-tauri/gen/
 package-lock.json
 *.md
+src/lib/bindings/
