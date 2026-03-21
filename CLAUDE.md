@@ -16,7 +16,7 @@
 - 脚手架已就绪：Tauri v2 + Svelte 5 + Vite 6 + TailwindCSS v4
 - 后端 MVP 已实现：7 个核心服务 + Commands + Events + Platform + Models
 - 前端原型已实现：ts-rs 类型桥接 + IPC stores + tray-panel + tip-window + tip-minimal
-- E2E 测试通过：完整用户流程验证（Working → PreAlert → Alerting → Resting → Working）
+- 手动测试通过：完整用户流程验证（Working → PreAlert → Alerting → Resting → Working）
 - Settings UI + About 页面已实现（Plan 010）
 - i18n 已实现：全栈 zh-CN/en 双语 + 热切换（Plan 011）
 - 主题切换已实现：Dark/Light CSS 变量 + 原生标题栏适配（Plan 012）
@@ -39,7 +39,7 @@
 | 自启动 | tauri-plugin-autostart | `~2.2` | `~2.2` | 开机自启 |
 | 数据库 | SQLite | via sqlx | 未安装 (P2) | |
 | 配置 | TOML | 人类可读 | `~0.8` | |
-| 类型桥接 | ts-rs | 最新稳定 | `~10` (dev-dep) | Rust → TS |
+| 类型桥接 | ts-rs | 最新稳定 | `~10.1` (dev-dep) | Rust → TS |
 | 日志 | tracing + 日轮转 | -- | `~0.1` / `~0.3` / `~0.2` | tracing + subscriber + appender |
 | 音频 | rodio | 独立线程 | `~0.20` | |
 | 序列化 | serde + serde_json | `~1.0` | `~1.0` | |

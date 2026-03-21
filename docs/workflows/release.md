@@ -14,6 +14,7 @@ dev branch ready → local validation → push & CI green → PR to main
 - On `dev` branch
 - Working directory clean
 - All features for this release committed and pushed
+- Shell commands below require Bash (Git Bash / WSL on Windows)
 
 ## Step-by-Step
 
@@ -60,7 +61,7 @@ Three files MUST stay in sync:
 
 Additional references to update manually:
 - `README.md` / `README.zh-CN.md` — version badge
-- `src/pages/main/AboutPage.svelte` — `APP_VERSION`
+- `src/pages/main/AboutPage.svelte` — hardcoded version string in `<span class="version">`
 
 ```bash
 NEW_VERSION="0.2.0"  # adjust as needed
@@ -117,7 +118,8 @@ MUST use PR workflow. MUST NOT directly merge dev to main.
 ```bash
 RELEASE_BRANCH="release/v$NEW_VERSION"
 git checkout -b "$RELEASE_BRANCH"
-git add package.json src-tauri/Cargo.toml src-tauri/tauri.conf.json CHANGELOG.md
+git add package.json src-tauri/Cargo.toml src-tauri/tauri.conf.json CHANGELOG.md \
+      README.md README.zh-CN.md src/pages/main/AboutPage.svelte
 git commit -m "chore: release v$NEW_VERSION"
 git push -u origin "$RELEASE_BRANCH"
 ```
@@ -172,8 +174,14 @@ Tag MUST be on `main`, MUST NOT be on `dev` or release branch.
 - Four-target build: Windows / macOS ARM / macOS Intel / Linux
 - Windows portable zip is created automatically
 - Wait for all builds to complete
-- Review Draft Release on GitHub
+- Verify Draft Release on GitHub:
+  - All expected assets present (see `docs/workflows/release-naming.md`)
+  - Download and spot-check at least the current platform's installer
+  - Verify release notes are accurate
 - Click **Publish** when satisfied
+
+> Note: Code signing (macOS notarization, Windows SmartScreen) is not yet configured.
+> When available, verify signing status before publishing.
 
 ### 9. Post-release
 
@@ -198,10 +206,12 @@ When main has a bug but dev has unfinished features:
 git checkout main
 git checkout -b fix/critical-bug
 # Fix + test + commit
-git checkout main
-git merge fix/critical-bug  # or PR
+# MUST create PR to main (same as release — no direct merge)
+gh pr create --base main --title "fix: critical bug description" --body "..."
+# After PR merged:
+git checkout main && git pull
 git tag v0.2.1
-git push origin main --tags
+git push origin v0.2.1
 # Sync back to dev
 git checkout dev
 git merge main

@@ -50,13 +50,11 @@ Steps:
        ↓
 3. Implementation     → Read existing code → Define interface → Implement → Test
        ↓
-4. Local Validation   → pre-push hook catches issues automatically
+4. Commit             → Atomic, Conventional Commits format (pre-commit auto-formats)
        ↓
-5. Push & CI          → Three-platform CI validates
+5. Code Review        → Multi-model review for cross-boundary changes
        ↓
-6. Code Review        → Multi-model review for cross-boundary changes
-       ↓
-7. Commit             → Atomic, Conventional Commits format
+6. Push & CI          → pre-push validates locally, then three-platform CI
 ```
 
 ### Implementation Order (MUST follow)

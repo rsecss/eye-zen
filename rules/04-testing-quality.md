@@ -79,9 +79,11 @@ npm run build
 - 日常开发可用 `git push --no-verify` 跳过（仅限 WIP 推送）
 - 发版前 MUST NOT 跳过
 
+> **重要**：本地 hook 只是前置反馈，不是最终安全边界。最终门禁 MUST 依赖 GitHub branch protection + required status checks。
+
 ### CI (GitHub Actions)
 
-在 `push` / `pull_request` 到 `dev` / `main` 时触发（`.github/workflows/ci.yml`）：
+在 `push` 到 `dev` / `main` 或 `pull_request` 到 `main` 时触发（`.github/workflows/ci.yml`）：
 
 - Rust: `check` → `clippy --all-targets` → `test` → `fmt --check`
 - Frontend: `svelte-check` → `vitest run` → `format:check` → `vite build`

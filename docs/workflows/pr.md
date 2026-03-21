@@ -1,6 +1,6 @@
 # Eyezen PR Workflow
 
-Create pull request from `dev` branch to `main` with standardized description.
+Create pull request to `main` with standardized description.
 
 ## Usage
 
@@ -15,8 +15,10 @@ Create pull request from `dev` branch to `main` with standardized description.
 
 ## Context
 
-- Protected `main` branch — all changes go through PR
+- Protected `main` branch — all changes go through PR (including releases and hotfixes)
 - Development happens on `dev` branch
+- Release uses `release/vX.Y.Z` branch (see `docs/workflows/release.md`)
+- Hotfix uses `fix/<name>` branch from `main`
 - CI runs automatically on PR creation (three-platform matrix)
 - Conventional Commits format used throughout
 
