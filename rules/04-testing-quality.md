@@ -72,7 +72,7 @@ npm run build
 - Frontend: `svelte-check` → `vitest run` → `format:check` → `vite build`
 - 三平台矩阵：Windows / macOS / Linux
 - 额外 Tauri build 验证（`tauri-action@v0`）
-- Security: `cargo audit`（SHOULD，尚未配置）
+- Security: `cargo audit`（已配置，独立 job，仅 Linux 运行）
 
 #### 平台特定注意事项
 
