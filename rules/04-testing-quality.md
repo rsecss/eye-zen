@@ -46,23 +46,38 @@
 
 ## 质量门禁
 
-### Pre-commit（MUST < 15 秒）
+项目使用 [husky](https://typicode.github.io/husky/) 管理 git hooks，自动执行分层检查。
+详细说明见 `docs/workflows/dev.md`。
+
+### Pre-commit（每次 `git commit`，MUST < 15 秒）
+
+位置：`.husky/pre-commit` + `.husky/commit-msg`
 
 ```bash
-npx lint-staged                    # Prettier 格式化暂存文件
-npx commitlint --edit "$1"         # 提交信息校验
+npx lint-staged                    # Prettier 自动格式化暂存文件
+npx commitlint --edit "$1"         # Conventional Commits 格式校验
 ```
 
-### Pre-push（全量）
+- 仅处理暂存文件，不影响开发节奏
+- `src/lib/bindings/` 已排除在 prettier 之外（ts-rs 输出格式优先）
+
+### Pre-push（每次 `git push`，全量验证）
+
+位置：`.husky/pre-push`
 
 ```bash
-cargo fmt --all --check --manifest-path src-tauri/Cargo.toml
+cargo fmt --all --manifest-path src-tauri/Cargo.toml --check
 cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
 cargo test --manifest-path src-tauri/Cargo.toml
 npx svelte-check --tsconfig ./tsconfig.json
-npm test
+npm test -- --run
+npm run format:check
 npm run build
 ```
+
+- 耗时 1-3 分钟，确保推送的代码能通过 CI
+- 日常开发可用 `git push --no-verify` 跳过（仅限 WIP 推送）
+- 发版前 MUST NOT 跳过
 
 ### CI (GitHub Actions)
 
