@@ -60,7 +60,7 @@ Steps:
 ### Implementation Order (MUST follow)
 
 1. Read existing code, understand patterns
-2. List impact scope (per `rules/05-change-management.md` checklist)
+2. List impact scope (per `.trellis/spec/architecture/change-management.md` checklist)
 3. Define interfaces first, then implement
 4. Write implementation code
 5. Write corresponding tests
@@ -101,6 +101,6 @@ Start a new session when ANY of these apply:
 
 - Detailed 10-stage lifecycle guide: `docs/.local/dev-workflow.md` (local reference)
 - Commit conventions: [Conventional Commits](https://www.conventionalcommits.org/)
-- Testing requirements: `rules/04-testing-quality.md`
-- Change checklists: `rules/05-change-management.md`
+- Testing requirements: `.trellis/spec/architecture/testing-quality.md`
+- Change checklists: `.trellis/spec/architecture/change-management.md`
 - Release workflow: `docs/workflows/release.md`

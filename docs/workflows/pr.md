@@ -106,7 +106,7 @@ Template:
 
 ## Checklist
 
-- [ ] Code follows project rules (see `rules/`)
+- [ ] Code follows project rules (see `.trellis/spec/`)
 - [ ] Self-review completed
 - [ ] No new warnings introduced
 - [ ] CLAUDE.md updated (if architecture changed)

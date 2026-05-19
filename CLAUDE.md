@@ -67,7 +67,7 @@ Frontend (Svelte 5, per window)
                   └── StatService      SQLite (P2)
 ```
 
-详细架构约束见 → [`rules/01-architecture.md`](rules/01-architecture.md)
+详细架构约束见 → [`.trellis/spec/architecture/layering.md`](.trellis/spec/architecture/layering.md) 与 [`.trellis/spec/backend/service-pattern.md`](.trellis/spec/backend/service-pattern.md)
 
 ---
 
@@ -77,7 +77,7 @@ Frontend (Svelte 5, per window)
 graph TD
     ROOT["Eyezen"] --> SRC_TAURI["src-tauri/"]
     ROOT --> SRC["src/"]
-    ROOT --> RULES["rules/"]
+    ROOT --> RULES[".trellis/spec/"]
     ROOT --> DOCS["docs/"]
 
     SRC_TAURI --> SERVICES["services/"]
@@ -152,19 +152,30 @@ npm run build                # 前端构建检查
 
 ## 规则与约束（强制遵循）
 
-> **所有开发 MUST 遵循 `rules/` 目录下的规则文档。违反规则的代码不得合入。**
+> **所有开发 MUST 遵循 `.trellis/spec/` 下的规范文档。违反规则的代码不得合入。**
 >
-> 完整导航与按角色快速定位见 → [`rules/README.md`](rules/README.md)
+> 完整导航见各分组 `index.md`。
 
-| 规则文档 | 覆盖范围 | 关键约束 |
-|---------|---------|---------|
-| [`01-architecture.md`](rules/01-architecture.md) | 分层依赖、服务 DAG、生命周期、可见性 | 单向依赖、四阶段生命周期、pub(crate) |
-| [`02-ipc-and-state.md`](rules/02-ipc-and-state.md) | IPC 接口、状态机、错误类型 | 纯函数状态转换、锁外执行 Effect |
-| [`03-coding-standards.md`](rules/03-coding-standards.md) | 命名、Rust/Svelte 规范、错误传播、日志 | 禁止 unwrap、reducer 锁策略 |
-| [`04-testing-quality.md`](rules/04-testing-quality.md) | 测试要求、质量门禁、性能预算 | fix 必须先写测试、pre-push 全量检查 |
-| [`05-change-management.md`](rules/05-change-management.md) | 变更清单、配置兼容、破坏性变更、依赖管理 | 新增 Command/Service 的完整 checklist |
-| [`06-frontend.md`](rules/06-frontend.md) | 前端架构、状态管理、窗口、权限、视觉 | store 单一数据源、禁止乐观更新 |
-| [`07-platform-storage.md`](rules/07-platform-storage.md) | 平台抽象、降级、配置、存储 | 保守降级、原子写入、参数化 SQL |
+| 分组 | 索引 | 关键约束 |
+|------|------|---------|
+| 跨层架构 | [`.trellis/spec/architecture/`](.trellis/spec/architecture/index.md) | 分层依赖、IPC 契约、状态机、变更清单、测试质量、发版流程 |
+| 后端 Rust | [`.trellis/spec/backend/`](.trellis/spec/backend/index.md) | 服务 DAG / 四阶段生命周期、错误传播、锁/异步、PlatformApi 降级、tracing 日志 |
+| 前端 Svelte | [`.trellis/spec/frontend/`](.trellis/spec/frontend/index.md) | Svelte 5 Runes、单一数据源、ts-rs 桥接、CSP/capability、CSS 变量 |
+| 思维指南 | [`.trellis/spec/guides/`](.trellis/spec/guides/index.md) | 跨层思考、代码复用思考（通用） |
+
+### 关键文档速查
+
+| 我在做… | 先看 |
+|--------|------|
+| 新增 Service | [`backend/service-pattern.md`](.trellis/spec/backend/service-pattern.md) |
+| 新增 Tauri Command | [`architecture/ipc-and-state.md`](.trellis/spec/architecture/ipc-and-state.md) + [`architecture/change-management.md`](.trellis/spec/architecture/change-management.md) |
+| 改 Timer 状态机 | [`architecture/ipc-and-state.md`](.trellis/spec/architecture/ipc-and-state.md) |
+| Rust 错误/锁/异步 | [`backend/coding-standards.md`](.trellis/spec/backend/coding-standards.md) |
+| 平台相关代码 | [`backend/platform-storage.md`](.trellis/spec/backend/platform-storage.md) |
+| 新增前端页面/组件 | [`frontend/component-guidelines.md`](.trellis/spec/frontend/component-guidelines.md) + [`frontend/quality-guidelines.md`](.trellis/spec/frontend/quality-guidelines.md) |
+| 改 store / IPC 调用 | [`frontend/store-and-ipc-patterns.md`](.trellis/spec/frontend/store-and-ipc-patterns.md) |
+| 提交前自检 | [`architecture/testing-quality.md`](.trellis/spec/architecture/testing-quality.md) |
+| 发版 | [`architecture/change-management.md`](.trellis/spec/architecture/change-management.md) + [`docs/workflows/release.md`](docs/workflows/release.md) |
 
 ---
 
@@ -214,7 +225,7 @@ npm run build                # 前端构建检查
 ### 实现顺序（固定，不可跳步）
 
 1. 读现有代码，理解模式
-2. 列出影响面（参照 [`05-change-management.md`](rules/05-change-management.md) 的变更清单）
+2. 列出影响面（参照 [`architecture/change-management.md`](.trellis/spec/architecture/change-management.md) 的变更清单）
 3. 先定接口，再填实现
 4. 写实现代码
 5. 写对应测试
@@ -231,14 +242,6 @@ Tests to run:      需要跑哪些测试
 Open risks:        已知风险
 ```
 
-### 多模型分工
-
-| 模型 | 角色 | 用途 |
-|------|------|------|
-| Claude Code | 主实现器 | 长链路实现、小步迭代 |
-| Codex | 代码级审查器 | 阻塞问题、缺失测试、回归点 |
-| Gemini | 需求/边界审查器 | 场景覆盖、状态遗漏、异常路径 |
-
 ### 会话管理
 
 满足任一条件开新会话：
@@ -250,6 +253,17 @@ Open risks:        已知风险
 ---
 
 ## 变更记录
+
+### 2026-05-19 -- Trellis 工作流 + 规则规范化
+
+- 引入 Trellis 工作流（`.trellis/` 目录：workflow / spec / tasks / workspace）
+- 重塑规范布局：`rules/` 7 篇 → `.trellis/spec/{architecture,backend,frontend,guides}/`
+- `.trellis/spec/architecture/`（5 文件）：分层依赖、IPC 与状态机、变更管理、测试质量
+- `.trellis/spec/backend/`（5 文件）：服务模式、Rust 编码规范、平台与存储、错误与日志
+- `.trellis/spec/frontend/`（7 文件）：目录结构、组件、Store 与 IPC、状态管理、类型安全、质量
+- 删除 `rules/` 目录；CLAUDE.md / CONTRIBUTING.md / `docs/workflows/{dev,release,pr,update-docs}.md` / `.claude/index.json` 中全部 `rules/XX-*.md` 引用迁移到 `.trellis/spec/`
+- 清理 `.gitignore` 中 `docs/superpowers/`、`.superpowers/` 残留条目（实际目录从未存在）
+- 配套子代理：`.claude/agents/trellis-{research,implement,check}.md`；hooks：session-start / inject-workflow-state / inject-subagent-context
 
 ### 2026-03-21 -- v0.1.0 Release + CI/CD 基础设施
 

@@ -234,5 +234,5 @@ git merge main
 - Asset naming: `docs/workflows/release-naming.md`
 - PR workflow: `docs/workflows/pr.md`
 - Development workflow: `docs/workflows/dev.md`
-- Change checklists: `rules/05-change-management.md`
-- Testing requirements: `rules/04-testing-quality.md`
+- Change checklists: `.trellis/spec/architecture/change-management.md`
+- Testing requirements: `.trellis/spec/architecture/testing-quality.md`
