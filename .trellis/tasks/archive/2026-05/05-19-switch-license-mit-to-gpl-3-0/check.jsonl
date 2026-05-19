@@ -1,0 +1,2 @@
+{"file": ".trellis/spec/architecture/change-management.md", "reason": "验证所有 license 引用点已同步（LICENSE / README × 2 / CONTRIBUTING / CLAUDE.md / devlog / tauri.conf.json / Cargo.toml / package.json），无 MIT 残留"}
+{"file": ".trellis/spec/architecture/testing-quality.md", "reason": "验证本地全量自检通过：cargo fmt --check、cargo clippy --all-targets -- -D warnings、cargo test、npm run format:check、svelte-check、npm test、npm run build"}

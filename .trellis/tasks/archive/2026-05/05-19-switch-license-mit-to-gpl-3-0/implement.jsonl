@@ -1,0 +1,2 @@
+{"file": ".trellis/spec/architecture/change-management.md", "reason": "License 切换属于跨多文件配置变更，按 change-management 的变更清单顺序执行（影响面识别 → 文档同步 → 一致性自检），并遵守 PR 工作流而非直推 main"}
+{"file": ".trellis/spec/architecture/testing-quality.md", "reason": "提交前必须跑完整本地自检（cargo fmt + clippy --all-targets + test + svelte-check + npm build），license 字段写入 Cargo.toml / package.json / tauri.conf.json 后需验证不触发 warning"}
