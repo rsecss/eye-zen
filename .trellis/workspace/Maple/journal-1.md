@@ -39,3 +39,36 @@ Migrated project conventions from rules/ (8 files) to .trellis/spec/{architectur
 ### Next Steps
 
 - None - task complete
+
+
+## Session 2: License switch: MIT -> GPL-3.0-or-later
+
+**Date**: 2026-05-19
+**Task**: License switch: MIT -> GPL-3.0-or-later
+**Branch**: `dev`
+
+### Summary
+
+Switched Eyezen license from MIT to GPL-3.0-or-later to prevent closed-source forks. Replaced LICENSE with verbatim GNU GPL-3.0 text (674 lines), synced SPDX identifier across tauri.conf.json / Cargo.toml / package.json / .claude/index.json, updated copyright + publisher (Maple -> rsecss), refreshed README en/zh-CN badges + License sections, added inbound=outbound clause to CONTRIBUTING, recorded changelog entries in CLAUDE.md and docs/devlog.md. AGPL-3.0 evaluated and excluded (desktop app does not trigger its network clause). v0.1.0 binaries remain under MIT permanently. All 7 local quality gates passed.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `4cb8c2b` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
