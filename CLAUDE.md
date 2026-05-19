@@ -2,7 +2,7 @@
 
 基于 20-20-20 规则的跨平台桌面护眼工具。
 
-- 开源 (MIT)，社区驱动
+- 开源 (GPL-3.0-or-later)，社区驱动
 - 跨平台：Windows / macOS / Linux
 - 面向技术用户（细粒度控制）和普通用户（开箱即用）
 
@@ -253,6 +253,18 @@ Open risks:        已知风险
 ---
 
 ## 变更记录
+
+### 2026-05-19 -- License 切换：MIT → GPL-3.0-or-later
+
+- `LICENSE` 替换为 GNU GPL-3.0 verbatim 全文（674 行，标准 80-col 格式）
+- SPDX 标识符统一为 `GPL-3.0-or-later`：`src-tauri/tauri.conf.json` / 新增 `src-tauri/Cargo.toml` `license` 字段 / 新增 `package.json` `license` 字段
+- 版权署名 `Maple` → `rsecss`：`tauri.conf.json` 的 `copyright` + `publisher`（Trellis 内部工作流身份保留）
+- README 中英两版 badge + License section 同步更新
+- `CONTRIBUTING.md` 加入 inbound=outbound 一句话条款，无 CLA / 无 DCO
+- 未在源文件添加 SPDX 短头（LICENSE 已具备完整法律效力，避免噪声 diff）
+- AGPL-3.0 已评估并排除：桌面 app 不触发其网络条款，徒增企业避雷反应
+- v0.1.0 制品永久保留 MIT 状态（已发布事实不可追溯），从下一个 release 起生效 GPL-3.0-or-later
+- 关键时机：当前唯一贡献者，重新许可零阻力；未来贡献者池可能缩小，不可逆
 
 ### 2026-05-19 -- Trellis 工作流 + 规则规范化
 

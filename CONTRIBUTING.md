@@ -311,4 +311,4 @@ docs/add-screenshots
 
 ## 许可证
 
-提交贡献即表示你同意你的代码在 [MIT License](LICENSE) 下发布。
+提交贡献即表示你同意以 [GPL-3.0-or-later](LICENSE) 许可证发布你的代码（入站许可证 = 出站许可证 / inbound = outbound）。
