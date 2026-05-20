@@ -1,0 +1,14 @@
+{"file": ".trellis/spec/architecture/index.md", "reason": "Cross-layer contract entry point for final verification."}
+{"file": ".trellis/spec/architecture/ipc-and-state.md", "reason": "Verify hotkey command/event contracts, timer dispatch, rollback behavior, and required tests."}
+{"file": ".trellis/spec/architecture/change-management.md", "reason": "Verify command, event, config schema, permissions, and compatibility checklist."}
+{"file": ".trellis/spec/architecture/testing-quality.md", "reason": "Verify npm run ci parity and required Rust/frontend test coverage."}
+{"file": ".trellis/spec/backend/index.md", "reason": "Verify backend service source registration is represented in specs."}
+{"file": ".trellis/spec/backend/coding-standards.md", "reason": "Verify Rust locking, errors, visibility, ts-rs, and clippy constraints."}
+{"file": ".trellis/spec/backend/service-pattern.md", "reason": "Verify HotkeyService lifecycle, dependency DAG, and shutdown order."}
+{"file": ".trellis/spec/backend/platform-storage.md", "reason": "Verify TOML defaults, hotkey immediate update semantics, and degraded platform behavior."}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Verify frontend Settings and IPC rule coverage."}
+{"file": ".trellis/spec/frontend/store-and-ipc-patterns.md", "reason": "Verify command/event wrappers and listener cleanup patterns."}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Verify Settings avoids optimistic updates and uses backend truth."}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Verify generated bindings are used instead of handwritten DTOs."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Verify capability minimization and frontend quality gates."}
+{"file": ".trellis/tasks/05-21-global-hotkeys-timer-control/research/global-shortcut-plugin.md", "reason": "Verify implementation matches plugin behavior and backend-owned registration decision."}

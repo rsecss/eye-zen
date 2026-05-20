@@ -4,7 +4,10 @@
 use tauri::State;
 
 use crate::error::AppError;
+use tracing::warn;
+
 use crate::models::config::{BehaviorConfig, Config, DisplayConfig, ScheduleConfig, TimerConfig};
+use crate::models::hotkeys::{HotkeyStatus, HotkeysConfig};
 use crate::models::types::StatePayload;
 use crate::services::timer::UserEvent;
 use crate::services::SharedAppServices;
@@ -41,6 +44,12 @@ pub(crate) async fn resume_timer(services: Services<'_>) -> CmdResult<()> {
 #[tauri::command]
 pub(crate) fn get_config(services: Services<'_>) -> CmdResult<Config> {
     Ok((*services.config.current()).clone())
+}
+
+#[allow(clippy::unnecessary_wraps)]
+#[tauri::command]
+pub(crate) fn get_hotkey_status(services: Services<'_>) -> CmdResult<HotkeyStatus> {
+    Ok(services.hotkeys.status())
 }
 
 fn validate_timer_config(config: &TimerConfig) -> CmdResult<()> {
@@ -152,4 +161,32 @@ pub(crate) async fn update_schedule_config(
         .map_err(|err| AppError::IoError {
             message: format!("update_schedule_config task failed: {err}"),
         })?
+}
+
+#[tauri::command]
+pub(crate) async fn update_hotkeys_config(
+    services: Services<'_>,
+    config: HotkeysConfig,
+) -> CmdResult<()> {
+    let previous = services.config.current().hotkeys.clone();
+    services.hotkeys.apply_config(&config)?;
+
+    let services_for_save = services.inner().clone();
+    let config_for_save = config.clone();
+    let save_result = tokio::task::spawn_blocking(move || {
+        services_for_save.config.update_hotkeys(config_for_save)
+    })
+    .await
+    .map_err(|err| AppError::IoError {
+        message: format!("update_hotkeys_config task failed: {err}"),
+    })?;
+
+    if let Err(err) = save_result {
+        if let Err(rollback_err) = services.hotkeys.apply_config(&previous) {
+            warn!("failed to roll back hotkeys after config save failure: {rollback_err}");
+        }
+        return Err(err);
+    }
+
+    Ok(())
 }

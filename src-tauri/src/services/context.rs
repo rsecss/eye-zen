@@ -11,6 +11,7 @@ use tracing::warn;
 #[cfg(not(test))]
 use crate::events;
 use crate::models::config::Config;
+use crate::models::hotkeys::HotkeyStatus;
 #[cfg(not(test))]
 use crate::services::schedule::is_schedule_active;
 
@@ -62,6 +63,20 @@ impl ServiceContext {
 
     #[cfg(test)]
     pub(crate) fn emit_config_changed(&self, _config: &Config) {}
+
+    #[cfg(not(test))]
+    pub(crate) fn emit_hotkey_status_changed(&self, status: &HotkeyStatus) {
+        let Some(app) = self.app.as_ref() else {
+            return;
+        };
+
+        if let Err(err) = app.emit(events::HOTKEY_STATUS_CHANGED, status) {
+            warn!("failed to emit hotkey_status_changed: {err}");
+        }
+    }
+
+    #[cfg(test)]
+    pub(crate) fn emit_hotkey_status_changed(&self, _status: &HotkeyStatus) {}
 
     #[cfg(not(test))]
     pub(crate) fn execute_timer_effect(&self, effect: &Effect) {

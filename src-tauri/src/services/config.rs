@@ -9,6 +9,7 @@ use tracing::{info, warn};
 
 use crate::error::{AppError, Result};
 use crate::models::config::{BehaviorConfig, Config, DisplayConfig, ScheduleConfig, TimerConfig};
+use crate::models::hotkeys::HotkeysConfig;
 use crate::services::{Service, ServiceContext};
 
 pub(crate) struct ConfigService {
@@ -77,6 +78,14 @@ impl ConfigService {
     pub(crate) fn update_schedule(&self, schedule: ScheduleConfig) -> Result<()> {
         self.update_with(move |config| {
             config.schedule = schedule;
+        })
+    }
+
+    /// Replace the hotkeys section and persist the new config.
+    #[allow(clippy::missing_errors_doc)]
+    pub(crate) fn update_hotkeys(&self, hotkeys: HotkeysConfig) -> Result<()> {
+        self.update_with(move |config| {
+            config.hotkeys = hotkeys;
         })
     }
 
@@ -365,6 +374,27 @@ rest_seconds = 30
             .expect("display update should succeed");
 
         assert_eq!(service.current().display.theme, "dark");
+    }
+
+    #[test]
+    fn update_hotkeys_persists() {
+        let dir = TempDir::new().expect("temp dir should exist");
+        let path = test_path(&dir);
+        let service = ConfigService::new(path.clone()).expect("service should initialize");
+
+        let new_hotkeys = HotkeysConfig {
+            start_rest: "ctrl+shift+b".to_string(),
+            ..HotkeysConfig::default()
+        };
+        service
+            .update_hotkeys(new_hotkeys)
+            .expect("hotkeys update should succeed");
+
+        assert_eq!(service.current().hotkeys.start_rest, "ctrl+shift+b");
+        let reloaded: Config =
+            toml::from_str(&std::fs::read_to_string(&path).expect("config file should exist"))
+                .expect("persisted config should parse");
+        assert_eq!(reloaded.hotkeys.start_rest, "ctrl+shift+b");
     }
 
     #[test]

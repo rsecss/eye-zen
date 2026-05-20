@@ -96,6 +96,19 @@ impl TimerService {
         Ok(())
     }
 
+    pub(crate) async fn toggle_pause(&self) -> Result<()> {
+        let event = {
+            let inner = self.inner.lock().await;
+            if inner.state == super::state::TimerState::Paused {
+                UserEvent::Resume
+            } else {
+                UserEvent::Pause
+            }
+        };
+
+        self.handle_user_event(event).await
+    }
+
     #[allow(dead_code)]
     pub(crate) async fn apply_config(&self, config: &Config) {
         let mut inner = self.inner.lock().await;
@@ -296,13 +309,28 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn toggle_pause_pauses_then_resumes() {
+        let (service, _tx) = make_test_service();
+
+        service.toggle_pause().await.expect("toggle should pause");
+        {
+            let inner = service.inner.lock().await;
+            assert_eq!(inner.state, TimerState::Paused);
+        }
+
+        service.toggle_pause().await.expect("toggle should resume");
+        let inner = service.inner.lock().await;
+        assert_eq!(inner.state, TimerState::Working);
+    }
+
+    #[tokio::test]
     async fn invalid_event_returns_error() {
         let (service, _tx) = make_test_service();
-        let result = service.handle_user_event(UserEvent::StartRest).await;
+        let result = service.handle_user_event(UserEvent::Resume).await;
         assert!(matches!(
             result,
             Err(AppError::InvalidOperation { operation, reason })
-                if operation == "timer event StartRest" && reason == "invalid in Working"
+                if operation == "timer event Resume" && reason == "invalid in Working"
         ));
     }
 

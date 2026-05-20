@@ -5,6 +5,8 @@ import type { TimerConfig } from './bindings/TimerConfig';
 import type { BehaviorConfig } from './bindings/BehaviorConfig';
 import type { DisplayConfig } from './bindings/DisplayConfig';
 import type { ScheduleConfig } from './bindings/ScheduleConfig';
+import type { HotkeyStatus } from './bindings/HotkeyStatus';
+import type { HotkeysConfig } from './bindings/HotkeysConfig';
 
 const INVOKE_TIMEOUT_MS = 5000;
 
@@ -45,6 +47,10 @@ export function getConfig(): Promise<Config> {
   return invokeWithTimeout('get_config');
 }
 
+export function getHotkeyStatus(): Promise<HotkeyStatus> {
+  return invokeWithTimeout('get_hotkey_status');
+}
+
 export function updateTimerConfig(config: TimerConfig): Promise<void> {
   return invokeWithTimeout('update_timer_config', { config });
 }
@@ -59,4 +65,8 @@ export function updateDisplayConfig(config: DisplayConfig): Promise<void> {
 
 export function updateScheduleConfig(config: ScheduleConfig): Promise<void> {
   return invokeWithTimeout('update_schedule_config', { config });
+}
+
+export function updateHotkeysConfig(config: HotkeysConfig): Promise<void> {
+  return invokeWithTimeout('update_hotkeys_config', { config });
 }

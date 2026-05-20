@@ -47,6 +47,26 @@ const en: TranslationDict = {
   'settings.schedule.weekday.sat': 'Sat',
   'settings.schedule.weekday.sun': 'Sun',
 
+  'settings.hotkeys.title': 'Global Hotkeys',
+  'settings.hotkeys.desc':
+    'Changes are rebound immediately. If the system or another app owns a shortcut, Eyezen rolls back and shows the error.',
+  'settings.hotkeys.startRest': 'Start Rest',
+  'settings.hotkeys.startRest.desc': 'Enter resting immediately',
+  'settings.hotkeys.skipRest': 'Skip Alert',
+  'settings.hotkeys.skipRest.desc': 'Skip the current alert and return to work timing',
+  'settings.hotkeys.togglePause': 'Pause / Resume',
+  'settings.hotkeys.togglePause.desc': 'Toggle between running and paused',
+  'settings.hotkeys.status.pending': 'Syncing',
+  'settings.hotkeys.status.registered': 'Active',
+  'settings.hotkeys.status.conflict': 'Failed',
+  'settings.hotkeys.status.permissionMissing': 'Needs permission',
+  'settings.hotkeys.conflict.title': 'Hotkey not active',
+  'settings.hotkeys.permission.title': 'macOS Accessibility permission required',
+  'settings.hotkeys.permission.desc':
+    'Allow Eyezen in System Settings → Privacy & Security → Accessibility, then restart the app or save the hotkeys again.',
+  'settings.hotkeys.error.empty': 'Shortcut must not be empty',
+  'settings.hotkeys.error.generic': 'Failed to save hotkeys',
+
   'about.version': 'Version',
   'about.description': 'Cross-platform eye health tool based on the 20-20-20 rule',
   'about.rule': 'Every 20 min, look 20 feet away, for 20 seconds',

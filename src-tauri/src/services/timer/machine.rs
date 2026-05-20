@@ -17,7 +17,7 @@ pub(crate) fn resolve_user_event(
     use UserEvent::{Pause, Resume, Skip, StartRest};
 
     let to = match (*state, event) {
-        (Alerting, StartRest) => Resting,
+        (Working | PreAlert | Alerting, StartRest) => Resting,
         (Alerting, Skip) => Working,
         (Paused, Resume) => paused_from.unwrap_or(Working),
         (Working | PreAlert | Alerting | Resting, Pause) => Paused,
@@ -86,6 +86,10 @@ pub(crate) fn collect_effects(transition: Transition, inner: &Inner, now: Instan
         }
         (PreAlert, Alerting) => {
             effects.push(Effect::ShowTipWindows);
+        }
+        (Working | PreAlert, Resting) => {
+            effects.push(Effect::ShowTipWindows);
+            effects.push(Effect::UpdateTray(TrayUpdate::StateIcon(Resting)));
         }
         (Alerting, Resting) => {
             effects.push(Effect::UpdateTray(TrayUpdate::StateIcon(Resting)));
@@ -250,10 +254,26 @@ mod tests {
     }
 
     #[test]
-    fn working_start_rest_invalid() {
+    fn working_start_rest_enters_resting() {
+        let transition = resolve_user_event(&Working, UserEvent::StartRest, None);
         assert_eq!(
-            resolve_user_event(&Working, UserEvent::StartRest, None),
-            None
+            transition,
+            Some(Transition {
+                from: Working,
+                to: Resting,
+            })
+        );
+    }
+
+    #[test]
+    fn pre_alert_start_rest_enters_resting() {
+        let transition = resolve_user_event(&PreAlert, UserEvent::StartRest, None);
+        assert_eq!(
+            transition,
+            Some(Transition {
+                from: PreAlert,
+                to: Resting,
+            })
         );
     }
 
@@ -492,6 +512,26 @@ mod tests {
         assert!(!effects
             .iter()
             .any(|effect| matches!(effect, Effect::HideTipWindows)));
+    }
+
+    #[test]
+    fn effects_working_to_resting_show_tip_windows() {
+        let inner = make_inner(Resting);
+        let effects = collect_effects(
+            Transition {
+                from: Working,
+                to: Resting,
+            },
+            &inner,
+            Instant::now(),
+        );
+
+        assert!(effects
+            .iter()
+            .any(|effect| matches!(effect, Effect::ShowTipWindows)));
+        assert!(effects
+            .iter()
+            .any(|effect| matches!(effect, Effect::UpdateTray(TrayUpdate::StateIcon(Resting)))));
     }
 
     #[test]

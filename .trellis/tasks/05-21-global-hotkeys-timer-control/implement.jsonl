@@ -1,0 +1,14 @@
+{"file": ".trellis/spec/architecture/index.md", "reason": "Cross-layer contract entry point for IPC, state, change management, and quality gates."}
+{"file": ".trellis/spec/architecture/ipc-and-state.md", "reason": "Defines command/event contracts, timer action dispatch, hotkey status payloads, and required tests."}
+{"file": ".trellis/spec/architecture/change-management.md", "reason": "Covers new command/event/config schema checklist, capability permissions, and backward compatibility."}
+{"file": ".trellis/spec/architecture/testing-quality.md", "reason": "Defines local CI parity, Rust tests, and platform-specific quality expectations."}
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend spec entry point including service registration and hotkey source files."}
+{"file": ".trellis/spec/backend/coding-standards.md", "reason": "Rust error handling, locking, ts-rs, visibility, and clippy constraints."}
+{"file": ".trellis/spec/backend/service-pattern.md", "reason": "Service lifecycle, dependency DAG, startup/shutdown order, and hotkey service placement."}
+{"file": ".trellis/spec/backend/platform-storage.md", "reason": "Config TOML schema/defaulting, immediate config update semantics, and platform degradation rules."}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend spec entry point for Settings, IPC wrappers, and type-safety rules."}
+{"file": ".trellis/spec/frontend/store-and-ipc-patterns.md", "reason": "IPC/event wrapper and store lifecycle requirements for hotkey status events."}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Settings immediate-save and backend-truth data flow requirements."}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Generated binding import rules and cross-boundary DTO constraints."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Capability minimization, frontend quality gates, and command/event checklist."}
+{"file": ".trellis/tasks/05-21-global-hotkeys-timer-control/research/global-shortcut-plugin.md", "reason": "Tauri global-shortcut plugin behavior, backend-owned registration rationale, and conflict limitations."}

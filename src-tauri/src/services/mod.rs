@@ -1,6 +1,7 @@
 pub(crate) mod config;
 pub(crate) mod context;
 pub(crate) mod detector;
+pub(crate) mod hotkeys;
 pub(crate) mod i18n;
 pub(crate) mod schedule;
 pub(crate) mod sound;
@@ -24,6 +25,7 @@ pub(crate) struct AppServices {
     pub(crate) sound: sound::SoundService,
     pub(crate) tray: tray::TrayService,
     pub(crate) i18n: Arc<i18n::I18nService>,
+    pub(crate) hotkeys: hotkeys::HotkeyService,
 }
 
 #[cfg(not(test))]

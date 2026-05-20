@@ -90,6 +90,11 @@ auto_start = false
 [display]
 language = "zh-CN"
 theme = "light"
+
+[hotkeys]
+start_rest = "CommandOrControl+Alt+B"
+skip_rest = "CommandOrControl+Alt+S"
+toggle_pause = "CommandOrControl+Alt+P"
 ```
 
 规则：
@@ -152,12 +157,13 @@ self.emit_config_changed(updated.as_ref());
 | `display.language` | 即时 | I18nService 订阅 watch，托盘菜单与前端同步刷新 |
 | `display.theme` | 即时 | 前端监听 `config_changed` 事件即时切换 |
 | `behavior.auto_start` | 即时 | 调用 `tauri-plugin-autostart` 同步系统状态 |
-| 全局快捷键（P3） | 重启 | 启动时一次性注册 |
+| `hotkeys.*` | 即时 | `update_hotkeys_config` 先重绑 OS 快捷键，成功后写 TOML；失败回滚旧绑定并发 `hotkey_status_changed` |
 
 规则：
 
 - 即时生效配置 MUST 在变更后通过 `ServiceContext::emit_config_changed` 广播 `config_changed` 事件（见 `src-tauri/src/services/context.rs`）
 - 下周期生效的字段 MUST NOT 中断当前计时周期；现行实现由 timer loop 在每秒 tick 时检查 `config_rx.has_changed()` 并调用 `sync_runtime_config` 更新内部 `Duration`
+- 快捷键配置 MUST NOT 只依赖 `config_changed` 事后同步；Settings 写入路径 MUST 先完成 `HotkeyService` 事务式注册，避免 TOML 已保存但系统绑定失败。
 
 ## SQLite Schema（P2，未实现）
 

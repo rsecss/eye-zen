@@ -22,6 +22,11 @@ const DEFAULT_CONFIG: Config = {
     enabled: false,
     active_days: [true, true, true, true, true, false, false],
   },
+  hotkeys: {
+    start_rest: 'CommandOrControl+Alt+B',
+    skip_rest: 'CommandOrControl+Alt+S',
+    toggle_pause: 'CommandOrControl+Alt+P',
+  },
 };
 
 let config = $state<Config>({ ...DEFAULT_CONFIG });

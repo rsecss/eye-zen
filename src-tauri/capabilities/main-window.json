@@ -11,17 +11,20 @@
       "allow": [
         { "event": "config_changed" },
         { "event": "state_changed" },
-        { "event": "navigate_tab" }
+        { "event": "navigate_tab" },
+        { "event": "hotkey_status_changed" }
       ]
     },
     "allow-get-state-snapshot",
     "allow-pause-timer",
     "allow-resume-timer",
     "allow-get-config",
+    "allow-get-hotkey-status",
     "allow-update-timer-config",
     "allow-update-behavior-config",
     "allow-update-display-config",
     "allow-update-schedule-config",
+    "allow-update-hotkeys-config",
     "core:window:allow-set-theme",
     "autostart:allow-enable",
     "autostart:allow-disable",
