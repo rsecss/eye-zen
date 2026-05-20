@@ -1,0 +1,8 @@
+{"file": ".trellis/spec/architecture/change-management.md", "reason": "变更清单 + 配置兼容性（新增 ScheduleConfig 段、老 config 缺字段时的默认）"}
+{"file": ".trellis/spec/architecture/ipc-and-state.md", "reason": "状态机与 IPC 契约 — 扩展 SkipFlags 字段、复用 any_active() 聚合路径"}
+{"file": ".trellis/spec/backend/service-pattern.md", "reason": "服务/纯函数模式 — 新增 is_schedule_active 纯函数 + TimerService::on_tick 集成"}
+{"file": ".trellis/spec/backend/coding-standards.md", "reason": "Rust 错误传播、锁/异步、模块组织约定"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Svelte 5 Runes 组件约定 — 新增 Schedule SettingsCard"}
+{"file": ".trellis/spec/frontend/store-and-ipc-patterns.md", "reason": "configStore 字段扩展、update_config IPC 调用模式"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "ts-rs 桥接 + 新增字段类型对齐"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "复用 SkipFlags + Toggle.svelte + Settings 卡片模式，避免新造抽象"}

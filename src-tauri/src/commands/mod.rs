@@ -4,7 +4,7 @@
 use tauri::State;
 
 use crate::error::AppError;
-use crate::models::config::{BehaviorConfig, Config, DisplayConfig, TimerConfig};
+use crate::models::config::{BehaviorConfig, Config, DisplayConfig, ScheduleConfig, TimerConfig};
 use crate::models::types::StatePayload;
 use crate::services::timer::UserEvent;
 use crate::services::SharedAppServices;
@@ -136,5 +136,20 @@ pub(crate) async fn update_display_config(
         .await
         .map_err(|err| AppError::IoError {
             message: format!("update_display_config task failed: {err}"),
+        })?
+}
+
+#[tauri::command]
+pub(crate) async fn update_schedule_config(
+    services: Services<'_>,
+    config: ScheduleConfig,
+) -> CmdResult<()> {
+    // ScheduleConfig only contains a bool flag and a fixed-size boolean array;
+    // no range validation needed.
+    let services = services.inner().clone();
+    tokio::task::spawn_blocking(move || services.config.update_schedule(config))
+        .await
+        .map_err(|err| AppError::IoError {
+            message: format!("update_schedule_config task failed: {err}"),
         })?
 }

@@ -23,7 +23,8 @@
 - 开机自启动已实现：tauri-plugin-autostart 集成（Plan 013）
 - CI/CD 已就绪：三平台 CI 矩阵 + 四目标 Release 构建（Plan 014）
 - v0.1.0 已发布：GitHub Release + 跨平台制品
-- 下一步：Phase 2 继续（Statistics / 离席检测 / 工作日调度）
+- 工作日调度已实现：周几粒度按 Working→PreAlert 跳转点抑制弹窗，复用 SkipFlags
+- 下一步：Phase 2 继续（Statistics / 离席检测）
 
 ---
 

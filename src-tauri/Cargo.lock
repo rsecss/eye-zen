@@ -923,6 +923,7 @@ name = "eyezen"
 version = "0.1.0"
 dependencies = [
  "arc-swap",
+ "chrono",
  "core-foundation",
  "core-graphics 0.24.0",
  "rodio",

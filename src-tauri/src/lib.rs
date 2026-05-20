@@ -45,7 +45,8 @@ pub fn run() -> Result<(), tauri::Error> {
             commands::get_config,
             commands::update_timer_config,
             commands::update_behavior_config,
-            commands::update_display_config
+            commands::update_display_config,
+            commands::update_schedule_config
         ])
         .setup(|app| {
             let log_dir = app

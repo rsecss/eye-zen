@@ -8,7 +8,7 @@ use tokio::sync::watch;
 use tracing::{info, warn};
 
 use crate::error::{AppError, Result};
-use crate::models::config::{BehaviorConfig, Config, DisplayConfig, TimerConfig};
+use crate::models::config::{BehaviorConfig, Config, DisplayConfig, ScheduleConfig, TimerConfig};
 use crate::services::{Service, ServiceContext};
 
 pub(crate) struct ConfigService {
@@ -69,6 +69,14 @@ impl ConfigService {
     pub(crate) fn update_display(&self, display: DisplayConfig) -> Result<()> {
         self.update_with(move |config| {
             config.display = display;
+        })
+    }
+
+    /// Replace the schedule section and persist the new config.
+    #[allow(clippy::missing_errors_doc)]
+    pub(crate) fn update_schedule(&self, schedule: ScheduleConfig) -> Result<()> {
+        self.update_with(move |config| {
+            config.schedule = schedule;
         })
     }
 

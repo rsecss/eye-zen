@@ -18,6 +18,10 @@ const DEFAULT_CONFIG: Config = {
     language: 'zh-CN',
     theme: 'light',
   },
+  schedule: {
+    enabled: false,
+    active_days: [true, true, true, true, true, false, false],
+  },
 };
 
 let config = $state<Config>({ ...DEFAULT_CONFIG });
