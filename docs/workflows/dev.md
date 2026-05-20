@@ -1,110 +1,52 @@
 # Development Workflow
 
-Daily development cycle from feature idea to merged code.
+## Rules
 
-## Git Hooks (Automatic)
+- Work on `dev`; merge to `main` only through PR.
+- Keep changes scoped and atomic.
+- Run `npm run ci` before pushing release-bound work.
+- Normal push/PR CI does not package installers; release tags do.
 
-Project uses [husky](https://typicode.github.io/husky/) to run git hooks automatically.
+## Hooks
 
-### pre-commit (every `git commit`)
+| Hook | Runs | Purpose |
+|------|------|---------|
+| `pre-commit` | `lint-staged` + commitlint | Format staged frontend files and enforce Conventional Commits. |
+| `pre-push` | `npm run ci` | Match local checks with GitHub Actions. |
 
-```
-git commit → .husky/pre-commit runs → lint-staged (prettier on staged files) → commit succeeds/fails
-```
+`npm run ci` runs:
 
-- Runs `npx lint-staged`: auto-formats staged `.ts/.js/.svelte/.html/.css/.json` files with prettier
-- Fast (<5s), does NOT block development flow
-- Also runs commitlint via `.husky/commit-msg` to enforce Conventional Commits format
+1. Rust format
+2. Rust clippy with `--all-targets`
+3. Rust tests
+4. Svelte type check
+5. Vitest
+6. Prettier check
+7. Rust check
+8. Frontend build
 
-### pre-push (every `git push`)
+## Flow
 
-```
-git push → .husky/pre-push runs → npm run ci → push succeeds/fails
-```
+1. Define scope, non-goals, and acceptance criteria.
+2. Read existing code and the relevant `.trellis/spec/` docs.
+3. Implement the smallest change that satisfies the scope.
+4. Add or update tests when behavior changes.
+5. Run checks.
+6. Commit with Conventional Commits.
+7. Push and wait for CI.
 
-`npm run ci` is the single local parity entrypoint shared by the pre-push hook and GitHub Actions:
+## Branches
 
-1. `cargo fmt --check` — Rust format
-2. `cargo clippy --all-targets -D warnings` — Rust lint (MUST use `--all-targets`)
-3. `cargo test` — Rust tests (also regenerates ts-rs bindings)
-4. `npx svelte-check` — Frontend type check
-5. `npm test -- --run` — Frontend tests
-6. `npm run format:check` — Prettier check
-7. `cargo check` — Rust compile check
-8. `npm run build` — Frontend build
-
-- Takes 1-3 minutes, ensures pushed code will pass CI
-- Skip with `git push --no-verify` for WIP pushes (MUST NOT skip before release)
-- Toolchains are pinned by `rust-toolchain.toml` and `.nvmrc`; update those files in a dedicated CI/toolchain PR.
-- Installer packaging is intentionally not part of the normal push/PR gate. Full Tauri bundling runs from `release.yml` on `v*` tags.
-
-### Why two layers
-
-| Hook | When | Scope | Speed | Purpose |
-|------|------|-------|-------|---------|
-| pre-commit | Every commit | Format staged files only | <5s | Don't break formatting |
-| pre-push | Every push | `npm run ci` parity checks | 1-3min | Don't break CI |
-
-## Development Cycle
-
-```
-1. Task Brief         → Define scope, non-goals, acceptance criteria
-       ↓
-2. Design/Research    → Architecture, IPC interfaces, platform feasibility
-       ↓
-3. Implementation     → Read existing code → Define interface → Implement → Test
-       ↓
-4. Commit             → Atomic, Conventional Commits format (pre-commit auto-formats)
-       ↓
-5. Code Review        → Multi-model review for cross-boundary changes
-       ↓
-6. Push & CI          → pre-push validates locally, then three-platform CI
-```
-
-### Implementation Order (MUST follow)
-
-1. Read existing code, understand patterns
-2. List impact scope (per `.trellis/spec/architecture/change-management.md` checklist)
-3. Define interfaces first, then implement
-4. Write implementation code
-5. Write corresponding tests
-6. Run automated checks (pre-push handles this)
-7. Update docs if API changed
-
-### When to Use Multi-model Review
-
-Trigger review when ANY of these apply:
-- Cross frontend-backend boundary
-- New permissions/plugins
-- New async tasks or state machine states
-- New persistence/migration
-- Changes > 150 lines or > 3 files
-
-| Model | Role | Focus |
-|-------|------|-------|
-| Claude Code | Primary implementer | Long-chain implementation, iterative development |
-| Codex | Code-level reviewer | Blocking issues, missing tests, regression risks |
-| Gemini | Requirements reviewer | Missing scenarios, uncovered state transitions |
-
-## Branching
-
-- `dev` — Primary development branch, all work happens here
-- `main` — Release branch, only receives merges via PR
-- `release/vX.Y.Z` — Short-lived release branches (see release workflow)
-- `fix/<name>` — Hotfix branches from main (see release workflow)
-
-## Session Management
-
-Start a new session when ANY of these apply:
-- Changes span > 8 files or > 3 modules
-- Session covers > 1 major feature
-- AI starts repeating or contradicting earlier decisions
-- Context window has been compressed
+| Branch | Use |
+|--------|-----|
+| `dev` | Daily development. |
+| `main` | Release branch; PR only. |
+| `release/vX.Y.Z` | Short-lived release prep. |
+| `fix/<name>` | Hotfix from `main`. |
 
 ## References
 
-- Detailed 10-stage lifecycle guide: `docs/.local/dev-workflow.md` (local reference)
-- Commit conventions: [Conventional Commits](https://www.conventionalcommits.org/)
-- Testing requirements: `.trellis/spec/architecture/testing-quality.md`
-- Change checklists: `.trellis/spec/architecture/change-management.md`
-- Release workflow: `docs/workflows/release.md`
+- Quality gate: `.trellis/spec/architecture/testing-quality.md`
+- Change checklist: `.trellis/spec/architecture/change-management.md`
+- PR flow: `docs/workflows/pr.md`
+- Release flow: `docs/workflows/release.md`

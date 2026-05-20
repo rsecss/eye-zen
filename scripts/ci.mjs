@@ -1,6 +1,7 @@
 import { spawnSync } from 'node:child_process';
 
 const steps = [
+  ['Version sync check', 'node', ['scripts/check-version-sync.mjs']],
   [
     'Rust format check',
     'cargo',
@@ -15,7 +16,6 @@ const steps = [
   ['Frontend type check', 'npx', ['svelte-check', '--tsconfig', './tsconfig.json']],
   ['Frontend tests', 'npm', ['test', '--', '--run']],
   ['Frontend format check', 'npm', ['run', 'format:check']],
-  ['Rust check', 'cargo', ['check', '--manifest-path', 'src-tauri/Cargo.toml']],
   ['Build frontend', 'npm', ['run', 'build']],
 ];
 

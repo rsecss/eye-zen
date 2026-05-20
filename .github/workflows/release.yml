@@ -64,6 +64,22 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
+      - name: Verify version sync
+        shell: bash
+        run: node scripts/check-version-sync.mjs
+
+      - name: Generate release notes from CHANGELOG
+        id: notes
+        shell: bash
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          BODY=$(node scripts/extract-changelog.mjs "$VERSION")
+          {
+            echo "body<<RELEASE_NOTES_EOF"
+            echo "$BODY"
+            echo "RELEASE_NOTES_EOF"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Build and release
         uses: tauri-apps/tauri-action@v0
         env:
@@ -71,32 +87,7 @@ jobs:
         with:
           tagName: v__VERSION__
           releaseName: 'Eyezen v__VERSION__'
-          releaseBody: |
-            ## __VERSION__ (2026-03-21)
-
-            First public release. A fully functional 20-20-20 eye care desktop app.
-
-            ### 🎉 Features
-
-            - 20-20-20 timer with configurable work/rest durations and full state machine (Working → PreAlert → Alerting → Resting)
-            - Multi-monitor support — tip windows appear on all connected displays
-            - Fullscreen detection — auto-skip reminders during fullscreen apps (Windows / Linux X11; macOS and Wayland limited)
-            - System tray — persistent icon with status tooltip, quick actions, and glassmorphic panel
-            - Settings UI — in-app settings for Timer, Behavior, and Display preferences
-            - About page — version info, platform details, GitHub links
-            - Dark / Light theme — CSS variable overrides + native title bar + WebView2 color-scheme
-            - Auto-start — OS-level launch at startup via `tauri-plugin-autostart`
-            - i18n — Chinese (zh-CN) / English (en) with hot switching
-            - Sound alerts — gentle audio cue on rest reminder via rodio
-            - Typed IPC — ts-rs auto-generated TypeScript bindings with typed commands and event listeners
-            - Reactive stores — Svelte 5 Runes stores with race condition protection
-            - Config persistence — TOML config with arc-swap hot reload
-
-            ### ⚠️ Known Limitations
-
-            - Fullscreen detection: macOS returns conservative `false`; Linux Wayland always shows reminders
-            - No usage statistics or charts yet (planned for v0.2)
-            - No away detection (planned for v0.3)
+          releaseBody: ${{ steps.notes.outputs.body }}
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}
