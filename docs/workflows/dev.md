@@ -19,27 +19,31 @@ git commit → .husky/pre-commit runs → lint-staged (prettier on staged files)
 ### pre-push (every `git push`)
 
 ```
-git push → .husky/pre-push runs → 7-step validation → push succeeds/fails
+git push → .husky/pre-push runs → npm run ci → push succeeds/fails
 ```
 
-Steps:
+`npm run ci` is the single local parity entrypoint shared by the pre-push hook and GitHub Actions:
+
 1. `cargo fmt --check` — Rust format
 2. `cargo clippy --all-targets -D warnings` — Rust lint (MUST use `--all-targets`)
 3. `cargo test` — Rust tests (also regenerates ts-rs bindings)
 4. `npx svelte-check` — Frontend type check
 5. `npm test -- --run` — Frontend tests
 6. `npm run format:check` — Prettier check
-7. `npm run build` — Frontend build
+7. `cargo check` — Rust compile check
+8. `npm run build` — Frontend build
 
 - Takes 1-3 minutes, ensures pushed code will pass CI
 - Skip with `git push --no-verify` for WIP pushes (MUST NOT skip before release)
+- Toolchains are pinned by `rust-toolchain.toml` and `.nvmrc`; update those files in a dedicated CI/toolchain PR.
+- Installer packaging is intentionally not part of the normal push/PR gate. Full Tauri bundling runs from `release.yml` on `v*` tags.
 
 ### Why two layers
 
 | Hook | When | Scope | Speed | Purpose |
 |------|------|-------|-------|---------|
 | pre-commit | Every commit | Format staged files only | <5s | Don't break formatting |
-| pre-push | Every push | Full compile + test + lint | 1-3min | Don't break CI |
+| pre-push | Every push | `npm run ci` parity checks | 1-3min | Don't break CI |
 
 ## Development Cycle
 

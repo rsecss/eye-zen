@@ -132,16 +132,10 @@ fn migrate_if_needed(config: &mut Config) {
 ### 1. 本地全量验证（在 `dev` 分支）
 
 ```bash
-cargo fmt --all --manifest-path src-tauri/Cargo.toml --check
-cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
-cargo test --manifest-path src-tauri/Cargo.toml
-npx svelte-check --tsconfig ./tsconfig.json
-npm test -- --run
-npm run format:check
-npm run build
+npm run ci
 ```
 
-七项全部通过才可推送 dev。等价于 `.husky/pre-push` 七步检查（见 [`testing-quality.md`](./testing-quality.md#pre-pushhusky)）。
+`npm run ci` 全部通过才可推送 dev。等价于 `.husky/pre-push` 检查（见 [`testing-quality.md`](./testing-quality.md#pre-pushhusky)）。
 
 ### 2. 推送 dev 并等待 CI 绿灯
 
@@ -149,7 +143,7 @@ npm run build
 git push origin dev
 ```
 
-- 等待 `.github/workflows/ci.yml` 三平台（Windows / macOS / Linux）+ audit job 全部通过。
+- 等待 `.github/workflows/ci.yml` 三平台（Windows / macOS / Linux）parity checks + audit job 全部通过。
 - MUST NOT 在 CI 未通过时合并到 main。
 
 ### 3. 通过 PR 合并到 main
@@ -178,7 +172,7 @@ git push origin v<VERSION>
 ```
 
 - Tag MUST 在 main 上创建，MUST NOT 在 dev 上创建。
-- 推送 tag 后 `.github/workflows/release.yml` 自动跑四目标构建（Win / Linux / macOS ARM / macOS Intel）+ Windows portable zip。
+- 推送 tag 后 `.github/workflows/release.yml` 自动跑四目标 Tauri 打包（Win / Linux / macOS ARM / macOS Intel）+ Windows portable zip。普通 push / PR CI MUST NOT run packaging by default.
 
 ### 6. 验证 Release 制品
 
@@ -190,7 +184,8 @@ git push origin v<VERSION>
 
 - `tauri-apps/tauri-action` MUST 使用 `@v0`（v1 tag 已被上游删除，强行 pin 到 v1 会 fetch 失败）
 - 关键 Action SHOULD 考虑 pin 到具体 commit SHA（dependabot 触发后审核更新）
-- `dtolnay/rust-toolchain@stable`、`swatinem/rust-cache@v2`、`actions/setup-node@v4` 是当前基线，升级 MUST 单独 PR 验证
+- Rust and Node versions MUST be pinned in `rust-toolchain.toml` and `.nvmrc`; GitHub Actions MUST read those files instead of floating `stable` / `lts/*` aliases.
+- `swatinem/rust-cache@v2`、`actions/setup-node@v4` 是当前基线，升级 MUST 单独 PR 验证
 
 ---
 

@@ -73,22 +73,24 @@ npx --no -- commitlint --edit "$1"  # Conventional Commits 校验
 
 ### Pre-push（`.husky/pre-push`，全量验证）
 
-实际脚本（7 步）：
+`.husky/pre-push` MUST call `npm run ci`. The `npm run ci` script is the single local parity entrypoint shared with GitHub Actions and currently runs eight checks:
 
 ```bash
-[1/7] cargo fmt --all --manifest-path src-tauri/Cargo.toml --check
-[2/7] cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
-[3/7] cargo test --manifest-path src-tauri/Cargo.toml
-[4/7] npx svelte-check --tsconfig ./tsconfig.json
-[5/7] npm test -- --run
-[6/7] npm run format:check
-[7/7] npm run build
+[1/8] cargo fmt --all --manifest-path src-tauri/Cargo.toml --check
+[2/8] cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
+[3/8] cargo test --manifest-path src-tauri/Cargo.toml
+[4/8] npx svelte-check --tsconfig ./tsconfig.json
+[5/8] npm test -- --run
+[6/8] npm run format:check
+[7/8] cargo check --manifest-path src-tauri/Cargo.toml
+[8/8] npm run build
 ```
 
 - 耗时约 1-3 分钟，确保推送代码能过 CI。
 - 日常 WIP 推送 MAY 用 `git push --no-verify` 跳过。
 - 发版分支 / `main` push MUST NOT 跳过。
 - 本地 hook 是前置反馈，**不是**最终安全边界；最终门禁依赖 GitHub branch protection + required status checks。
+- `rust-toolchain.toml` and `.nvmrc` pin the Rust and Node versions used locally and in GitHub Actions. CI MUST read those files instead of floating `stable` / `lts/*` aliases.
 
 ---
 
@@ -105,11 +107,11 @@ npx --no -- commitlint --edit "$1"  # Conventional Commits 校验
 | Job | Runner | 内容 |
 |-----|--------|------|
 | `audit` | `ubuntu-22.04` | `cargo audit --file src-tauri/Cargo.lock`，独立 job，仅 Linux |
-| `check` (Windows) | `windows-latest` | Rust check / clippy / test / fmt + 前端全套 + Tauri build |
-| `check` (macOS) | `macos-latest` | 同上，Tauri build 用 `--target aarch64-apple-darwin` |
-| `check` (Linux) | `ubuntu-22.04` | 同上，需 `libwebkit2gtk-4.1-dev`、`libappindicator3-dev`、`librsvg2-dev`、`patchelf`、`libasound2-dev` |
+| `check` (Windows) | `windows-latest` | `npm run ci` local/cloud parity checks |
+| `check` (macOS) | `macos-latest` | `npm run ci` local/cloud parity checks |
+| `check` (Linux) | `ubuntu-22.04` | `npm run ci` local/cloud parity checks；需 `libwebkit2gtk-4.1-dev`、`libappindicator3-dev`、`librsvg2-dev`、`patchelf`、`libasound2-dev` |
 
-`check` job 步骤顺序：svelte-check → vitest → format:check → cargo check → cargo clippy → cargo test → cargo fmt --check → npm run build → tauri-action build。
+`check` job 步骤顺序：npm run ci。`npm run ci` owns the shared local/cloud parity checks. Full Tauri packaging belongs to `release.yml` on `v*` tags, not every push or PR.
 
 ### 平台特定注意事项
 
@@ -117,7 +119,7 @@ npx --no -- commitlint --edit "$1"  # Conventional Commits 校验
 |------|---------|
 | Linux | `libasound2-dev` 是 rodio / ALSA 必需依赖，MUST 包含在 `apt-get install` 中 |
 | Linux | `#[cfg(target_os = "linux")]` 代码**仅**在 Linux runner 被 clippy 检查；其它平台改 Linux 代码 MUST 本地交叉验证或等 CI |
-| macOS | CI 仅构建单架构（ARM 或 Intel），**非** universal binary；release.yml 才会双架构 |
+| macOS | 普通 CI 不打包；release.yml 才会双架构打包（ARM + Intel） |
 | Windows | `Instant` 算术可能在短 uptime CI runner 上下溢，见下方陷阱 |
 | 全平台 | `--all-targets` MUST 用于 clippy，否则 test-target 警告会被遗漏（v0.1.0 实际踩过）|
 

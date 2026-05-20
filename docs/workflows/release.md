@@ -35,6 +35,7 @@ npm run build
 > **v0.1.0 lesson**: Skipping pre-flight caused 9 CI fix-merge cycles.
 > `--all-targets` is required for clippy — without it, test-target warnings are missed.
 > `cargo test` also regenerates ts-rs bindings — verify no unexpected diffs.
+> Use `npm run ci` as the single local/cloud parity entrypoint; Rust and Node are pinned by `rust-toolchain.toml` and `.nvmrc`.
 
 ### 2. Push Dev and Wait for CI Green
 
@@ -42,7 +43,7 @@ npm run build
 git push origin dev
 ```
 
-Go to GitHub Actions and wait for **all three platforms** (Windows / macOS / Linux) to pass.
+Go to GitHub Actions and wait for **all three platforms** (Windows / macOS / Linux) to pass parity checks.
 
 MUST NOT proceed until CI is fully green. If CI fails:
 1. Fix the issue on `dev`
