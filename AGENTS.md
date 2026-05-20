@@ -19,3 +19,24 @@ If you're using Codex or another agent-capable tool, additional project-scoped h
 Managed by Trellis. Edits outside this block are preserved; edits inside may be overwritten by a future `trellis update`.
 
 <!-- TRELLIS:END -->
+
+## Platform Files
+
+Keep behavior in platform files; do not duplicate setup details across docs.
+
+| Path | Purpose |
+|------|---------|
+| `AGENTS.md` | This file — Trellis entrypoint and platform map. |
+| `CLAUDE.md` | Claude-facing project index. |
+| `.trellis/workflow.md` | Canonical workflow and task routing. |
+| `.trellis/spec/` | Canonical coding and architecture rules. |
+| `.claude/` | Claude settings, hooks, agents, and skills. |
+| `.codex/` | Codex settings, hooks, and agents. |
+| `.agents/skills/` | Shared project skills. |
+
+### Change rules
+
+- Workflow semantics: update `.trellis/workflow.md` first.
+- Agent responsibilities: keep `.claude/agents/trellis-*` and `.codex/agents/trellis-*` aligned.
+- Hook behavior: update both the platform config and the matching hook script.
+- Documentation: link here instead of repeating platform setup text.

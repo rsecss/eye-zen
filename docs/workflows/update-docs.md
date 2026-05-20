@@ -17,7 +17,7 @@
 | `CLAUDE.md` | Claude-facing project index. |
 | `AGENTS.md` | Trellis-managed agent entrypoint. |
 | `docs/workflows/*.md` | Human workflow docs. |
-| `docs/workflows/agent-config.md` | Agent config map. |
+| `AGENTS.md` | Trellis-managed agent entrypoint and platform file map. |
 | `.trellis/spec/` | Canonical engineering rules. |
 | `.claude/index.json` | Machine-readable project index. |
 
@@ -28,7 +28,7 @@
 | User-visible behavior | README, CHANGELOG, relevant workflow/spec doc. |
 | Architecture or API contract | `.trellis/spec/`, CLAUDE.md index if needed. |
 | CI/release behavior | `docs/workflows/`, `.trellis/spec/architecture/testing-quality.md`. |
-| Agent config | `docs/workflows/agent-config.md` and actual platform files. |
+| Agent config | `AGENTS.md` (platform file map) and actual platform files. |
 | Plan status | `docs/plans/README.md`. |
 
 ## Style Constraints
