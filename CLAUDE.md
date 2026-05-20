@@ -10,7 +10,7 @@
 
 ## 项目状态
 
-**当前阶段：v0.1.0 已发布，Phase 2 增强进行中。**
+**当前阶段：v0.2.0 已发布（2026-05-20），Phase 2 增强进行中。**
 
 - Phase 1 MVP 代码已废弃，仅保留架构经验和设计决策
 - 脚手架已就绪：Tauri v2 + Svelte 5 + Vite 6 + TailwindCSS v4
@@ -21,9 +21,11 @@
 - i18n 已实现：全栈 zh-CN/en 双语 + 热切换（Plan 011）
 - 主题切换已实现：Dark/Light CSS 变量 + 原生标题栏适配（Plan 012）
 - 开机自启动已实现：tauri-plugin-autostart 集成（Plan 013）
-- CI/CD 已就绪：三平台 CI 矩阵 + 四目标 Release 构建（Plan 014）
-- v0.1.0 已发布：GitHub Release + 跨平台制品
+- CI/CD 已就绪：三平台 CI 矩阵 + 四目标 Release 构建（Plan 014）+ cargo-deny 安全审计
+- v0.1.0 已发布（MIT）：2026-03-21，9 个 artifact，Draft published
 - 工作日调度已实现：周几粒度按 Working→PreAlert 跳转点抑制弹窗，复用 SkipFlags
+- License 切换：MIT → GPL-3.0-or-later，自 v0.2.0 起生效（v0.1.0 二进制永久保留 MIT）
+- v0.2.0 已发布（GPL-3.0-or-later）：2026-05-20，10 个 artifact（多了 .rpm），latest published；含 weekday scheduling + 主窗 880×560 调整 + bump-version.mjs Cargo.lock 同步修复
 - 下一步：Phase 2 继续（Statistics / 离席检测）
 
 ---
