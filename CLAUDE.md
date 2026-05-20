@@ -203,8 +203,9 @@ npm run build                # 前端构建检查
 | 发版工作流 | `docs/workflows/release.md` | Release rules, commands, and checks |
 | Release 命名规范 | `docs/workflows/release-naming.md` | 制品命名约定 |
 | PR 流程 | `docs/workflows/pr.md` | Pull Request 模板与流程 |
+| 分支保护 | `docs/workflows/branch-protection.md` | GitHub Settings 配置（main/dev 保护、auto-delete head） |
 | 文档更新流程 | `docs/workflows/update-docs.md` | 文档同步工作流 |
-| Agent 配置 | `docs/workflows/agent-config.md` | Claude / Codex / Trellis 配置导航 |
+| Agent 配置 | `AGENTS.md` | Claude / Codex / Trellis 配置导航 |
 | CI 配置 | `.github/workflows/ci.yml` | 三平台 CI 矩阵 |
 | Release CI | `.github/workflows/release.yml` | 四目标 Release 构建 |
 | Release notes 模板 | `.github/release.yml` | GitHub 自动 release notes |
