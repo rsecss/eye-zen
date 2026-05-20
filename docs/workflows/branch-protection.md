@@ -21,15 +21,9 @@ Settings → Branches → Add rule, pattern `main`:
 | Setting | Value | Why |
 |---------|-------|-----|
 | Allow squash merging | ✅ | `pr.md`: "Squash merge is preferred." |
-| Allow merge commits | ❌ | Discourage merge-commit clutter for normal PRs. |
+| Allow merge commits | ❌ | Discourage merge-commit clutter. |
 | Allow rebase merging | Optional | Useful for hotfix PRs. |
-| Automatically delete head branches | ✅ | Removes the manual `git push origin --delete` step after each release. |
-
-## `dev`
-
-`dev` is the daily branch. Protection is **optional**.
-
-If enabled, mirror `main`'s required status checks. Without protection, CI failures on `dev` are surfaced via email or workflow notifications rather than blocking pushes — pick based on team discipline.
+| Automatically delete head branches | ✅ | Removes the manual `git push origin --delete` step after PR merge. |
 
 ## Verifying
 
