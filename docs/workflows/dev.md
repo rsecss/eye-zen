@@ -2,9 +2,10 @@
 
 ## Rules
 
-- Work on `dev`; merge to `main` only through PR.
+- Work on short-lived `feat/<scope>`, `fix/<scope>`, or `chore/<scope>` branches off `main`.
+- All changes to `main` go through PR; no direct pushes.
 - Keep changes scoped and atomic.
-- Run `npm run ci` before pushing release-bound work.
+- Run `npm run ci` before pushing (the pre-push hook enforces this).
 - Normal push/PR CI does not package installers; release tags do.
 
 ## Hooks
@@ -16,33 +17,37 @@
 
 `npm run ci` runs:
 
-1. Rust format
-2. Rust clippy with `--all-targets`
-3. Rust tests
-4. Svelte type check
-5. Vitest
-6. Prettier check
-7. Rust check
-8. Frontend build
+1. Version sync check
+2. Rust format
+3. Rust clippy with `--all-targets`
+4. Rust tests
+5. Svelte type check
+6. Vitest
+7. Prettier check
+8. Rust check
+9. Frontend build
 
 ## Flow
 
 1. Define scope, non-goals, and acceptance criteria.
 2. Read existing code and the relevant `.trellis/spec/` docs.
-3. Implement the smallest change that satisfies the scope.
-4. Add or update tests when behavior changes.
-5. Run checks.
-6. Commit with Conventional Commits.
-7. Push and wait for CI.
+3. `git checkout main && git pull && git checkout -b <type>/<scope>`.
+4. Implement the smallest change that satisfies the scope.
+5. Add or update tests when behavior changes.
+6. Run checks (or rely on the pre-push hook).
+7. Commit with Conventional Commits.
+8. Push the branch and open a PR to `main`.
+9. Wait for PR CI to pass; squash merge; the head branch is auto-deleted.
 
 ## Branches
 
 | Branch | Use |
 |--------|-----|
-| `dev` | Daily development. |
-| `main` | Release branch; PR only. |
-| `release/vX.Y.Z` | Short-lived release prep. |
-| `fix/<name>` | Hotfix from `main`. |
+| `main` | Single long-lived branch; always releasable; PR only. |
+| `feat/<scope>` | New feature branch off `main`. |
+| `fix/<scope>` | Bug fix or hotfix branch off `main`. |
+| `chore/<scope>` | Tooling, docs, or maintenance branch off `main`. |
+| `release/vX.Y.Z` | Short-lived release prep branch off `main`. |
 
 ## References
 

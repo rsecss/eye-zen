@@ -47,6 +47,34 @@ function patchCargoToml(relPath) {
   console.log(`  updated ${relPath}`);
 }
 
+function patchCargoLock(relPath, packageName) {
+  const abs = resolve(repoRoot, relPath);
+  const lines = readFileSync(abs, 'utf8').split('\n');
+  let inTargetPackage = false;
+  let patched = false;
+  for (let i = 0; i < lines.length; i += 1) {
+    const trimmed = lines[i].trim();
+    if (trimmed === '[[package]]') {
+      inTargetPackage = false;
+      continue;
+    }
+    if (trimmed === `name = "${packageName}"`) {
+      inTargetPackage = true;
+      continue;
+    }
+    if (inTargetPackage && /^version\s*=\s*"[^"]+"/.test(trimmed)) {
+      lines[i] = `version = "${version}"`;
+      patched = true;
+      break;
+    }
+  }
+  if (!patched) {
+    throw new Error(`${packageName} package version not found in ${relPath}`);
+  }
+  writeFileSync(abs, lines.join('\n'));
+  console.log(`  updated ${relPath}`);
+}
+
 function prependChangelogSection(relPath) {
   const abs = resolve(repoRoot, relPath);
   const text = readFileSync(abs, 'utf8');
@@ -71,6 +99,7 @@ patchJson('package.json', (data) => {
   data.version = version;
 });
 patchCargoToml('src-tauri/Cargo.toml');
+patchCargoLock('src-tauri/Cargo.lock', 'eyezen');
 patchJson('src-tauri/tauri.conf.json', (data) => {
   data.version = version;
 });
