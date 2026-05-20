@@ -146,3 +146,36 @@ Implemented Phase 2 starter slice: weekday scheduling that suppresses rest remin
 ## 2026-05-20 — Migrate to GitHub Flow
 
 Repo switched from dev+main double-branch to GitHub Flow (single main + short-lived feat/fix/chore branches). PR #7 merged, dev deleted. This commit is the trivial verification PR for the new flow.
+
+
+## Session 5: Global hotkeys timer control
+
+**Date**: 2026-05-21
+**Task**: Global hotkeys timer control
+**Branch**: `feat/hotkeys`
+
+### Summary
+
+Implemented configurable backend-owned global hotkeys for start rest, skip alert, and pause/resume; added transactional rebinding with rollback/status UI, macOS permission degradation guidance, TOML defaults, generated bindings, tests, and passing npm run ci.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `084fa63` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
