@@ -5,7 +5,7 @@
     "description": "Cross-platform desktop eye health tool based on 20-20-20 rule",
     "license": "GPL-3.0-or-later",
     "status": "phase2-in-progress",
-    "branch": "dev",
+    "branch": "main",
     "techStack": {
       "framework": { "name": "Tauri", "version": "~2.10", "installed": true },
       "frontend": { "name": "Svelte 5 (Runes)", "version": "~5.54.0", "installed": true },
