@@ -1,7 +1,8 @@
 # cargo-deny configuration
 # https://embarkstudios.github.io/cargo-deny/
 #
-# Run locally: cargo deny --manifest-path src-tauri/Cargo.toml check
+# cargo-deny reads this file from the same directory as Cargo.toml.
+# Run locally from repo root: cargo deny --manifest-path src-tauri/Cargo.toml check
 # CI runs this on every push/PR via .github/workflows/ci.yml (audit job).
 
 [graph]
