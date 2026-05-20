@@ -2,19 +2,18 @@
 
 ## Rules
 
-- PRs target `main`.
-- Release and hotfix changes also go through PR.
-- PR descriptions must be in English.
-- Wait for `dev` CI before opening release PRs.
-- Squash merge is preferred.
+- All PRs target `main`.
+- Release and hotfix changes go through PR.
+- PR descriptions are in English.
+- Squash merge is preferred; the head branch is auto-deleted on merge.
 
 ## Pre-flight
 
 ```bash
 git status --short --branch
 npm run ci
-git push origin dev
-gh pr create --base main --head dev
+git push -u origin <type>/<scope>
+gh pr create --base main --head <type>/<scope>
 ```
 
 ## Description
