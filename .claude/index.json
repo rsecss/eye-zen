@@ -219,7 +219,8 @@
       "docs/workflows/release.md",
       "docs/workflows/release-naming.md",
       "docs/workflows/pr.md",
-      "docs/workflows/update-docs.md"
+      "docs/workflows/update-docs.md",
+      "docs/workflows/branch-protection.md"
     ],
     "github": [
       ".github/workflows/ci.yml",
