@@ -139,3 +139,10 @@ Implemented Phase 2 starter slice: weekday scheduling that suppresses rest remin
 ### Next Steps
 
 - None - task complete
+
+
+---
+
+## 2026-05-20 — Migrate to GitHub Flow
+
+Repo switched from dev+main double-branch to GitHub Flow (single main + short-lived feat/fix/chore branches). PR #7 merged, dev deleted. This commit is the trivial verification PR for the new flow.
