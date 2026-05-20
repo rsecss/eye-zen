@@ -200,10 +200,11 @@ npm run build                # 前端构建检查
 | 文档 | 路径 | 说明 |
 |------|------|------|
 | 开发工作流 | `docs/workflows/dev.md` | 日常开发循环 + Git Hooks 说明 |
-| 发版工作流 | `docs/workflows/release.md` | 完整发版流程（9 步 + CI 踩坑记录） |
+| 发版工作流 | `docs/workflows/release.md` | Release rules, commands, and checks |
 | Release 命名规范 | `docs/workflows/release-naming.md` | 制品命名约定 |
 | PR 流程 | `docs/workflows/pr.md` | Pull Request 模板与流程 |
 | 文档更新流程 | `docs/workflows/update-docs.md` | 文档同步工作流 |
+| Agent 配置 | `docs/workflows/agent-config.md` | Claude / Codex / Trellis 配置导航 |
 | CI 配置 | `.github/workflows/ci.yml` | 三平台 CI 矩阵 |
 | Release CI | `.github/workflows/release.yml` | 四目标 Release 构建 |
 | Release notes 模板 | `.github/release.yml` | GitHub 自动 release notes |
@@ -252,107 +253,12 @@ Open risks:        已知风险
 
 ---
 
-## 变更记录
+## 关键决策
 
-### 2026-05-19 -- License 切换：MIT → GPL-3.0-or-later
+- License: GPL-3.0-or-later from the next release after v0.1.0; v0.1.0 artifacts remain MIT.
+- Workflow: all changes to `main` go through PR; no direct release merges.
+- Specs: canonical rules live in `.trellis/spec/`; do not duplicate them in root docs.
+- CI: local and cloud checks share `npm run ci`; release packaging runs only on `v*` tags.
+- Frontend: Vite multi-entry HTML files stay at repo root unless all Tauri URLs and Vite inputs are migrated together.
 
-- `LICENSE` 替换为 GNU GPL-3.0 verbatim 全文（674 行，标准 80-col 格式）
-- SPDX 标识符统一为 `GPL-3.0-or-later`：`src-tauri/tauri.conf.json` / 新增 `src-tauri/Cargo.toml` `license` 字段 / 新增 `package.json` `license` 字段
-- 版权署名 `Maple` → `rsecss`：`tauri.conf.json` 的 `copyright` + `publisher`（Trellis 内部工作流身份保留）
-- README 中英两版 badge + License section 同步更新
-- `CONTRIBUTING.md` 加入 inbound=outbound 一句话条款，无 CLA / 无 DCO
-- 未在源文件添加 SPDX 短头（LICENSE 已具备完整法律效力，避免噪声 diff）
-- AGPL-3.0 已评估并排除：桌面 app 不触发其网络条款，徒增企业避雷反应
-- v0.1.0 制品永久保留 MIT 状态（已发布事实不可追溯），从下一个 release 起生效 GPL-3.0-or-later
-- 关键时机：当前唯一贡献者，重新许可零阻力；未来贡献者池可能缩小，不可逆
-
-### 2026-05-19 -- Trellis 工作流 + 规则规范化
-
-- 引入 Trellis 工作流（`.trellis/` 目录：workflow / spec / tasks / workspace）
-- 重塑规范布局：`rules/` 7 篇 → `.trellis/spec/{architecture,backend,frontend,guides}/`
-- `.trellis/spec/architecture/`（5 文件）：分层依赖、IPC 与状态机、变更管理、测试质量
-- `.trellis/spec/backend/`（5 文件）：服务模式、Rust 编码规范、平台与存储、错误与日志
-- `.trellis/spec/frontend/`（7 文件）：目录结构、组件、Store 与 IPC、状态管理、类型安全、质量
-- 删除 `rules/` 目录；CLAUDE.md / CONTRIBUTING.md / `docs/workflows/{dev,release,pr,update-docs}.md` / `.claude/index.json` 中全部 `rules/XX-*.md` 引用迁移到 `.trellis/spec/`
-- 清理 `.gitignore` 中 `docs/superpowers/`、`.superpowers/` 残留条目（实际目录从未存在）
-- 配套子代理：`.claude/agents/trellis-{research,implement,check}.md`；hooks：session-start / inject-workflow-state / inject-subagent-context
-
-### 2026-03-21 -- v0.1.0 Release + CI/CD 基础设施
-
-- 新增 CI workflow（`.github/workflows/ci.yml`）：三平台矩阵，Rust + 前端全量检查 + Tauri 构建
-- 新增 Release workflow（`.github/workflows/release.yml`）：四目标构建 + Windows portable zip
-- 新增 release notes 模板（`.github/release.yml`）：PR label 自动分类
-- 新增文档：CHANGELOG.md / README 双语 / CONTRIBUTING.md / 4 篇工作流规范
-- 新增品牌资源：Eyezen logo v4 + 全平台图标更新
-- 修复 CI 问题（9 轮）：tauri-action@v0 / libasound2-dev / clippy --all-targets / Instant 下溢 / SVG→PNG
-- 更新 rules/04：CI 实际配置 + 平台特定注意事项 + Instant 测试陷阱规则
-- 更新 rules/05：新增发版清单（本地验证→CI 绿灯→PR 合并→版本同步→Tag→验证）
-- 经验教训：发版 MUST 使用 PR 工作流，MUST NOT 直接合并
-
-### 2026-03-21 -- 主题切换 + 开机自启动（Plan 012 + 013）
-
-- 新增 Dark/Light 主题切换：`[data-theme='dark']` CSS 变量覆盖 + `$effect` 同步
-- 新增 `color-scheme` 声明：`:root` light + dark 切换，WebView2 原生控件跟随
-- 新增 Windows 标题栏主题：`getCurrentWindow().setTheme()` + `core:window:allow-set-theme`
-- 修复原生控件暗色适配：Stepper/Select 添加 `appearance: none` + 显式 `bg-card` 背景
-- 新增 `configStore.loaded` 标志：解决 autostart 同步触发过早的竞态问题
-- 新增 tauri-plugin-autostart：Cargo + npm 依赖 + 插件注册 + 3 个权限
-- Settings toggle 集成 autostart API：enable/disable/isEnabled + 配置保存失败回滚
-- 新增 `<meta name="color-scheme" content="light dark">` 到 index.html
-- Codex 审查修复：loaded 守卫、双写不一致回滚、autoStartSynced 延迟置位、FOUC 防闪烁
-- 新增依赖：tauri-plugin-autostart ~2.2, @tauri-apps/plugin-autostart ~2.2
-
-### 2026-03-20 -- i18n 全栈国际化（Plan 011）
-
-- 新增 I18nService（Rust）：zh-CN/en 双语翻译，11 个托盘相关 key
-- 重构 TrayService：i18n 菜单文本 + TrayTooltip 类型化 + config watch 语言热切换
-- 重构 TrayUpdate：从 String 改为 TrayTooltip struct + TimerState enum
-- 新增前端 i18nStore：Svelte 5 Runes 响应式 + TranslationKey 编译时类型安全
-- 国际化所有前端页面：Settings / About / Tip / TipMinimal / Tray（~55 个翻译 key）
-- 语言标识符规范化：en-US → en
-- 架构文档更新：I18nService 依赖 DAG + 关闭顺序
-- 审计修复：移除死参数、收紧 t() 类型签名、clippy lint 允许
-
-### 2026-03-20 -- 前端原型实现 + Codex 审查修复
-
-- 实现 ts-rs 类型桥接：5 个 TypeScript bindings（cfg_attr(test) 模式）
-- 修复 Paused 状态快照 bug（service.rs + machine.rs 双路径修复）
-- 实现 IPC 封装层：commands.ts (9 函数 + 5s 超时) + events.ts (2 监听器)
-- 实现 Svelte 5 Runes stores：timer + config（版本计数器防竞态）
-- 实现视觉基础：Plus Jakarta Sans 本地字体 + biophilic CSS 变量
-- 实现 tray-panel：5 状态映射 + 玻璃拟态 + 呼吸动画 + 跟随托盘图标定位
-- 实现 tip-window：alerting + resting 双视图 + 深森林绿极光背景
-- 实现 tip-minimal：次显示器覆盖 + 呼吸文字
-- 托盘面板多显示器定位：available_monitors() 查找实际 monitor + 双轴 clamp
-- 新增依赖：ts-rs ~10 (dev-dep), @testing-library/svelte, @testing-library/jest-dom, jsdom
-- Codex 审查修复：store 竞态保护、invokeWithTimeout 清理、pre_alert 分离
-- E2E 测试通过
-
-### 2026-03-19 -- 后端 MVP 实现
-
-- 实现 6 个核心服务：Config / Timer / Detector / Window / Sound / Tray
-- 实现基础设施：AppError / Logging / ServiceContext / Events
-- 实现 IPC 层：9 个 Commands + 3 个 capability 文件 + 权限 TOML
-- 实现跨平台层：Windows / macOS / Linux 全屏检测
-- 新增依赖：toml, tracing, tracing-subscriber, tracing-appender, rodio, arc-swap, windows, core-foundation, core-graphics, x11rb
-- 合并 dev-codex 分支，清理所有 worktree
-
-### 2026-03-19 -- 文档重构：规则抽离
-
-- 从 CLAUDE.md 抽离详细约束到 `rules/` 目录（7 个规则文件）
-- 补充 8 项缺失约束：依赖 DAG、可见性、生命周期、IPC 验证、变更清单、配置兼容、命名规范、前端状态管理
-- CLAUDE.md 精简为项目信息 + 架构 + 索引
-
-### 2026-03-18 -- 架构扫描更新（脚手架后）
-
-- 扫描实际文件结构，增量更新
-- 修正 HTML 入口、文档路径、版本信息
-
-### 2026-03-18 -- 脚手架初始化
-
-- Tauri v2 + Svelte 5 + Vite 6 + TailwindCSS v4
-- Vite 多入口 + 4 窗口占位 + CSS 变量
-
-### 2026-03-18 -- 初始创建
-
-- 基于重建设计规格生成
+History lives in `CHANGELOG.md` and `docs/devlog.md`.
