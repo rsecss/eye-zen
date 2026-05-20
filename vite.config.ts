@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { defineConfig } from 'vite';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
@@ -5,9 +6,14 @@ import { svelteTesting } from '@testing-library/svelte/vite';
 import tailwindcss from '@tailwindcss/vite';
 
 const host = process.env.TAURI_DEV_HOST;
+const pkg = JSON.parse(readFileSync(resolve(__dirname, 'package.json'), 'utf8'));
 
 export default defineConfig(async () => ({
   plugins: [svelte(), svelteTesting(), tailwindcss()],
+
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version),
+  },
 
   resolve: {
     alias: { $lib: resolve(__dirname, 'src/lib') },

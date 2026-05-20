@@ -19,7 +19,7 @@
   </div>
 
   <h1 class="app-name">Eyezen</h1>
-  <span class="version">{i18nStore.t('about.version')} 0.1.0</span>
+  <span class="version">{i18nStore.t('about.version')} {__APP_VERSION__}</span>
   <p class="description">{i18nStore.t('about.description')}</p>
   <p class="sub-description">{i18nStore.t('about.rule')}</p>
 
