@@ -5,6 +5,7 @@ use tauri::State;
 
 use crate::error::AppError;
 use crate::models::config::{BehaviorConfig, Config, DisplayConfig, ScheduleConfig, TimerConfig};
+use crate::models::statistics::StatisticsTrendPayload;
 use crate::models::types::StatePayload;
 use crate::services::timer::UserEvent;
 use crate::services::SharedAppServices;
@@ -41,6 +42,14 @@ pub(crate) async fn resume_timer(services: Services<'_>) -> CmdResult<()> {
 #[tauri::command]
 pub(crate) fn get_config(services: Services<'_>) -> CmdResult<Config> {
     Ok((*services.config.current()).clone())
+}
+
+#[tauri::command]
+pub(crate) async fn get_statistics_trends(
+    services: Services<'_>,
+    timezone: Option<String>,
+) -> CmdResult<StatisticsTrendPayload> {
+    services.stat.statistics_trends(timezone.as_deref()).await
 }
 
 fn validate_timer_config(config: &TimerConfig) -> CmdResult<()> {

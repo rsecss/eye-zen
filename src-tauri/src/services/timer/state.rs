@@ -94,10 +94,7 @@ impl Inner {
         }
     }
 
-    /// Apply a transition and reset the state timestamp.
-    pub(crate) fn apply_transition(&mut self, transition: Transition) {
-        let now = Instant::now();
-
+    pub(crate) fn apply_transition_at(&mut self, transition: Transition, now: Instant) {
         if transition.to == TimerState::Paused {
             // Transitioning TO Paused: save origin state and remaining time
             self.paused_from = Some(transition.from);

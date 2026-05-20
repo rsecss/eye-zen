@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-get-statistics-trends"
+description = "Enables the get_statistics_trends command without any pre-configured scope."
+commands.allow = ["get_statistics_trends"]
+
+[[permission]]
+identifier = "deny-get-statistics-trends"
+description = "Denies the get_statistics_trends command without any pre-configured scope."
+commands.deny = ["get_statistics_trends"]

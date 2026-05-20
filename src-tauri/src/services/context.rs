@@ -16,8 +16,8 @@ use crate::services::schedule::is_schedule_active;
 
 #[cfg(not(test))]
 use super::timer::{
-    collect_effects, collect_tick_effects, step_time, Effect, Inner, SkipFlags, TimerService,
-    TrayUpdate,
+    apply_transition_and_collect_effects, collect_tick_effects, step_time, Effect, Inner,
+    SkipFlags, TimerService, TrayUpdate,
 };
 #[cfg(test)]
 use super::timer::{Effect, Inner};
@@ -97,6 +97,15 @@ impl ServiceContext {
             Effect::ResetWorkTimer(duration) => {
                 info!("work timer reset to {}s", duration.as_secs());
             }
+            Effect::RecordRestSession(session) => {
+                let stat = services.stat.clone();
+                let session = session.clone();
+                tauri::async_runtime::spawn(async move {
+                    if let Err(err) = stat.record_rest_session(session).await {
+                        warn!("failed to record rest session: {err}");
+                    }
+                });
+            }
         }
     }
 
@@ -133,8 +142,7 @@ impl ServiceContext {
 
                     match step_time(&guard, now, &flags) {
                         Some(transition) => {
-                            guard.apply_transition(transition);
-                            collect_effects(transition, &guard, now)
+                            apply_transition_and_collect_effects(&mut guard, transition, now)
                         }
                         None => collect_tick_effects(&guard, now),
                     }

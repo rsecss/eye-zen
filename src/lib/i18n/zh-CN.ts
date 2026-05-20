@@ -1,5 +1,6 @@
 const zhCN = {
   'tab.settings': '设置',
+  'tab.statistics': '统计',
   'tab.about': '关于',
 
   'settings.timer.title': '计时器',
@@ -52,6 +53,26 @@ const zhCN = {
   'about.platform': '平台',
   'about.license': '开源协议',
   'about.source': '源代码',
+
+  'statistics.eyebrow': 'REST RHYTHM',
+  'statistics.title': '休息趋势',
+  'statistics.subtitle': '按日、周、月查看已完成休息记录',
+  'statistics.refresh': '刷新',
+  'statistics.loading': '加载中',
+  'statistics.error': '统计数据加载失败',
+  'statistics.empty': '暂无休息记录',
+  'statistics.latest': '最新数据：{label}',
+  'statistics.totalSessions': '休息次数',
+  'statistics.totalMinutes': '休息分钟',
+  'statistics.timezone': '时区',
+  'statistics.trends': '趋势',
+  'statistics.chartLabel': '休息趋势图',
+  'statistics.rangeLabel': '趋势范围',
+  'statistics.range.daily': '日',
+  'statistics.range.weekly': '周',
+  'statistics.range.monthly': '月',
+  'statistics.chart.sessions': '次数',
+  'statistics.chart.minutes': '分钟',
 
   'tray.working': '工作中',
   'tray.resting': '休息中',

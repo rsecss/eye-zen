@@ -45,6 +45,14 @@ impl From<toml::de::Error> for AppError {
     }
 }
 
+impl From<sqlx::Error> for AppError {
+    fn from(err: sqlx::Error) -> Self {
+        Self::IoError {
+            message: format!("database error: {err}"),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -97,5 +105,13 @@ mod tests {
         let io_err = std::io::Error::new(std::io::ErrorKind::NotFound, "gone");
         let app_err = AppError::from(io_err);
         assert!(matches!(app_err, AppError::IoError { .. }));
+    }
+
+    #[test]
+    fn from_sqlx_error() {
+        let app_err = AppError::from(sqlx::Error::RowNotFound);
+        assert!(
+            matches!(app_err, AppError::IoError { message } if message.contains("database error"))
+        );
     }
 }
