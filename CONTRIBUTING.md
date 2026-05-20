@@ -41,7 +41,7 @@ Frontend (Svelte 5 Runes)               Backend (Rust)
 └── src/lib/commands.ts IPC 调用层       └── src-tauri/src/services/timer/  状态机
 ```
 
-详细架构说明见 [CLAUDE.md](CLAUDE.md) 和 [rules/01-architecture.md](rules/01-architecture.md)。
+详细架构说明见 [CLAUDE.md](CLAUDE.md) 和 [`.trellis/spec/architecture/layering.md`](.trellis/spec/architecture/layering.md)。
 
 ---
 
@@ -276,17 +276,19 @@ docs/add-screenshots
 
 ## 编码规范
 
-项目有完整的编码规范文档，位于 [`rules/`](rules/) 目录：
+项目有完整的编码规范文档，位于 [`.trellis/spec/`](.trellis/spec/) 目录：
 
-| 文档 | 覆盖范围 |
+| 分组 | 覆盖范围 |
 |------|---------|
-| [01-architecture.md](rules/01-architecture.md) | 分层依赖、服务 DAG、生命周期 |
-| [02-ipc-and-state.md](rules/02-ipc-and-state.md) | IPC 接口、状态机、错误类型 |
-| [03-coding-standards.md](rules/03-coding-standards.md) | 命名、错误传播、日志 |
-| [04-testing-quality.md](rules/04-testing-quality.md) | 测试要求、质量门禁 |
-| [05-change-management.md](rules/05-change-management.md) | 变更清单、配置兼容 |
-| [06-frontend.md](rules/06-frontend.md) | 前端架构、状态管理、视觉设计 |
-| [07-platform-storage.md](rules/07-platform-storage.md) | 平台抽象、降级、存储 |
+| [`architecture/layering.md`](.trellis/spec/architecture/layering.md) | 分层依赖、`models/` 拆分、可见性 |
+| [`architecture/ipc-and-state.md`](.trellis/spec/architecture/ipc-and-state.md) | IPC 接口、Timer 状态机、错误类型 |
+| [`architecture/change-management.md`](.trellis/spec/architecture/change-management.md) | 变更清单、破坏性协议、发版流程 |
+| [`architecture/testing-quality.md`](.trellis/spec/architecture/testing-quality.md) | 测试要求、质量门禁 |
+| [`backend/service-pattern.md`](.trellis/spec/backend/service-pattern.md) | 服务 DAG、四阶段生命周期、关闭顺序 |
+| [`backend/coding-standards.md`](.trellis/spec/backend/coding-standards.md) | Rust 命名、错误传播、锁/异步 |
+| [`backend/platform-storage.md`](.trellis/spec/backend/platform-storage.md) | PlatformApi、降级、TOML 配置、SQLite |
+| [`backend/error-and-logging.md`](.trellis/spec/backend/error-and-logging.md) | AppError、tracing 级别 |
+| [`frontend/`](.trellis/spec/frontend/index.md) | Svelte 5 + Vite 多入口 + store + IPC + 视觉 |
 
 ### 核心要点速查
 
@@ -309,4 +311,4 @@ docs/add-screenshots
 
 ## 许可证
 
-提交贡献即表示你同意你的代码在 [MIT License](LICENSE) 下发布。
+提交贡献即表示你同意以 [GPL-3.0-or-later](LICENSE) 许可证发布你的代码（入站许可证 = 出站许可证 / inbound = outbound）。

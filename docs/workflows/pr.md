@@ -1,6 +1,6 @@
 # Eyezen PR Workflow
 
-Create pull request from `dev` branch to `main` with standardized description.
+Create pull request to `main` with standardized description.
 
 ## Usage
 
@@ -15,8 +15,10 @@ Create pull request from `dev` branch to `main` with standardized description.
 
 ## Context
 
-- Protected `main` branch — all changes go through PR
+- Protected `main` branch — all changes go through PR (including releases and hotfixes)
 - Development happens on `dev` branch
+- Release uses `release/vX.Y.Z` branch (see `docs/workflows/release.md`)
+- Hotfix uses `fix/<name>` branch from `main`
 - CI runs automatically on PR creation (three-platform matrix)
 - Conventional Commits format used throughout
 
@@ -104,7 +106,7 @@ Template:
 
 ## Checklist
 
-- [ ] Code follows project rules (see `rules/`)
+- [ ] Code follows project rules (see `.trellis/spec/`)
 - [ ] Self-review completed
 - [ ] No new warnings introduced
 - [ ] CLAUDE.md updated (if architecture changed)
@@ -145,3 +147,21 @@ gh pr create \
 - **Reference plan numbers** in description when implementing plans (e.g., "Implements Plan 012").
 - **CI runs on three platforms** — if macOS or Linux fails, check platform-specific code.
 - **Squash merge recommended** for feature branches to keep `main` history clean.
+- **Release MUST go through PR** — MUST NOT 直接 `git merge dev` 到 main（v0.1.0 教训：9 次合并循环）。
+- **Wait for CI green** — push dev 后等三平台 CI 全部通过再创建 PR。
+
+## Pre-push Validation Checklist
+
+在创建 PR 之前，MUST 在本地运行：
+
+```bash
+cargo fmt --all --manifest-path src-tauri/Cargo.toml --check
+cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
+cargo test --manifest-path src-tauri/Cargo.toml
+npx svelte-check --tsconfig ./tsconfig.json
+npm test -- --run
+npm run format:check
+npm run build
+```
+
+> `--all-targets` 是必须的，否则 test-target 的 clippy 警告会被遗漏。

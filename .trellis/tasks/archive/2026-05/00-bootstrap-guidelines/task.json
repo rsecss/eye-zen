@@ -1,0 +1,30 @@
+{
+  "id": "00-bootstrap-guidelines",
+  "name": "00-bootstrap-guidelines",
+  "title": "Bootstrap Guidelines",
+  "description": "Bootstrap project spec: migrate rules/ to .trellis/spec/{architecture,backend,frontend} and remove legacy workflow remnants",
+  "status": "completed",
+  "dev_type": "docs",
+  "scope": null,
+  "package": null,
+  "priority": "P1",
+  "creator": "Maple",
+  "assignee": "Maple",
+  "createdAt": "2026-05-19",
+  "completedAt": "2026-05-19",
+  "branch": null,
+  "base_branch": null,
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": null,
+  "relatedFiles": [
+    ".trellis/spec/architecture/",
+    ".trellis/spec/backend/",
+    ".trellis/spec/frontend/"
+  ],
+  "notes": "Migrated rules/01-07 into .trellis/spec/, deleted rules/ directory, cleaned .gitignore superpower entries, updated CLAUDE.md/CONTRIBUTING.md/docs/workflows references. Reviewed via subagent (codex MCP was blocked by local .codex config bug).",
+  "meta": {}
+}

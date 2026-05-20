@@ -52,9 +52,10 @@ Analyze changed files to determine documentation impact:
 | `package.json` | CLAUDE.md tech stack table |
 | `src/pages/**/*.svelte` | CLAUDE.md module index (frontend pages) |
 | `src/lib/stores/*.ts` | CLAUDE.md module index |
-| `.github/workflows/*.yml` | README CI badges |
+| `.github/workflows/*.yml` | README CI badges, `.trellis/spec/architecture/testing-quality.md` CI section |
 | `docs/plans/*.md` | docs/plans/README.md status table |
 | `src-tauri/capabilities/*.json` | Permissions documentation |
+| `.github/release.yml` | Release notes template consistency |
 
 ### 3. Check CLAUDE.md Consistency
 

@@ -3,9 +3,4 @@
 /**
  * Shared timer payload placeholder for commands and events.
  */
-export type StatePayload = {
-  state: string;
-  remaining_secs: number;
-  work_minutes: number;
-  rest_seconds: number;
-};
+export type StatePayload = { state: string, remaining_secs: number, work_minutes: number, rest_seconds: number, };

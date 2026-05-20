@@ -2,7 +2,7 @@
 
 基于 20-20-20 规则的跨平台桌面护眼工具。
 
-- 开源 (MIT)，社区驱动
+- 开源 (GPL-3.0-or-later)，社区驱动
 - 跨平台：Windows / macOS / Linux
 - 面向技术用户（细粒度控制）和普通用户（开箱即用）
 
@@ -10,17 +10,19 @@
 
 ## 项目状态
 
-**当前阶段：Phase 2 增强进行中。**
+**当前阶段：v0.1.0 已发布，Phase 2 增强进行中。**
 
 - Phase 1 MVP 代码已废弃，仅保留架构经验和设计决策
 - 脚手架已就绪：Tauri v2 + Svelte 5 + Vite 6 + TailwindCSS v4
-- 后端 MVP 已实现：6 个核心服务 + Commands + Events + Platform + Models
+- 后端 MVP 已实现：7 个核心服务 + Commands + Events + Platform + Models
 - 前端原型已实现：ts-rs 类型桥接 + IPC stores + tray-panel + tip-window + tip-minimal
-- E2E 测试通过：完整用户流程验证（Working → PreAlert → Alerting → Resting → Working）
+- 手动测试通过：完整用户流程验证（Working → PreAlert → Alerting → Resting → Working）
 - Settings UI + About 页面已实现（Plan 010）
 - i18n 已实现：全栈 zh-CN/en 双语 + 热切换（Plan 011）
 - 主题切换已实现：Dark/Light CSS 变量 + 原生标题栏适配（Plan 012）
 - 开机自启动已实现：tauri-plugin-autostart 集成（Plan 013）
+- CI/CD 已就绪：三平台 CI 矩阵 + 四目标 Release 构建（Plan 014）
+- v0.1.0 已发布：GitHub Release + 跨平台制品
 - 下一步：Phase 2 继续（Statistics / 离席检测 / 工作日调度）
 
 ---
@@ -37,7 +39,7 @@
 | 自启动 | tauri-plugin-autostart | `~2.2` | `~2.2` | 开机自启 |
 | 数据库 | SQLite | via sqlx | 未安装 (P2) | |
 | 配置 | TOML | 人类可读 | `~0.8` | |
-| 类型桥接 | ts-rs | 最新稳定 | `~10` (dev-dep) | Rust → TS |
+| 类型桥接 | ts-rs | 最新稳定 | `~10.1` (dev-dep) | Rust → TS |
 | 日志 | tracing + 日轮转 | -- | `~0.1` / `~0.3` / `~0.2` | tracing + subscriber + appender |
 | 音频 | rodio | 独立线程 | `~0.20` | |
 | 序列化 | serde + serde_json | `~1.0` | `~1.0` | |
@@ -65,7 +67,7 @@ Frontend (Svelte 5, per window)
                   └── StatService      SQLite (P2)
 ```
 
-详细架构约束见 → [`rules/01-architecture.md`](rules/01-architecture.md)
+详细架构约束见 → [`.trellis/spec/architecture/layering.md`](.trellis/spec/architecture/layering.md) 与 [`.trellis/spec/backend/service-pattern.md`](.trellis/spec/backend/service-pattern.md)
 
 ---
 
@@ -75,7 +77,7 @@ Frontend (Svelte 5, per window)
 graph TD
     ROOT["Eyezen"] --> SRC_TAURI["src-tauri/"]
     ROOT --> SRC["src/"]
-    ROOT --> RULES["rules/"]
+    ROOT --> RULES[".trellis/spec/"]
     ROOT --> DOCS["docs/"]
 
     SRC_TAURI --> SERVICES["services/"]
@@ -150,19 +152,30 @@ npm run build                # 前端构建检查
 
 ## 规则与约束（强制遵循）
 
-> **所有开发 MUST 遵循 `rules/` 目录下的规则文档。违反规则的代码不得合入。**
+> **所有开发 MUST 遵循 `.trellis/spec/` 下的规范文档。违反规则的代码不得合入。**
 >
-> 完整导航与按角色快速定位见 → [`rules/README.md`](rules/README.md)
+> 完整导航见各分组 `index.md`。
 
-| 规则文档 | 覆盖范围 | 关键约束 |
-|---------|---------|---------|
-| [`01-architecture.md`](rules/01-architecture.md) | 分层依赖、服务 DAG、生命周期、可见性 | 单向依赖、四阶段生命周期、pub(crate) |
-| [`02-ipc-and-state.md`](rules/02-ipc-and-state.md) | IPC 接口、状态机、错误类型 | 纯函数状态转换、锁外执行 Effect |
-| [`03-coding-standards.md`](rules/03-coding-standards.md) | 命名、Rust/Svelte 规范、错误传播、日志 | 禁止 unwrap、reducer 锁策略 |
-| [`04-testing-quality.md`](rules/04-testing-quality.md) | 测试要求、质量门禁、性能预算 | fix 必须先写测试、pre-push 全量检查 |
-| [`05-change-management.md`](rules/05-change-management.md) | 变更清单、配置兼容、破坏性变更、依赖管理 | 新增 Command/Service 的完整 checklist |
-| [`06-frontend.md`](rules/06-frontend.md) | 前端架构、状态管理、窗口、权限、视觉 | store 单一数据源、禁止乐观更新 |
-| [`07-platform-storage.md`](rules/07-platform-storage.md) | 平台抽象、降级、配置、存储 | 保守降级、原子写入、参数化 SQL |
+| 分组 | 索引 | 关键约束 |
+|------|------|---------|
+| 跨层架构 | [`.trellis/spec/architecture/`](.trellis/spec/architecture/index.md) | 分层依赖、IPC 契约、状态机、变更清单、测试质量、发版流程 |
+| 后端 Rust | [`.trellis/spec/backend/`](.trellis/spec/backend/index.md) | 服务 DAG / 四阶段生命周期、错误传播、锁/异步、PlatformApi 降级、tracing 日志 |
+| 前端 Svelte | [`.trellis/spec/frontend/`](.trellis/spec/frontend/index.md) | Svelte 5 Runes、单一数据源、ts-rs 桥接、CSP/capability、CSS 变量 |
+| 思维指南 | [`.trellis/spec/guides/`](.trellis/spec/guides/index.md) | 跨层思考、代码复用思考（通用） |
+
+### 关键文档速查
+
+| 我在做… | 先看 |
+|--------|------|
+| 新增 Service | [`backend/service-pattern.md`](.trellis/spec/backend/service-pattern.md) |
+| 新增 Tauri Command | [`architecture/ipc-and-state.md`](.trellis/spec/architecture/ipc-and-state.md) + [`architecture/change-management.md`](.trellis/spec/architecture/change-management.md) |
+| 改 Timer 状态机 | [`architecture/ipc-and-state.md`](.trellis/spec/architecture/ipc-and-state.md) |
+| Rust 错误/锁/异步 | [`backend/coding-standards.md`](.trellis/spec/backend/coding-standards.md) |
+| 平台相关代码 | [`backend/platform-storage.md`](.trellis/spec/backend/platform-storage.md) |
+| 新增前端页面/组件 | [`frontend/component-guidelines.md`](.trellis/spec/frontend/component-guidelines.md) + [`frontend/quality-guidelines.md`](.trellis/spec/frontend/quality-guidelines.md) |
+| 改 store / IPC 调用 | [`frontend/store-and-ipc-patterns.md`](.trellis/spec/frontend/store-and-ipc-patterns.md) |
+| 提交前自检 | [`architecture/testing-quality.md`](.trellis/spec/architecture/testing-quality.md) |
+| 发版 | [`architecture/change-management.md`](.trellis/spec/architecture/change-management.md) + [`docs/workflows/release.md`](docs/workflows/release.md) |
 
 ---
 
@@ -180,13 +193,14 @@ npm run build                # 前端构建检查
 | 前端原型 mockup | `docs/.local/mockups/2026-03-19-tray-tip-v4.html` | 已采纳的 v4 视觉原型（浏览器打开） |
 | 主题对比 mockup | `docs/.local/mockups/2026-03-20-theme-comparison.html` | Dark/Light 主题视觉对比 |
 | 实现计划 | `docs/plans/` | 功能切片，命名 `<NNN>-<scope>.md` |
-| 开发工作流 | `docs/.local/dev-workflow.md` | 10 阶段全生命周期 |
+| 开发工作流（详细） | `docs/.local/dev-workflow.md` | 10 阶段全生命周期（本地参考） |
 
 ### 工作流与 CI
 
 | 文档 | 路径 | 说明 |
 |------|------|------|
-| Release 流程 | `docs/workflows/release.md` | 发布检查清单与步骤 |
+| 开发工作流 | `docs/workflows/dev.md` | 日常开发循环 + Git Hooks 说明 |
+| 发版工作流 | `docs/workflows/release.md` | 完整发版流程（9 步 + CI 踩坑记录） |
 | Release 命名规范 | `docs/workflows/release-naming.md` | 制品命名约定 |
 | PR 流程 | `docs/workflows/pr.md` | Pull Request 模板与流程 |
 | 文档更新流程 | `docs/workflows/update-docs.md` | 文档同步工作流 |
@@ -211,7 +225,7 @@ npm run build                # 前端构建检查
 ### 实现顺序（固定，不可跳步）
 
 1. 读现有代码，理解模式
-2. 列出影响面（参照 [`05-change-management.md`](rules/05-change-management.md) 的变更清单）
+2. 列出影响面（参照 [`architecture/change-management.md`](.trellis/spec/architecture/change-management.md) 的变更清单）
 3. 先定接口，再填实现
 4. 写实现代码
 5. 写对应测试
@@ -228,14 +242,6 @@ Tests to run:      需要跑哪些测试
 Open risks:        已知风险
 ```
 
-### 多模型分工
-
-| 模型 | 角色 | 用途 |
-|------|------|------|
-| Claude Code | 主实现器 | 长链路实现、小步迭代 |
-| Codex | 代码级审查器 | 阻塞问题、缺失测试、回归点 |
-| Gemini | 需求/边界审查器 | 场景覆盖、状态遗漏、异常路径 |
-
 ### 会话管理
 
 满足任一条件开新会话：
@@ -247,6 +253,41 @@ Open risks:        已知风险
 ---
 
 ## 变更记录
+
+### 2026-05-19 -- License 切换：MIT → GPL-3.0-or-later
+
+- `LICENSE` 替换为 GNU GPL-3.0 verbatim 全文（674 行，标准 80-col 格式）
+- SPDX 标识符统一为 `GPL-3.0-or-later`：`src-tauri/tauri.conf.json` / 新增 `src-tauri/Cargo.toml` `license` 字段 / 新增 `package.json` `license` 字段
+- 版权署名 `Maple` → `rsecss`：`tauri.conf.json` 的 `copyright` + `publisher`（Trellis 内部工作流身份保留）
+- README 中英两版 badge + License section 同步更新
+- `CONTRIBUTING.md` 加入 inbound=outbound 一句话条款，无 CLA / 无 DCO
+- 未在源文件添加 SPDX 短头（LICENSE 已具备完整法律效力，避免噪声 diff）
+- AGPL-3.0 已评估并排除：桌面 app 不触发其网络条款，徒增企业避雷反应
+- v0.1.0 制品永久保留 MIT 状态（已发布事实不可追溯），从下一个 release 起生效 GPL-3.0-or-later
+- 关键时机：当前唯一贡献者，重新许可零阻力；未来贡献者池可能缩小，不可逆
+
+### 2026-05-19 -- Trellis 工作流 + 规则规范化
+
+- 引入 Trellis 工作流（`.trellis/` 目录：workflow / spec / tasks / workspace）
+- 重塑规范布局：`rules/` 7 篇 → `.trellis/spec/{architecture,backend,frontend,guides}/`
+- `.trellis/spec/architecture/`（5 文件）：分层依赖、IPC 与状态机、变更管理、测试质量
+- `.trellis/spec/backend/`（5 文件）：服务模式、Rust 编码规范、平台与存储、错误与日志
+- `.trellis/spec/frontend/`（7 文件）：目录结构、组件、Store 与 IPC、状态管理、类型安全、质量
+- 删除 `rules/` 目录；CLAUDE.md / CONTRIBUTING.md / `docs/workflows/{dev,release,pr,update-docs}.md` / `.claude/index.json` 中全部 `rules/XX-*.md` 引用迁移到 `.trellis/spec/`
+- 清理 `.gitignore` 中 `docs/superpowers/`、`.superpowers/` 残留条目（实际目录从未存在）
+- 配套子代理：`.claude/agents/trellis-{research,implement,check}.md`；hooks：session-start / inject-workflow-state / inject-subagent-context
+
+### 2026-03-21 -- v0.1.0 Release + CI/CD 基础设施
+
+- 新增 CI workflow（`.github/workflows/ci.yml`）：三平台矩阵，Rust + 前端全量检查 + Tauri 构建
+- 新增 Release workflow（`.github/workflows/release.yml`）：四目标构建 + Windows portable zip
+- 新增 release notes 模板（`.github/release.yml`）：PR label 自动分类
+- 新增文档：CHANGELOG.md / README 双语 / CONTRIBUTING.md / 4 篇工作流规范
+- 新增品牌资源：Eyezen logo v4 + 全平台图标更新
+- 修复 CI 问题（9 轮）：tauri-action@v0 / libasound2-dev / clippy --all-targets / Instant 下溢 / SVG→PNG
+- 更新 rules/04：CI 实际配置 + 平台特定注意事项 + Instant 测试陷阱规则
+- 更新 rules/05：新增发版清单（本地验证→CI 绿灯→PR 合并→版本同步→Tag→验证）
+- 经验教训：发版 MUST 使用 PR 工作流，MUST NOT 直接合并
 
 ### 2026-03-21 -- 主题切换 + 开机自启动（Plan 012 + 013）
 

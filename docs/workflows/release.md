@@ -1,150 +1,131 @@
-# Eyezen Release Workflow
+# Release Workflow
 
-Automate version release for the Eyezen Tauri v2 desktop app.
+Complete release process from dev branch to published GitHub Release.
 
-## Usage
+## Overview
+
+```
+dev branch ready → local validation → push & CI green → PR to main
+    → squash merge → tag on main → Release CI builds → publish
+```
+
+## Prerequisites
+
+- On `dev` branch
+- Working directory clean
+- All features for this release committed and pushed
+- Shell commands below require Bash (Git Bash / WSL on Windows)
+
+## Step-by-Step
+
+### 1. Local Pre-flight Validation
+
+MUST run ALL checks locally. Do NOT rely on CI to catch issues.
 
 ```bash
-/release [-p|--patch] [-mi|--minor] [-ma|--major] [<version>]
+cargo fmt --all --manifest-path src-tauri/Cargo.toml --check
+cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
+cargo test --manifest-path src-tauri/Cargo.toml
+npx svelte-check --tsconfig ./tsconfig.json
+npm test -- --run
+npm run format:check
+npm run build
 ```
 
-## Parameters
+> **v0.1.0 lesson**: Skipping pre-flight caused 9 CI fix-merge cycles.
+> `--all-targets` is required for clippy — without it, test-target warnings are missed.
+> `cargo test` also regenerates ts-rs bindings — verify no unexpected diffs.
+> Use `npm run ci` as the single local/cloud parity entrypoint; Rust and Node are pinned by `rust-toolchain.toml` and `.nvmrc`.
 
-- `-p` or `--patch`: Patch version (default) — bug fixes, minor changes
-- `-mi` or `--minor`: Minor version — new features, backward compatible
-- `-ma` or `--major`: Major version — breaking changes
-- `<version>`: Exact version number (e.g., 0.2.0, 1.0.0-beta.1)
-
-## Context
-
-- Tauri v2 app with three version files that must stay in sync
-- Protected `main` branch — all releases go through PR
-- GitHub Actions `release.yml` auto-builds cross-platform installers on `v*` tag
-- No changeset/npm publish — version artifacts are GitHub Release binaries
-
-## Version Files (Must Stay in Sync)
-
-| File | Field | Example |
-|------|-------|---------|
-| `package.json` | `"version"` | `"0.1.0"` |
-| `src-tauri/Cargo.toml` | `version` under `[package]` | `"0.1.0"` |
-| `src-tauri/tauri.conf.json` | `"version"` | `"0.1.0"` |
-
-### Additional Version References (update manually)
-
-| File | Location | Notes |
-|------|----------|-------|
-| `README.md` | Version badge | Static shield.io badge |
-| `README.zh-CN.md` | Version badge | Same as above |
-| `src/pages/main/AboutPage.svelte` | `APP_VERSION` | Displayed in About page |
-
-## Execution Flow
-
-### 1. Parameter Parsing
-
-Parse arguments to determine version bump type or exact version.
-
-Default: `patch`.
-
-### 2. Pre-flight Checks
-
-```
-- [ ] Working directory is clean (no uncommitted changes)
-- [ ] On `dev` branch
-- [ ] All tests pass: cargo test + npm test
-- [ ] No Rust warnings: cargo clippy -- -D warnings
-- [ ] Frontend type check: npx svelte-check
-- [ ] Format check: npm run format:check + cargo fmt --check
-- [ ] Production build succeeds: npm run tauri build
-```
-
-### 3. Analyze Changes Since Last Release
+### 2. Push Dev and Wait for CI Green
 
 ```bash
-LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-
-if [ -z "$LAST_TAG" ]; then
-  COMMITS=$(git log --oneline)
-else
-  COMMITS=$(git log $LAST_TAG..HEAD --oneline)
-fi
+git push origin dev
 ```
 
-Display: commit history, file change statistics, change categories.
+Go to GitHub Actions and wait for **all three platforms** (Windows / macOS / Linux) to pass parity checks.
 
-### 4. Calculate New Version
+MUST NOT proceed until CI is fully green. If CI fails:
+1. Fix the issue on `dev`
+2. Push again
+3. Wait for CI green again
+
+### 3. Bump Version
+
+Three files MUST stay in sync:
+
+| File | Field |
+|------|-------|
+| `package.json` | `"version"` |
+| `src-tauri/Cargo.toml` | `version` under `[package]` |
+| `src-tauri/tauri.conf.json` | `"version"` |
+
+Additional references to update manually:
+- `README.md` / `README.zh-CN.md` — version badge
+- `src/pages/main/AboutPage.svelte` — hardcoded version string in `<span class="version">`
 
 ```bash
-CURRENT_VERSION=$(node -p "require('./package.json').version")
+NEW_VERSION="0.2.0"  # adjust as needed
 
-# For patch/minor/major: use semver bump
-# For custom: use provided version directly
-```
-
-### 5. Update Version in All Three Files
-
-```bash
-NEW_VERSION="<calculated>"
-
-# package.json
+# Update package.json
 node -e "
   const pkg = require('./package.json');
   pkg.version = '$NEW_VERSION';
   require('fs').writeFileSync('package.json', JSON.stringify(pkg, null, 2) + '\n');
 "
 
-# src-tauri/tauri.conf.json
+# Update tauri.conf.json
 node -e "
   const conf = require('./src-tauri/tauri.conf.json');
   conf.version = '$NEW_VERSION';
   require('fs').writeFileSync('src-tauri/tauri.conf.json', JSON.stringify(conf, null, 2) + '\n');
 "
 
-# src-tauri/Cargo.toml — sed replace version line under [package]
+# Update Cargo.toml
 sed -i 's/^version = ".*"/version = "'$NEW_VERSION'"/' src-tauri/Cargo.toml
 
 # Verify sync
-echo "package.json:      $(node -p "require('./package.json').version")"
-echo "tauri.conf.json:   $(node -p "require('./src-tauri/tauri.conf.json').version")"
-echo "Cargo.toml:        $(grep '^version' src-tauri/Cargo.toml | head -1)"
+echo "package.json:    $(node -p "require('./package.json').version")"
+echo "tauri.conf.json: $(node -p "require('./src-tauri/tauri.conf.json').version")"
+echo "Cargo.toml:      $(grep '^version' src-tauri/Cargo.toml | head -1)"
 ```
 
-### 6. Update CHANGELOG.md
+### 4. Update CHANGELOG.md
 
-Add new version section at the top following [Keep a Changelog](https://keepachangelog.com/) format.
+Add new version section at the top following [Keep a Changelog](https://keepachangelog.com/) format:
 
-Structure:
 ```markdown
 ## [X.Y.Z] - YYYY-MM-DD
 
-### Features
+### Added
 - ...
 
-### Fixes
+### Fixed
 - ...
 
-### Other
+### Changed
 - ...
 ```
 
-Generate content by analyzing commits since last tag, categorizing by conventional commit prefix.
+Generate content by analyzing commits since last tag:
+```bash
+git log $(git describe --tags --abbrev=0)..HEAD --oneline
+```
 
-### 7. Create Release Branch and Commit
+### 5. Create Release Branch and PR
+
+MUST use PR workflow. MUST NOT directly merge dev to main.
 
 ```bash
 RELEASE_BRANCH="release/v$NEW_VERSION"
 git checkout -b "$RELEASE_BRANCH"
-
-# Commit version bump
-git add package.json src-tauri/Cargo.toml src-tauri/tauri.conf.json CHANGELOG.md
+git add package.json src-tauri/Cargo.toml src-tauri/tauri.conf.json CHANGELOG.md \
+      README.md README.zh-CN.md src/pages/main/AboutPage.svelte
 git commit -m "chore: release v$NEW_VERSION"
-
-# Push release branch
 git push -u origin "$RELEASE_BRANCH"
 ```
 
-### 8. Create Pull Request
-
+Create PR:
 ```bash
 gh pr create \
   --base main \
@@ -152,40 +133,32 @@ gh pr create \
   --body "$(cat <<'EOF'
 ## Release v$NEW_VERSION
 
-### Changes
-
 See [CHANGELOG.md](CHANGELOG.md) for full details.
 
 ### Pre-release Checklist
 
-- [x] Version synced across package.json, Cargo.toml, tauri.conf.json
+- [x] Version synced (package.json, Cargo.toml, tauri.conf.json)
 - [x] CHANGELOG.md updated
-- [x] All tests pass (cargo test + npm test)
-- [x] No warnings (clippy + svelte-check)
-- [x] Production build verified
+- [x] All local checks pass
+- [x] Dev branch CI green (3 platforms)
+- [ ] PR CI green (3 platforms)
 
-### Post-merge Actions (Automatic)
+### Post-merge
 
-After this PR is merged to `main`:
-1. Manually create and push tag: `git tag v$NEW_VERSION && git push origin v$NEW_VERSION`
-2. GitHub Actions `release.yml` triggers automatically
-3. Cross-platform builds (Windows, macOS ARM/Intel, Linux)
-4. Draft GitHub Release created with all installers
-
-### Platform Test Status
-
-| Platform | Status |
-|----------|--------|
-| Windows | ✅ Tested |
-| macOS | ⚠️ Untested |
-| Linux | ⚠️ Untested |
+1. Tag: `git tag v$NEW_VERSION && git push origin v$NEW_VERSION`
+2. Release CI auto-triggers (4-target build)
+3. Review draft release, then Publish
 EOF
 )"
 ```
 
-## Post-Merge Steps
+### 6. Wait for PR CI Green, Then Merge
 
-After the PR is merged to `main`:
+- CI runs automatically on the PR
+- Use **Squash Merge** to keep main history clean
+- This avoids the v0.1.0 problem of 9 merge commits polluting history
+
+### 7. Tag on Main
 
 ```bash
 git checkout main
@@ -194,15 +167,73 @@ git tag v$NEW_VERSION
 git push origin v$NEW_VERSION
 ```
 
-This triggers `release.yml` → cross-platform build → draft GitHub Release.
+Tag MUST be on `main`, MUST NOT be on `dev` or release branch.
 
-Review the draft release on GitHub, then click **Publish**.
+### 8. Verify Release
 
-## Important Notes
+- `release.yml` triggers automatically on `v*` tag
+- Four-target build: Windows / macOS ARM / macOS Intel / Linux
+- Windows portable zip is created automatically
+- Wait for all builds to complete
+- Verify Draft Release on GitHub:
+  - All expected assets present (see `docs/workflows/release-naming.md`)
+  - Download and spot-check at least the current platform's installer
+  - Verify release notes are accurate
+- Click **Publish** when satisfied
 
-- **Three-file version sync** is critical. Never update only one file.
-- **Tag after merge**, not before. The tag must be on `main`.
-- **Draft release**: Review installer assets before publishing.
-- **No npm publish**: This is a desktop app, not a library.
-- Always update `CHANGELOG.md` before release.
-- Always run full test suite before starting release.
+> Note: Code signing (macOS notarization, Windows SmartScreen) is not yet configured.
+> When available, verify signing status before publishing.
+
+### 9. Post-release
+
+```bash
+# Sync main back to dev
+git checkout dev
+git merge main
+git push origin dev
+
+# Clean up release branch
+git branch -d release/v$NEW_VERSION
+git push origin --delete release/v$NEW_VERSION
+```
+
+Write retrospective entry in `docs/devlog.md` (local file).
+
+## Hotfix Process
+
+When main has a bug but dev has unfinished features:
+
+```bash
+git checkout main
+git checkout -b fix/critical-bug
+# Fix + test + commit
+# MUST create PR to main (same as release — no direct merge)
+gh pr create --base main --title "fix: critical bug description" --body "..."
+# After PR merged:
+git checkout main && git pull
+git tag v0.2.1
+git push origin v0.2.1
+# Sync back to dev
+git checkout dev
+git merge main
+```
+
+## CI Notes (v0.1.0 Lessons)
+
+| Issue | Root Cause | Fix |
+|-------|-----------|-----|
+| `tauri-action@v1` not found | Upstream removed v1 tag | Use `@v0` |
+| Linux build failure | Missing `libasound2-dev` | Add to apt-get |
+| Clippy passes locally but fails CI | Didn't use `--all-targets` | Always use `--all-targets` |
+| Linux-only clippy lints | `#[cfg(target_os)]` code only compiled on that platform | Review platform-gated code |
+| Windows test panic | `Instant::now() - Duration` underflows on short-uptime CI | Use `future_instant` pattern |
+| SVG import type error | Vite missing module declaration | Use PNG or add `vite-env.d.ts` |
+| ts-rs format drift | Different versions produce different output | Pin ts-rs version + exclude from prettier |
+
+## References
+
+- Asset naming: `docs/workflows/release-naming.md`
+- PR workflow: `docs/workflows/pr.md`
+- Development workflow: `docs/workflows/dev.md`
+- Change checklists: `.trellis/spec/architecture/change-management.md`
+- Testing requirements: `.trellis/spec/architecture/testing-quality.md`

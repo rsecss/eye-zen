@@ -40,10 +40,10 @@
   "bundle": {
     "active": true,
     "targets": "all",
-    "copyright": "Copyright (c) 2026 Maple",
-    "license": "MIT",
+    "copyright": "Copyright (c) 2026 rsecss",
+    "license": "GPL-3.0-or-later",
     "licenseFile": "../LICENSE",
-    "publisher": "Maple",
+    "publisher": "rsecss",
     "shortDescription": "Cross-platform desktop eye care app based on the 20-20-20 rule",
     "category": "Utility",
     "icon": [

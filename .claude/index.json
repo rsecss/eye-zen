@@ -3,7 +3,7 @@
   "project": {
     "name": "Eyezen",
     "description": "Cross-platform desktop eye health tool based on 20-20-20 rule",
-    "license": "MIT",
+    "license": "GPL-3.0-or-later",
     "status": "phase2-in-progress",
     "branch": "dev",
     "techStack": {
@@ -192,14 +192,26 @@
       ]
     },
     "rules": [
-      "rules/README.md",
-      "rules/01-architecture.md",
-      "rules/02-ipc-and-state.md",
-      "rules/03-coding-standards.md",
-      "rules/04-testing-quality.md",
-      "rules/05-change-management.md",
-      "rules/06-frontend.md",
-      "rules/07-platform-storage.md"
+      ".trellis/spec/architecture/index.md",
+      ".trellis/spec/architecture/layering.md",
+      ".trellis/spec/architecture/ipc-and-state.md",
+      ".trellis/spec/architecture/change-management.md",
+      ".trellis/spec/architecture/testing-quality.md",
+      ".trellis/spec/backend/index.md",
+      ".trellis/spec/backend/service-pattern.md",
+      ".trellis/spec/backend/coding-standards.md",
+      ".trellis/spec/backend/platform-storage.md",
+      ".trellis/spec/backend/error-and-logging.md",
+      ".trellis/spec/frontend/index.md",
+      ".trellis/spec/frontend/directory-structure.md",
+      ".trellis/spec/frontend/component-guidelines.md",
+      ".trellis/spec/frontend/store-and-ipc-patterns.md",
+      ".trellis/spec/frontend/state-management.md",
+      ".trellis/spec/frontend/type-safety.md",
+      ".trellis/spec/frontend/quality-guidelines.md",
+      ".trellis/spec/guides/index.md",
+      ".trellis/spec/guides/code-reuse-thinking-guide.md",
+      ".trellis/spec/guides/cross-layer-thinking-guide.md"
     ],
     "docs": [
       "docs/devlog.md",

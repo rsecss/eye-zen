@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0--or--later-blue.svg" alt="License" /></a>
   <img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-brightgreen" alt="Platform" />
   <img src="https://img.shields.io/badge/version-0.1.0-orange" alt="Version" />
   <img src="https://img.shields.io/badge/tauri-v2-blue" alt="Tauri v2" />
@@ -169,4 +169,4 @@ Eyezen 的灵感来自 **[ProjectEye](https://github.com/Jeremyyang920/ProjectEy
 
 ## 许可证
 
-[MIT License](LICENSE)
+[GNU General Public License v3.0 or later](LICENSE)

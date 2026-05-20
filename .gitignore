@@ -26,8 +26,6 @@ src-tauri/gen/
 docs/.local/
 docs/plans/
 docs/devlog.md
-docs/superpowers/
 
 # Claude Code
 .ace-tool/
-.superpowers/

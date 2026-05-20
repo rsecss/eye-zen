@@ -10,7 +10,25 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
+  audit:
+    runs-on: ubuntu-22.04
+    name: Security Audit
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        run: rustup toolchain install
+
+      - name: Install cargo-audit
+        run: cargo install cargo-audit --locked
+
+      - name: Run cargo audit
+        run: cargo audit --file src-tauri/Cargo.lock
+
   check:
     strategy:
       fail-fast: false
@@ -32,11 +50,11 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: lts/*
+          node-version-file: .nvmrc
           cache: npm
 
-      - name: Install Rust stable
-        uses: dtolnay/rust-toolchain@stable
+      - name: Install Rust toolchain
+        run: rustup toolchain install
 
       - name: Rust cache
         uses: swatinem/rust-cache@v2
@@ -52,33 +70,5 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
-      - name: Frontend type check
-        run: npx svelte-check --tsconfig ./tsconfig.json
-
-      - name: Frontend tests
-        run: npm test -- --run
-
-      - name: Frontend format check
-        run: npm run format:check
-
-      - name: Rust check
-        run: cargo check --manifest-path src-tauri/Cargo.toml
-
-      - name: Rust clippy
-        run: cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
-
-      - name: Rust tests
-        run: cargo test --manifest-path src-tauri/Cargo.toml
-
-      - name: Rust format check
-        run: cargo fmt --all --manifest-path src-tauri/Cargo.toml --check
-
-      - name: Build frontend
-        run: npm run build
-
-      - name: Tauri build
-        uses: tauri-apps/tauri-action@v0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          args: ${{ matrix.platform == 'macos-latest' && '--target aarch64-apple-darwin' || '' }}
+      - name: Local CI parity checks
+        run: npm run ci
