@@ -13,7 +13,7 @@ Eyezen 前端的数据来源严格分层，每一类有明确的"住址"：
 | Timer 状态（state、remaining_secs、work/rest 配置） | Svelte store | `listen('state_changed')` 事件驱动 + 初始 `invoke('get_state_snapshot')` | `src/lib/stores/timer.svelte.ts` |
 | 配置数据（timer/behavior/display） | Svelte store | `listen('config_changed')` 事件驱动 + 初始 `invoke('get_config')` | `src/lib/stores/config.svelte.ts` |
 | i18n 语言 + 字典 | Svelte store | 通过 `i18nStore.setLocale(...)` 显式驱动；`MainApp.svelte` 中由 `$effect` 与 `configStore.current.display.language` 联动 | `src/lib/i18n/index.svelte.ts` |
-| 统计数据 (P2) | 组件本地 state | `invoke('get_daily_stats')` 按需拉取 | 未实现 |
+| 统计数据 | 组件本地 state | `commands.ts#getStatisticsTrends(timezone)` 按需拉取 | `src/pages/main/StatisticsPage.svelte` |
 | UI 临时状态（tab 选中、弹窗开关） | 组件本地 `$state` | 组件内管理 | `MainApp.svelte` 的 `activeTab` |
 
 ## 单一数据源原则

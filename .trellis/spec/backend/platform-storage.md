@@ -57,7 +57,7 @@ fn get_foreground_process_name(&self) -> Option<String>;  // P2 进程白名单
 | 数据 | 格式 | 位置 | 阶段 |
 |------|------|------|------|
 | 用户配置 | TOML | `app_config_dir/eyezen/config.toml` | MVP（已落地） |
-| 统计数据 | SQLite | `app_data_dir/eyezen/data.db` | P2 |
+| 统计数据 | SQLite | `app_data_dir/eyezen/data.db` | P2（已落地） |
 | 日志 | text | `app_data_dir/eyezen/logs/eyezen.log` | MVP（已落地，每日轮转） |
 
 代码锚点：
@@ -159,9 +159,9 @@ self.emit_config_changed(updated.as_ref());
 - 即时生效配置 MUST 在变更后通过 `ServiceContext::emit_config_changed` 广播 `config_changed` 事件（见 `src-tauri/src/services/context.rs`）
 - 下周期生效的字段 MUST NOT 中断当前计时周期；现行实现由 timer loop 在每秒 tick 时检查 `config_rx.has_changed()` 并调用 `sync_runtime_config` 更新内部 `Duration`
 
-## SQLite Schema（P2，未实现）
+## SQLite Schema（P2，已实现）
 
-P2 落地后 schema 初版：
+Schema v1 由 `StatService` 启动时自动创建；使用 `PRAGMA user_version = 1` 标记版本，旧版本无 DB 时 MUST 自动建库建表。
 
 ```sql
 CREATE TABLE activity_segments (
@@ -169,14 +169,19 @@ CREATE TABLE activity_segments (
     state TEXT NOT NULL,          -- 'working', 'resting', 'away', 'paused'
     started_at TEXT NOT NULL,     -- ISO 8601
     ended_at TEXT NOT NULL,
+    duration_secs INTEGER NOT NULL,
     date TEXT NOT NULL            -- YYYY-MM-DD
 );
 CREATE INDEX idx_activity_segments_date ON activity_segments(date);
+CREATE INDEX idx_activity_segments_state_started_at
+    ON activity_segments(state, started_at);
 ```
 
 规则：
 
-- Schema 变更 MUST 通过版本化迁移脚本（如 `sqlx::migrate!`），MUST NOT 手动修改用户数据库
-- 查询 MUST 使用参数化 SQL（`sqlx` 编译期校验），MUST NOT 字符串拼接
+- Schema 变更 MUST 通过版本化迁移（当前用 `PRAGMA user_version` + 幂等 DDL），MUST NOT 手动修改用户数据库
+- 查询 MUST 使用参数化 SQL（当前通过 `sqlx::query(...).bind(...)`），MUST NOT 字符串拼接
 - 写入 MUST 在专属 service（`StatService`）内进行，其他 service MUST NOT 直接持有连接池
 - StatService 在 `shutdown` 中 MUST flush 待写记录并关闭连接池
+- 持久化时间戳 MUST 使用 UTC RFC3339；日/周/月 bucket MUST 在查询时按请求 IANA timezone 聚合，不能把单个 `date` 字段当作跨时区事实来源
+- 当前记录语义：只在完成休息的 `Resting -> Working` transition 记录一条 `state = 'resting'` segment；跳过提醒不计入休息统计

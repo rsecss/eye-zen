@@ -16,7 +16,7 @@
 |------|------|--------|
 | [`service-pattern.md`](./service-pattern.md) | 服务依赖 DAG、四阶段生命周期、关闭顺序、AppServices 注册、服务间 channel | 新增 / 修改任一 service、调整启动或关闭顺序、设计服务间通信 |
 | [`coding-standards.md`](./coding-standards.md) | Rust 命名、错误传播、锁策略（reducer）、异步、ts-rs 跨界类型、clippy、可见性 | 写任何 Rust 代码前；review Rust PR 时 |
-| [`platform-storage.md`](./platform-storage.md) | `PlatformApi` trait、平台能力矩阵、降级原则、TOML 配置、ConfigService 设计、SQLite P2 schema | 新增平台能力、修改配置结构、设计存储相关功能 |
+| [`platform-storage.md`](./platform-storage.md) | `PlatformApi` trait、平台能力矩阵、降级原则、TOML 配置、ConfigService 设计、SQLite 统计 schema | 新增平台能力、修改配置结构、设计存储相关功能 |
 | [`error-and-logging.md`](./error-and-logging.md) | `AppError` 类型、错误传播分层、tracing 日志级别、敏感信息脱敏 | 新增错误变体、加日志、排查 IPC 报错链路 |
 
 ## 阅读顺序建议
@@ -32,6 +32,7 @@
 - 服务 trait 与 `AppServices`：`src-tauri/src/services/mod.rs`
 - 服务上下文与 effect 路由：`src-tauri/src/services/context.rs`
 - 配置服务范式：`src-tauri/src/services/config.rs`
+- 统计服务范式：`src-tauri/src/services/stat.rs`
 - 状态机服务：`src-tauri/src/services/timer/`
 - 平台抽象：`src-tauri/src/platform/mod.rs`
 - 错误类型：`src-tauri/src/error.rs`
