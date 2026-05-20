@@ -146,3 +146,37 @@ Implemented Phase 2 starter slice: weekday scheduling that suppresses rest remin
 ## 2026-05-20 — Migrate to GitHub Flow
 
 Repo switched from dev+main double-branch to GitHub Flow (single main + short-lived feat/fix/chore branches). PR #7 merged, dev deleted. This commit is the trivial verification PR for the new flow.
+
+
+## Session 5: SQLite Rest Statistics Trends
+
+**Date**: 2026-05-21
+**Task**: SQLite Rest Statistics Trends
+**Branch**: `feat/stats`
+
+### Summary
+
+Implemented SQLite-backed rest statistics persistence, day/week/month aggregation, Statistics ECharts UI, tests, and updated Trellis specs.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `34db95d` | (see git log) |
+| `a4ffb0b` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
