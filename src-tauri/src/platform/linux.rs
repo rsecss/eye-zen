@@ -19,8 +19,7 @@ impl LinuxPlatform {
     #[must_use]
     pub(crate) fn new() -> Self {
         let is_x11 = std::env::var("XDG_SESSION_TYPE")
-            .map(|value| value.eq_ignore_ascii_case("x11"))
-            .unwrap_or(false)
+            .is_ok_and(|value| value.eq_ignore_ascii_case("x11"))
             || std::env::var("DISPLAY").is_ok();
 
         if !is_x11 && !WAYLAND_WARNING_EMITTED.swap(true, Ordering::Relaxed) {

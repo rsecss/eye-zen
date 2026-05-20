@@ -234,7 +234,7 @@ mod tests {
         use crate::services::timer::machine::step_time;
 
         let (service, _tx) = make_test_service();
-        let future_now = Instant::now() + Duration::from_secs(20 * 60);
+        let future_now = Instant::now() + Duration::from_mins(20);
 
         let mut inner = service.inner.lock().await;
         if let Some(transition) = step_time(&inner, future_now, &SkipFlags::default()) {
@@ -322,7 +322,7 @@ mod tests {
         service.apply_config(&config).await;
 
         let inner = service.inner.lock().await;
-        assert_eq!(inner.work_duration, Duration::from_secs(30 * 60));
+        assert_eq!(inner.work_duration, Duration::from_mins(30));
         assert_eq!(inner.rest_duration, Duration::from_secs(40));
         assert_eq!(inner.pre_alert_duration, Duration::from_secs(10));
         assert_eq!(inner.alert_timeout, Duration::from_secs(20));
