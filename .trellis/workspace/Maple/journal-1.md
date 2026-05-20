@@ -72,3 +72,37 @@ Switched Eyezen license from MIT to GPL-3.0-or-later to prevent closed-source fo
 ### Next Steps
 
 - None - task complete
+
+
+## Session 3: CI hardening and docs slimming
+
+**Date**: 2026-05-20
+**Task**: CI hardening and docs slimming
+**Branch**: `dev`
+
+### Summary
+
+Aligned local and GitHub CI checks, moved normal push and PR workflows to parity checks without packaging, pinned toolchains, updated PR description, and slimmed workflow and agent documentation into concise rules and maps.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `e3cf334` | (see git log) |
+| `af98c41` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
