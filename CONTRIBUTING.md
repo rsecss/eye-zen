@@ -6,7 +6,7 @@ Thanks for helping Eyezen.
 
 - Code, commits, and PR titles use English.
 - Issues and discussions may use English or Chinese.
-- Target `dev` for normal work.
+- Work on short-lived `feat/<scope>`, `fix/<scope>`, or `chore/<scope>` branches off `main`.
 - `main` receives changes only through PR.
 - Keep each PR focused.
 - Contributions are licensed as GPL-3.0-or-later, inbound = outbound.
@@ -57,7 +57,8 @@ Constraints:
 
 ## PR Checklist
 
-- [ ] Target branch is `dev` unless this is release/hotfix work.
+- [ ] Target branch is `main`.
+- [ ] Branch name follows `<type>/<scope>` (e.g. `feat/timer-pause`, `fix/config-backup`).
 - [ ] `npm run ci` passes.
 - [ ] New behavior has tests.
 - [ ] New Tauri command has matching capability permissions.
