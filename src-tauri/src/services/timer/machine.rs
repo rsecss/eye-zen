@@ -326,6 +326,25 @@ mod tests {
         let inner = make_inner(Working);
         let flags = SkipFlags {
             fullscreen_active: true,
+            ..SkipFlags::default()
+        };
+
+        let transition = step_time(&inner, future_instant(20 * 60), &flags);
+        assert_eq!(
+            transition,
+            Some(Transition {
+                from: Working,
+                to: Working,
+            })
+        );
+    }
+
+    #[test]
+    fn working_timeout_with_schedule_inactive_resets() {
+        let inner = make_inner(Working);
+        let flags = SkipFlags {
+            schedule_inactive: true,
+            ..SkipFlags::default()
         };
 
         let transition = step_time(&inner, future_instant(20 * 60), &flags);

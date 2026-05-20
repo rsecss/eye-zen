@@ -2,6 +2,7 @@ pub(crate) mod config;
 pub(crate) mod context;
 pub(crate) mod detector;
 pub(crate) mod i18n;
+pub(crate) mod schedule;
 pub(crate) mod sound;
 pub(crate) mod timer;
 #[cfg(not(test))]

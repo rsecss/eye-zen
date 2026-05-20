@@ -4,6 +4,7 @@ import type { Config } from './bindings/Config';
 import type { TimerConfig } from './bindings/TimerConfig';
 import type { BehaviorConfig } from './bindings/BehaviorConfig';
 import type { DisplayConfig } from './bindings/DisplayConfig';
+import type { ScheduleConfig } from './bindings/ScheduleConfig';
 
 const INVOKE_TIMEOUT_MS = 5000;
 
@@ -54,4 +55,8 @@ export function updateBehaviorConfig(config: BehaviorConfig): Promise<void> {
 
 export function updateDisplayConfig(config: DisplayConfig): Promise<void> {
   return invokeWithTimeout('update_display_config', { config });
+}
+
+export function updateScheduleConfig(config: ScheduleConfig): Promise<void> {
+  return invokeWithTimeout('update_schedule_config', { config });
 }

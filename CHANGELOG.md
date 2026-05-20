@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.2.0] - 2026-05-20
+
+### Added
+
+- **Workday scheduling** — toggle to keep Eyezen quiet on selected weekdays (typically weekends) without manually pausing. Suppression fires only at the Working → PreAlert boundary, so cycles already in progress are never interrupted mid-rest. Day granularity only (hour-of-day ranges and holidays are out of scope by design).
+
+### Changed
+
+- **License** — switched from **MIT** to **GPL-3.0-or-later**, effective for this release and onward. v0.1.0 binaries remain under MIT permanently. Applied across `LICENSE`, `package.json`, `src-tauri/Cargo.toml`, `src-tauri/tauri.conf.json`, and the in-app About page.
+- **Main window default size** — `520×640` → `880×560` (16:10) for a less cramped Settings/About layout.
+
 ## [0.1.0] - 2026-03-21
 
 First public release. A fully functional 20-20-20 eye care desktop app.
@@ -41,4 +52,5 @@ First public release. A fully functional 20-20-20 eye care desktop app.
 | macOS (ARM/Intel) | ⚠️ Builds, untested |
 | Linux (X11/Wayland) | ⚠️ Builds, untested |
 
+[0.2.0]: https://github.com/rsecss/eye-zen/releases/tag/v0.2.0
 [0.1.0]: https://github.com/rsecss/eye-zen/releases/tag/v0.1.0

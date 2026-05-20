@@ -106,3 +106,36 @@ Aligned local and GitHub CI checks, moved normal push and PR workflows to parity
 ### Next Steps
 
 - None - task complete
+
+
+## Session 4: workday-scheduling: ScheduleConfig + SkipFlags extension + UI polish + License consistency fix
+
+**Date**: 2026-05-20
+**Task**: workday-scheduling: ScheduleConfig + SkipFlags extension + UI polish + License consistency fix
+**Branch**: `dev`
+
+### Summary
+
+Implemented Phase 2 starter slice: weekday scheduling that suppresses rest reminders on user-configured weekdays. Reused existing SkipFlags / any_active() OR aggregation so behavior only fires at the Working->PreAlert transition point (other states are never interrupted). Backend: pure is_schedule_active() + SkipFlags.schedule_inactive + chrono::Local each tick + update_schedule_config command. Frontend: ts-rs ScheduleConfig binding + Schedule SettingsCard (Toggle + 7 chip-styled native checkboxes) + zh-CN/en i18n (11 keys each). Bundled UI polish: main window 520x640 -> 880x560 (16:10), Active days row stacks vertically so English long descriptions no longer collide with the chip grid. Consistency fix: About page License MIT -> GPL-3.0-or-later. All gates green (cargo fmt + clippy --all-targets + test 80 passed, svelte-check 371/0/0, vitest 28 passed, prettier, vite build). Manual E2E verified.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `6e5fa9e` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

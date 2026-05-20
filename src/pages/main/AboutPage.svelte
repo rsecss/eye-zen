@@ -34,7 +34,7 @@
     </div>
     <div class="info-row separator">
       <span class="info-label">{i18nStore.t('about.license')}</span>
-      <span class="info-value">MIT</span>
+      <span class="info-value">GPL-3.0-or-later</span>
     </div>
     <div class="info-row separator">
       <span class="info-label">{i18nStore.t('about.source')}</span>

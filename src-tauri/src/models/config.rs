@@ -11,6 +11,7 @@ pub struct Config {
     pub timer: TimerConfig,
     pub behavior: BehaviorConfig,
     pub display: DisplayConfig,
+    pub schedule: ScheduleConfig,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -56,6 +57,29 @@ impl Default for BehaviorConfig {
             sound_enabled: true,
             fullscreen_skip: true,
             auto_start: false,
+        }
+    }
+}
+
+/// Weekly schedule controlling when rest reminders are allowed to surface.
+///
+/// `active_days` is indexed by `chrono::Weekday::num_days_from_monday`:
+/// `0 = Mon`, `1 = Tue`, ..., `6 = Sun`.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[cfg_attr(test, derive(ts_rs::TS))]
+#[cfg_attr(test, ts(export, export_to = "../../src/lib/bindings/"))]
+pub struct ScheduleConfig {
+    #[serde(default)]
+    pub enabled: bool,
+    #[serde(default = "default_active_days")]
+    pub active_days: [bool; 7],
+}
+
+impl Default for ScheduleConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            active_days: default_active_days(),
         }
     }
 }
@@ -107,6 +131,10 @@ fn default_theme() -> String {
     "light".to_string()
 }
 
+const fn default_active_days() -> [bool; 7] {
+    [true, true, true, true, true, false, false]
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -123,6 +151,11 @@ mod tests {
         assert!(!config.behavior.auto_start);
         assert_eq!(config.display.language, "zh-CN");
         assert_eq!(config.display.theme, "light");
+        assert!(!config.schedule.enabled);
+        assert_eq!(
+            config.schedule.active_days,
+            [true, true, true, true, true, false, false]
+        );
     }
 
     #[test]

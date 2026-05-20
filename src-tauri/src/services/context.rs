@@ -11,6 +11,8 @@ use tracing::warn;
 #[cfg(not(test))]
 use crate::events;
 use crate::models::config::Config;
+#[cfg(not(test))]
+use crate::services::schedule::is_schedule_active;
 
 #[cfg(not(test))]
 use super::timer::{
@@ -180,8 +182,11 @@ fn current_skip_flags(app: &AppHandle) -> SkipFlags {
         return SkipFlags::default();
     };
 
-    let fullscreen_skip = services.config.current().behavior.fullscreen_skip;
+    let config = services.config.current();
+    let fullscreen_skip = config.behavior.fullscreen_skip;
+    let schedule_inactive = !is_schedule_active(chrono::Local::now(), &config.schedule);
     SkipFlags {
         fullscreen_active: fullscreen_skip && services.detector.is_fullscreen(),
+        schedule_inactive,
     }
 }
