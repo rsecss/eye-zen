@@ -18,6 +18,7 @@
     "allow-pause-timer",
     "allow-resume-timer",
     "allow-get-config",
+    "allow-get-detector-capabilities",
     "allow-update-timer-config",
     "allow-update-behavior-config",
     "allow-update-display-config",

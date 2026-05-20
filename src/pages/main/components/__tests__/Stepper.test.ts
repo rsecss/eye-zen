@@ -59,4 +59,12 @@ describe('Stepper', () => {
     expect(screen.getByLabelText('Decrease Rest Duration')).toBeInTheDocument();
     expect(screen.getByLabelText('Increase Rest Duration')).toBeInTheDocument();
   });
+
+  it('does not call onchange when disabled', async () => {
+    const onchange = vi.fn();
+    render(Stepper, { props: { ...defaults, disabled: true, onchange } });
+    await fireEvent.click(screen.getByLabelText('Increase Work'));
+    await fireEvent.click(screen.getByLabelText('Decrease Work'));
+    expect(onchange).not.toHaveBeenCalled();
+  });
 });

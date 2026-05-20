@@ -31,4 +31,11 @@ describe('Toggle', () => {
     render(Toggle, { props: { checked: true, label: 'Sound', onchange: vi.fn() } });
     expect(screen.getByLabelText('Sound')).toBeInTheDocument();
   });
+
+  it('does not call onchange when disabled', async () => {
+    const onchange = vi.fn();
+    render(Toggle, { props: { checked: true, disabled: true, onchange } });
+    await fireEvent.click(screen.getByRole('switch'));
+    expect(onchange).not.toHaveBeenCalled();
+  });
 });

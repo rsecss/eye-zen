@@ -1,5 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import type { StatePayload } from './bindings/StatePayload';
+import type { DetectorCapabilities } from './bindings/DetectorCapabilities';
 import type { Config } from './bindings/Config';
 import type { TimerConfig } from './bindings/TimerConfig';
 import type { BehaviorConfig } from './bindings/BehaviorConfig';
@@ -43,6 +44,10 @@ export function resumeTimer(): Promise<void> {
 
 export function getConfig(): Promise<Config> {
   return invokeWithTimeout('get_config');
+}
+
+export function getDetectorCapabilities(): Promise<DetectorCapabilities> {
+  return invokeWithTimeout('get_detector_capabilities');
 }
 
 export function updateTimerConfig(config: TimerConfig): Promise<void> {

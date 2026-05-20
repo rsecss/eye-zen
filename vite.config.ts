@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, realpathSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { defineConfig } from 'vite';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
@@ -7,6 +7,7 @@ import tailwindcss from '@tailwindcss/vite';
 
 const host = process.env.TAURI_DEV_HOST;
 const pkg = JSON.parse(readFileSync(resolve(__dirname, 'package.json'), 'utf8'));
+const nodeModulesRoot = realpathSync(resolve(__dirname, 'node_modules'));
 
 export default defineConfig(async () => ({
   plugins: [svelte(), svelteTesting(), tailwindcss()],
@@ -27,6 +28,7 @@ export default defineConfig(async () => ({
     host: host || false,
     hmr: host ? { protocol: 'ws', host, port: 1421 } : undefined,
     watch: { ignored: ['**/src-tauri/**'] },
+    fs: { allow: [__dirname, nodeModulesRoot] },
   },
 
   build: {
