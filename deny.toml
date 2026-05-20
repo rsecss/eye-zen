@@ -14,7 +14,16 @@ feature-depth = 1
 version = 2
 db-path = "~/.cargo/advisory-db"
 db-urls = ["https://github.com/rustsec/advisory-db"]
-ignore = []
+# Each ignore entry must cite an upstream tracker and a revisit condition.
+# Drop entries when the constraint is gone, not when CI is loud.
+ignore = [
+    # Tauri pulls urlpattern → unic-ucd-{ident,version}, which the unic
+    # umbrella has unmaintained. No safe upgrade is available; revisit
+    # once Tauri / urlpattern migrates to icu_properties or unicode-ident.
+    # https://github.com/rustsec/advisory-db/issues/2414
+    "RUSTSEC-2025-0100", # unic-ucd-ident unmaintained
+    "RUSTSEC-2025-0098", # unic-ucd-version unmaintained
+]
 yanked = "warn"
 
 [licenses]
