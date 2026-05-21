@@ -7,6 +7,7 @@ use tracing::warn;
 
 use super::PlatformApi;
 
+#[allow(clippy::struct_field_names)]
 pub(crate) struct MacosPlatform {
     fullscreen_warned: AtomicBool,
     fullscreen_degraded_warned: AtomicBool,

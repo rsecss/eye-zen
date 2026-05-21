@@ -77,9 +77,7 @@ impl PlatformApi for LinuxPlatform {
             return None;
         }
 
-        let Some(session) = self.x11_session.as_ref() else {
-            return None;
-        };
+        let session = self.x11_session.as_ref()?;
 
         match detect_idle_duration_x11(session) {
             Ok(duration) => Some(duration),
