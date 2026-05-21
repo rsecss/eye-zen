@@ -134,12 +134,13 @@ pub(crate) trait Service: Send + Sync {
 ConfigService    --tokio::sync::watch-->  TimerService, TrayService, ...
 TimerService     --Effect via ServiceContext-->  WindowService, TrayService, SoundService
 TimerService     --Effect::RecordRestSession-->  StatService
-DetectorService  --同步拉取 (current_skip_flags)-->  TimerService loop
+DetectorService  --同步拉取 (current_skip_flags / capabilities)-->  TimerService loop / Settings command
 SoundService     --tokio::sync::mpsc-->  内部音频线程
 ```
 
 - watch channel 用于"广播最新值"语义，订阅者拿到 `Arc<Config>` 后 lock-free 读取
 - 副作用通过 `Effect` 枚举集中分派，定义在 `src-tauri/src/services/timer/effect.rs`，执行在 `src-tauri/src/services/context.rs::execute_timer_effect`
+- `DetectorService` MUST 保持薄包装：平台能力通过 `PlatformApi` 同步返回 `bool` / `Option<Duration>`，timer 只在 `current_skip_flags` 中拉取；Settings 只通过 `get_detector_capabilities` 读取能力，不直接依赖 platform 层。
 - 发送方 MUST NOT 关心接收方实现细节
 - 接收方 MUST 处理 channel 关闭（`RecvError`）的情况，关闭时不得 panic
 

@@ -397,6 +397,34 @@ mod tests {
     }
 
     #[test]
+    fn working_timeout_with_afk_skip_resets() {
+        let inner = make_inner(Working);
+        let flags = SkipFlags {
+            afk_active: true,
+            ..SkipFlags::default()
+        };
+
+        let transition = step_time(&inner, future_instant(20 * 60), &flags);
+        assert_eq!(
+            transition,
+            Some(Transition {
+                from: Working,
+                to: Working,
+            })
+        );
+    }
+
+    #[test]
+    fn skip_flags_any_active_includes_afk() {
+        let flags = SkipFlags {
+            afk_active: true,
+            ..SkipFlags::default()
+        };
+
+        assert!(flags.any_active());
+    }
+
+    #[test]
     fn pre_alert_timeout_enters_alerting() {
         let inner = make_inner(PreAlert);
 

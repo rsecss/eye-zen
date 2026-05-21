@@ -2,7 +2,6 @@
 #![warn(clippy::pedantic)]
 #![cfg_attr(test, allow(unused_imports, dead_code, clippy::unused_self))]
 
-#[cfg(not(test))]
 pub(crate) mod commands;
 pub(crate) mod error;
 #[cfg(not(test))]
@@ -44,6 +43,7 @@ pub fn run() -> Result<(), tauri::Error> {
             commands::resume_timer,
             commands::get_config,
             commands::get_statistics_trends,
+            commands::get_detector_capabilities,
             commands::update_timer_config,
             commands::update_behavior_config,
             commands::update_display_config,

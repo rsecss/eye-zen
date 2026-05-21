@@ -12,6 +12,8 @@ const DEFAULT_CONFIG: Config = {
   behavior: {
     sound_enabled: true,
     fullscreen_skip: true,
+    afk_skip_enabled: true,
+    afk_threshold_minutes: 5,
     auto_start: false,
   },
   display: {

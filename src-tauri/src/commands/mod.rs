@@ -1,55 +1,77 @@
 #![allow(clippy::missing_errors_doc, clippy::must_use_candidate)]
 #![allow(clippy::needless_pass_by_value)]
 
+#[cfg(not(test))]
 use tauri::State;
 
 use crate::error::AppError;
-use crate::models::config::{BehaviorConfig, Config, DisplayConfig, ScheduleConfig, TimerConfig};
+use crate::models::config::{BehaviorConfig, DisplayConfig, TimerConfig};
+#[cfg(not(test))]
+use crate::models::config::{Config, ScheduleConfig};
+#[cfg(not(test))]
 use crate::models::statistics::StatisticsTrendPayload;
-use crate::models::types::StatePayload;
+#[cfg(not(test))]
+use crate::models::types::{DetectorCapabilities, StatePayload};
+#[cfg(not(test))]
 use crate::services::timer::UserEvent;
+#[cfg(not(test))]
 use crate::services::SharedAppServices;
 
+#[cfg(not(test))]
 type Services<'a> = State<'a, SharedAppServices>;
 type CmdResult<T> = Result<T, AppError>;
 
+#[cfg(not(test))]
 #[tauri::command]
 pub(crate) async fn get_state_snapshot(services: Services<'_>) -> CmdResult<StatePayload> {
     Ok(services.timer.state_snapshot().await)
 }
 
+#[cfg(not(test))]
 #[tauri::command]
 pub(crate) async fn start_rest(services: Services<'_>) -> CmdResult<()> {
     services.timer.handle_user_event(UserEvent::StartRest).await
 }
 
+#[cfg(not(test))]
 #[tauri::command]
 pub(crate) async fn skip_rest(services: Services<'_>) -> CmdResult<()> {
     services.timer.handle_user_event(UserEvent::Skip).await
 }
 
+#[cfg(not(test))]
 #[tauri::command]
 pub(crate) async fn pause_timer(services: Services<'_>) -> CmdResult<()> {
     services.timer.handle_user_event(UserEvent::Pause).await
 }
 
+#[cfg(not(test))]
 #[tauri::command]
 pub(crate) async fn resume_timer(services: Services<'_>) -> CmdResult<()> {
     services.timer.handle_user_event(UserEvent::Resume).await
 }
 
+#[cfg(not(test))]
 #[allow(clippy::unnecessary_wraps)]
 #[tauri::command]
 pub(crate) fn get_config(services: Services<'_>) -> CmdResult<Config> {
     Ok((*services.config.current()).clone())
 }
 
+#[cfg(not(test))]
 #[tauri::command]
 pub(crate) async fn get_statistics_trends(
     services: Services<'_>,
     timezone: Option<String>,
 ) -> CmdResult<StatisticsTrendPayload> {
     services.stat.statistics_trends(timezone.as_deref()).await
+}
+
+#[cfg(not(test))]
+#[allow(clippy::unnecessary_wraps)]
+#[tauri::command]
+pub(crate) fn get_detector_capabilities(services: Services<'_>) -> CmdResult<DetectorCapabilities> {
+    Ok(services.detector.capabilities())
 }
 
 fn validate_timer_config(config: &TimerConfig) -> CmdResult<()> {
@@ -75,6 +97,16 @@ fn validate_timer_config(config: &TimerConfig) -> CmdResult<()> {
         return Err(AppError::ConfigInvalid {
             field: "alert_timeout_seconds".to_string(),
             reason: format!("must be 10-300, got {}", config.alert_timeout_seconds),
+        });
+    }
+    Ok(())
+}
+
+fn validate_behavior_config(config: &BehaviorConfig) -> CmdResult<()> {
+    if config.afk_threshold_minutes == 0 || config.afk_threshold_minutes > 120 {
+        return Err(AppError::ConfigInvalid {
+            field: "afk_threshold_minutes".to_string(),
+            reason: format!("must be 1-120, got {}", config.afk_threshold_minutes),
         });
     }
     Ok(())
@@ -106,6 +138,7 @@ fn validate_display_config(config: &DisplayConfig) -> CmdResult<()> {
     Ok(())
 }
 
+#[cfg(not(test))]
 #[tauri::command]
 pub(crate) async fn update_timer_config(
     services: Services<'_>,
@@ -120,12 +153,13 @@ pub(crate) async fn update_timer_config(
         })?
 }
 
+#[cfg(not(test))]
 #[tauri::command]
 pub(crate) async fn update_behavior_config(
     services: Services<'_>,
     config: BehaviorConfig,
 ) -> CmdResult<()> {
-    // BehaviorConfig contains only boolean fields; no range validation needed.
+    validate_behavior_config(&config)?;
     let services = services.inner().clone();
     tokio::task::spawn_blocking(move || services.config.update_behavior(config))
         .await
@@ -134,6 +168,7 @@ pub(crate) async fn update_behavior_config(
         })?
 }
 
+#[cfg(not(test))]
 #[tauri::command]
 pub(crate) async fn update_display_config(
     services: Services<'_>,
@@ -148,6 +183,7 @@ pub(crate) async fn update_display_config(
         })?
 }
 
+#[cfg(not(test))]
 #[tauri::command]
 pub(crate) async fn update_schedule_config(
     services: Services<'_>,
@@ -161,4 +197,54 @@ pub(crate) async fn update_schedule_config(
         .map_err(|err| AppError::IoError {
             message: format!("update_schedule_config task failed: {err}"),
         })?
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn behavior_config_accepts_afk_threshold_bounds() {
+        let config = BehaviorConfig {
+            afk_threshold_minutes: 1,
+            ..BehaviorConfig::default()
+        };
+        assert!(validate_behavior_config(&config).is_ok());
+
+        let config = BehaviorConfig {
+            afk_threshold_minutes: 120,
+            ..BehaviorConfig::default()
+        };
+        assert!(validate_behavior_config(&config).is_ok());
+    }
+
+    #[test]
+    fn behavior_config_rejects_zero_afk_threshold() {
+        let config = BehaviorConfig {
+            afk_threshold_minutes: 0,
+            ..BehaviorConfig::default()
+        };
+
+        let Err(AppError::ConfigInvalid { field, reason }) = validate_behavior_config(&config)
+        else {
+            panic!("expected afk threshold validation error");
+        };
+        assert_eq!(field, "afk_threshold_minutes");
+        assert_eq!(reason, "must be 1-120, got 0");
+    }
+
+    #[test]
+    fn behavior_config_rejects_too_large_afk_threshold() {
+        let config = BehaviorConfig {
+            afk_threshold_minutes: 121,
+            ..BehaviorConfig::default()
+        };
+
+        let Err(AppError::ConfigInvalid { field, reason }) = validate_behavior_config(&config)
+        else {
+            panic!("expected afk threshold validation error");
+        };
+        assert_eq!(field, "afk_threshold_minutes");
+        assert_eq!(reason, "must be 1-120, got 121");
+    }
 }

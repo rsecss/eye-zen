@@ -22,6 +22,12 @@ const zhCN = {
   'settings.behavior.sound.desc': '休息提醒时播放音效',
   'settings.behavior.fullscreenSkip': '全屏跳过',
   'settings.behavior.fullscreenSkip.desc': '全屏应用时跳过提醒',
+  'settings.behavior.afkSkip': '离开跳过',
+  'settings.behavior.afkSkip.desc': '键鼠无输入超过阈值时，跳过下一次提醒',
+  'settings.behavior.afkThreshold': '离开阈值',
+  'settings.behavior.afkThreshold.desc': '连续无键鼠输入多久后视为离开',
+  'settings.behavior.afkThreshold.unit': 'min',
+  'settings.behavior.afkUnsupported': '当前会话不支持键鼠空闲检测，已禁用',
   'settings.behavior.autoStart': '开机启动',
   'settings.behavior.autoStart.desc': '系统启动时自动运行',
 
