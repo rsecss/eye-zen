@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.3.0] - 2026-05-22
+
+### Added
+
+- **AFK detection** (#10) — detects system idle at each Working tick and skips the next rest reminder via `SkipFlags::afk_active`, logging `skip: afk`. Cross-platform: Windows / macOS / Linux X11; Wayland gracefully degrades (controls disabled with explanation). New Settings toggle and threshold stepper, effective on the next tick. Legacy TOML files without `afk_*` fields load via serde defaults.
+- **Rest statistics trends** (#11) — `StatService` persists each `Resting → Working` session to SQLite (`app_data_dir/eyezen/data.db`, WAL mode, auto-created schema). New Tauri command `get_statistics_trends(timezone?)` aggregates by day / week / month in the requested IANA timezone (DST-safe). New `StatisticsPage.svelte` renders trends with ECharts plus today's totals.
+- **Configurable global hotkeys** (#12) — backend-owned global shortcuts for `start_rest` / `skip_rest` / `toggle_pause`, configurable from Settings and persisted in TOML. Per-action best-effort registration: a single shortcut conflict no longer disables the other working bindings; the top "快捷键未生效" banner is reserved for macOS Accessibility missing or all-fail. macOS Accessibility missing path degrades gracefully with a permission banner.
+
+### Changed
+
+- **Spec docs** — `architecture/ipc-and-state.md` (AFK / Statistics Trend / Global Hotkey IPC scenarios with commands tables, validation/error matrices, Good/Base/Bad examples), `backend/service-pattern.md` (service DAG, lifecycle, start/shutdown order with `StatService` + `HotkeyService`), `backend/platform-storage.md` (idle capability + SQLite `app_data_dir`), `frontend/state-management.md`.
+
 ## [0.2.0] - 2026-05-20
 
 ### Added
@@ -52,5 +64,6 @@ First public release. A fully functional 20-20-20 eye care desktop app.
 | macOS (ARM/Intel) | ⚠️ Builds, untested |
 | Linux (X11/Wayland) | ⚠️ Builds, untested |
 
+[0.3.0]: https://github.com/rsecss/eye-zen/releases/tag/v0.3.0
 [0.2.0]: https://github.com/rsecss/eye-zen/releases/tag/v0.2.0
 [0.1.0]: https://github.com/rsecss/eye-zen/releases/tag/v0.1.0
