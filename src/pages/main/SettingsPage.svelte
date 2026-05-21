@@ -94,15 +94,31 @@
     );
   }
 
+  // MUST replace in order: CommandOrControl before Command/Control
+  function prettifyShortcut(value: string): string {
+    return value
+      .replaceAll('CommandOrControl', 'Cmd/Ctrl')
+      .replaceAll('Command', 'Cmd')
+      .replaceAll('Control', 'Ctrl');
+  }
+
+  // MUST replace in order: Cmd/Ctrl before Cmd and Ctrl
+  function rawifyShortcut(value: string): string {
+    return value
+      .replaceAll('Cmd/Ctrl', 'CommandOrControl')
+      .replaceAll('Cmd', 'Command')
+      .replaceAll('Ctrl', 'Control');
+  }
+
   function handleHotkeyChange(field: keyof HotkeysConfig, value: string, input: HTMLInputElement) {
-    const next = value.trim();
+    const next = rawifyShortcut(value.trim());
     if (next === cfg.hotkeys[field]) {
-      input.value = cfg.hotkeys[field];
+      input.value = prettifyShortcut(cfg.hotkeys[field]);
       return;
     }
     if (!next) {
       hotkeySaveError = i18nStore.t('settings.hotkeys.error.empty');
-      input.value = cfg.hotkeys[field];
+      input.value = prettifyShortcut(cfg.hotkeys[field]);
       return;
     }
 
@@ -113,7 +129,7 @@
       })
       .catch((err) => {
         hotkeySaveError = errorMessage(err);
-        input.value = cfg.hotkeys[field];
+        input.value = prettifyShortcut(cfg.hotkeys[field]);
         console.error('Failed to update hotkeys config:', err);
       });
   }
@@ -318,7 +334,7 @@
       <div class="hotkey-control">
         <input
           class="hotkey-input"
-          value={cfg.hotkeys.start_rest}
+          value={prettifyShortcut(cfg.hotkeys.start_rest)}
           aria-label={i18nStore.t('settings.hotkeys.startRest')}
           onchange={(e) => handleHotkeyChange('start_rest', e.currentTarget.value, e.currentTarget)}
         />
@@ -336,7 +352,7 @@
       <div class="hotkey-control">
         <input
           class="hotkey-input"
-          value={cfg.hotkeys.skip_rest}
+          value={prettifyShortcut(cfg.hotkeys.skip_rest)}
           aria-label={i18nStore.t('settings.hotkeys.skipRest')}
           onchange={(e) => handleHotkeyChange('skip_rest', e.currentTarget.value, e.currentTarget)}
         />
@@ -354,7 +370,7 @@
       <div class="hotkey-control">
         <input
           class="hotkey-input"
-          value={cfg.hotkeys.toggle_pause}
+          value={prettifyShortcut(cfg.hotkeys.toggle_pause)}
           aria-label={i18nStore.t('settings.hotkeys.togglePause')}
           onchange={(e) =>
             handleHotkeyChange('toggle_pause', e.currentTarget.value, e.currentTarget)}
@@ -535,7 +551,7 @@
   }
 
   .hotkey-input {
-    width: 172px;
+    width: 150px;
     padding: 6px 10px;
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
@@ -543,6 +559,7 @@
     color: var(--text-primary);
     font-size: 13px;
     font-family: inherit;
+    text-align: center;
     outline: none;
     transition:
       border-color var(--transition),

@@ -28,6 +28,12 @@ struct Binding {
     id: u32,
 }
 
+struct ActionOutcome {
+    active_entry: Option<Binding>,
+    status: HotkeyBindingStatus,
+    failure_message: Option<String>,
+}
+
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 struct ActiveBindings {
     entries: Vec<Binding>,
@@ -128,44 +134,136 @@ impl HotkeyInner {
             }
         };
 
-        let old = self.active_bindings()?;
-        if old.entries == desired {
+        let current = self.active_bindings()?;
+        if current.entries == desired {
             self.publish_status(Self::registered_status(&desired, accessibility));
             return Ok(());
         }
 
-        if let Err(err) = self.unregister_bindings(&old.entries) {
-            let message = format!("failed to unbind previous shortcuts: {err}");
-            self.publish_status(Self::failed_status(config, accessibility, &message));
-            return Err(AppError::ConfigInvalid {
-                field: "hotkeys".to_string(),
-                reason: message,
-            });
-        }
+        let mut next_active: Vec<Binding> = Vec::new();
+        let mut statuses: Vec<HotkeyBindingStatus> = Vec::new();
+        let mut failed_count = 0usize;
+        let mut last_failure_message: Option<String> = None;
 
-        let mut registered = Vec::new();
-        for binding in &desired {
-            if let Err(err) = self.registry.register(&binding.shortcut) {
-                let message = format!(
-                    "failed to register {} for {:?}: {err}",
-                    binding.shortcut, binding.action
-                );
-                self.rollback_failed_update(&registered, &old.entries);
-                self.set_active(old)?;
-                self.publish_status(Self::failed_status(config, accessibility, &message));
-                return Err(AppError::ConfigInvalid {
-                    field: Self::field_for_action(binding.action).to_string(),
-                    reason: message,
-                });
+        for desired_binding in &desired {
+            let current_for_action = current
+                .entries
+                .iter()
+                .find(|binding| binding.action == desired_binding.action);
+            let outcome = self.reconcile_single_action(desired_binding, current_for_action);
+            if let Some(entry) = outcome.active_entry {
+                next_active.push(entry);
             }
-            registered.push(binding.clone());
+            if let Some(message) = outcome.failure_message {
+                failed_count += 1;
+                last_failure_message = Some(message);
+            }
+            statuses.push(outcome.status);
         }
 
         self.set_active(ActiveBindings {
-            entries: desired.clone(),
+            entries: next_active,
         })?;
-        self.publish_status(Self::registered_status(&desired, accessibility));
-        Ok(())
+
+        let total = desired.len();
+        let last_error = if failed_count == total && total > 0 {
+            last_failure_message.clone()
+        } else {
+            None
+        };
+
+        // Partial conflicts no longer bubble Err (so Settings doesn't show the
+        // global banner), but they still warrant a log trail for diagnosis.
+        if failed_count > 0 && failed_count < total {
+            warn!(
+                "hotkey partial conflict: {}/{} bindings failed; see status for details",
+                failed_count, total
+            );
+        }
+
+        self.publish_status(HotkeyStatus {
+            bindings: statuses,
+            macos_accessibility: accessibility,
+            last_error,
+        });
+
+        if failed_count == total && total > 0 {
+            Err(AppError::ConfigInvalid {
+                field: Self::field_for_action(desired[0].action).to_string(),
+                reason: last_failure_message
+                    .unwrap_or_else(|| "all hotkey bindings failed".to_string()),
+            })
+        } else {
+            Ok(())
+        }
+    }
+
+    fn reconcile_single_action(
+        &self,
+        desired: &Binding,
+        current: Option<&Binding>,
+    ) -> ActionOutcome {
+        if let Some(cur) = current {
+            if cur.shortcut == desired.shortcut {
+                return ActionOutcome {
+                    active_entry: Some(cur.clone()),
+                    status: HotkeyBindingStatus {
+                        action: desired.action,
+                        shortcut: cur.shortcut.clone(),
+                        state: HotkeyBindingState::Registered,
+                        message: None,
+                    },
+                    failure_message: None,
+                };
+            }
+            if let Err(err) = self.registry.unregister(&cur.shortcut) {
+                warn!(
+                    "failed to unregister previous hotkey {}: {err}",
+                    cur.shortcut
+                );
+            }
+        }
+
+        match self.registry.register(&desired.shortcut) {
+            Ok(()) => ActionOutcome {
+                active_entry: Some(desired.clone()),
+                status: HotkeyBindingStatus {
+                    action: desired.action,
+                    shortcut: desired.shortcut.clone(),
+                    state: HotkeyBindingState::Registered,
+                    message: None,
+                },
+                failure_message: None,
+            },
+            Err(err) => {
+                let message = format!(
+                    "failed to register {} for {:?}: {err}",
+                    desired.shortcut, desired.action
+                );
+                let restored = current.and_then(|cur| {
+                    if self.registry.register(&cur.shortcut).is_ok() {
+                        Some(cur.clone())
+                    } else {
+                        warn!(
+                            "failed to restore previous hotkey {} after rollback",
+                            cur.shortcut
+                        );
+                        None
+                    }
+                });
+
+                ActionOutcome {
+                    active_entry: restored,
+                    status: HotkeyBindingStatus {
+                        action: desired.action,
+                        shortcut: desired.shortcut.clone(),
+                        state: HotkeyBindingState::Conflict,
+                        message: Some(message.clone()),
+                    },
+                    failure_message: Some(message),
+                }
+            }
+        }
     }
 
     fn status(&self) -> HotkeyStatus {
@@ -283,25 +381,6 @@ impl HotkeyInner {
             self.registry.unregister(&binding.shortcut)?;
         }
         Ok(())
-    }
-
-    fn rollback_failed_update(&self, registered: &[Binding], previous: &[Binding]) {
-        for binding in registered {
-            if let Err(err) = self.registry.unregister(&binding.shortcut) {
-                warn!(
-                    "failed to unregister partial hotkey {}: {err}",
-                    binding.shortcut
-                );
-            }
-        }
-        for binding in previous {
-            if let Err(err) = self.registry.register(&binding.shortcut) {
-                warn!(
-                    "failed to restore hotkey {} after rollback: {err}",
-                    binding.shortcut
-                );
-            }
-        }
     }
 
     fn publish_status(&self, status: HotkeyStatus) {
@@ -617,7 +696,7 @@ mod tests {
     }
 
     #[test]
-    fn registration_failure_rolls_back_previous_bindings() {
+    fn registration_failure_keeps_other_actions_active() {
         let registry = FakeRegistry::default();
         let service = make_service(registry.clone());
         let old = HotkeysConfig::default();
@@ -633,19 +712,35 @@ mod tests {
 
         let result = service.apply_config(&new);
 
-        assert!(matches!(
-            result,
-            Err(AppError::ConfigInvalid { field, .. }) if field == "hotkeys.toggle_pause"
-        ));
+        assert!(result.is_ok(), "mixed result should not bubble Err");
         assert_eq!(
             registry.registered(),
             BTreeSet::from([
                 "CommandOrControl+Alt+B".to_string(),
                 "CommandOrControl+Alt+P".to_string(),
                 "CommandOrControl+Alt+S".to_string(),
-            ])
+            ]),
+            "previous toggle_pause shortcut should be restored after failure"
         );
-        assert!(service.status().last_error.is_some());
+
+        let status = service.status();
+        assert_eq!(
+            status.last_error, None,
+            "mixed conflict must not set the global last_error banner"
+        );
+        let toggle_status = status
+            .bindings
+            .iter()
+            .find(|binding| binding.action == HotkeyAction::TogglePause)
+            .expect("toggle_pause status should be present");
+        assert_eq!(toggle_status.state, HotkeyBindingState::Conflict);
+        assert_eq!(toggle_status.shortcut, "CommandOrControl+Alt+X");
+        let start_status = status
+            .bindings
+            .iter()
+            .find(|binding| binding.action == HotkeyAction::StartRest)
+            .expect("start_rest status should be present");
+        assert_eq!(start_status.state, HotkeyBindingState::Registered);
     }
 
     #[test]
@@ -670,13 +765,114 @@ mod tests {
             registry.operations(),
             vec![
                 "unregister:CommandOrControl+Alt+B".to_string(),
-                "unregister:CommandOrControl+Alt+S".to_string(),
-                "unregister:CommandOrControl+Alt+P".to_string(),
                 "register:CommandOrControl+Alt+N".to_string(),
-                "register:CommandOrControl+Alt+S".to_string(),
-                "register:CommandOrControl+Alt+P".to_string(),
-            ]
+            ],
+            "only the changed action should be touched in per-action mode"
         );
+    }
+
+    #[test]
+    fn partial_conflict_keeps_other_actions_registered_with_no_global_error() {
+        let registry = FakeRegistry::default();
+        registry.fail_register("CommandOrControl+Alt+S");
+        let service = make_service(registry.clone());
+
+        service
+            .apply_config(&HotkeysConfig::default())
+            .expect("partial conflict on startup should not bubble Err");
+
+        assert_eq!(
+            registry.registered(),
+            BTreeSet::from([
+                "CommandOrControl+Alt+B".to_string(),
+                "CommandOrControl+Alt+P".to_string(),
+            ]),
+            "non-conflicting shortcuts should still register"
+        );
+
+        let status = service.status();
+        assert_eq!(status.last_error, None);
+        let skip_status = status
+            .bindings
+            .iter()
+            .find(|binding| binding.action == HotkeyAction::SkipRest)
+            .expect("skip_rest status should be present");
+        assert_eq!(skip_status.state, HotkeyBindingState::Conflict);
+        assert!(
+            skip_status.message.is_some(),
+            "conflict row should carry diagnostic message"
+        );
+
+        for action in [HotkeyAction::StartRest, HotkeyAction::TogglePause] {
+            let row = status
+                .bindings
+                .iter()
+                .find(|binding| binding.action == action)
+                .unwrap_or_else(|| panic!("status for {action:?} missing"));
+            assert_eq!(row.state, HotkeyBindingState::Registered);
+        }
+    }
+
+    #[test]
+    fn all_bindings_failed_sets_last_error_and_returns_err() {
+        let registry = FakeRegistry::default();
+        registry.fail_register("CommandOrControl+Alt+B");
+        registry.fail_register("CommandOrControl+Alt+S");
+        registry.fail_register("CommandOrControl+Alt+P");
+        let service = make_service(registry.clone());
+
+        let result = service.apply_config(&HotkeysConfig::default());
+
+        assert!(matches!(result, Err(AppError::ConfigInvalid { .. })));
+        assert!(registry.registered().is_empty());
+
+        let status = service.status();
+        assert!(
+            status.last_error.is_some(),
+            "global last_error must surface when every binding fails"
+        );
+        for binding in &status.bindings {
+            assert_eq!(binding.state, HotkeyBindingState::Conflict);
+        }
+    }
+
+    #[test]
+    fn editing_conflict_to_free_shortcut_only_changes_target_row() {
+        let registry = FakeRegistry::default();
+        registry.fail_register("CommandOrControl+Alt+S");
+        let service = make_service(registry.clone());
+        service
+            .apply_config(&HotkeysConfig::default())
+            .expect("partial conflict should keep service running");
+        registry.clear_operations();
+
+        let new = HotkeysConfig {
+            skip_rest: "CommandOrControl+Alt+K".to_string(),
+            ..HotkeysConfig::default()
+        };
+        service
+            .apply_config(&new)
+            .expect("freeing the conflict should succeed");
+
+        assert_eq!(
+            registry.operations(),
+            vec!["register:CommandOrControl+Alt+K".to_string()],
+            "only the formerly-conflicting action should be touched"
+        );
+        assert_eq!(
+            registry.registered(),
+            BTreeSet::from([
+                "CommandOrControl+Alt+B".to_string(),
+                "CommandOrControl+Alt+K".to_string(),
+                "CommandOrControl+Alt+P".to_string(),
+            ])
+        );
+
+        let status = service.status();
+        assert_eq!(status.last_error, None);
+        for binding in &status.bindings {
+            assert_eq!(binding.state, HotkeyBindingState::Registered);
+        }
     }
 
     #[test]
