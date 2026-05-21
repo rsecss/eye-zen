@@ -7,7 +7,7 @@ use std::sync::{Arc, Mutex};
 
 #[cfg(not(test))]
 use tauri::AppHandle;
-#[cfg(not(test))]
+#[cfg(all(not(test), feature = "plugin-shortcuts"))]
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut};
 use tokio::sync::watch;
 use tokio::task::JoinHandle;
@@ -54,12 +54,30 @@ trait HotkeyRegistry: Send + Sync {
     fn unregister(&self, shortcut: &str) -> std::result::Result<(), String>;
 }
 
-#[cfg(not(test))]
+#[cfg(all(not(test), not(feature = "plugin-shortcuts")))]
+struct DisabledHotkeyRegistry;
+
+#[cfg(all(not(test), not(feature = "plugin-shortcuts")))]
+impl HotkeyRegistry for DisabledHotkeyRegistry {
+    fn shortcut_id(&self, _shortcut: &str) -> std::result::Result<u32, String> {
+        Err("plugin-shortcuts feature is disabled in this build".to_string())
+    }
+
+    fn register(&self, _shortcut: &str) -> std::result::Result<(), String> {
+        Err("plugin-shortcuts feature is disabled in this build".to_string())
+    }
+
+    fn unregister(&self, _shortcut: &str) -> std::result::Result<(), String> {
+        Ok(())
+    }
+}
+
+#[cfg(all(not(test), feature = "plugin-shortcuts"))]
 struct TauriHotkeyRegistry {
     app: AppHandle,
 }
 
-#[cfg(not(test))]
+#[cfg(all(not(test), feature = "plugin-shortcuts"))]
 impl TauriHotkeyRegistry {
     fn parse_shortcut(shortcut: &str) -> std::result::Result<Shortcut, String> {
         shortcut
@@ -68,7 +86,7 @@ impl TauriHotkeyRegistry {
     }
 }
 
-#[cfg(not(test))]
+#[cfg(all(not(test), feature = "plugin-shortcuts"))]
 impl HotkeyRegistry for TauriHotkeyRegistry {
     fn shortcut_id(&self, shortcut: &str) -> std::result::Result<u32, String> {
         Ok(Self::parse_shortcut(shortcut)?.id())
@@ -483,10 +501,16 @@ pub(crate) struct HotkeyService {
 }
 
 impl HotkeyService {
-    #[cfg(not(test))]
+    #[cfg(all(not(test), feature = "plugin-shortcuts"))]
     #[must_use]
     pub(crate) fn new(config_rx: watch::Receiver<Arc<Config>>, app: AppHandle) -> Self {
         Self::with_registry(config_rx, Box::new(TauriHotkeyRegistry { app }))
+    }
+
+    #[cfg(all(not(test), not(feature = "plugin-shortcuts")))]
+    #[must_use]
+    pub(crate) fn new_disabled(config_rx: watch::Receiver<Arc<Config>>) -> Self {
+        Self::with_registry(config_rx, Box::new(DisabledHotkeyRegistry))
     }
 
     fn with_registry(

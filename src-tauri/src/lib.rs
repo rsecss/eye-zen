@@ -20,12 +20,12 @@ use std::time::Duration;
 
 #[cfg(not(test))]
 use tauri::{Manager, RunEvent, WindowEvent};
-#[cfg(not(test))]
+#[cfg(all(not(test), feature = "plugin-shortcuts"))]
 use tauri_plugin_global_shortcut::ShortcutState;
 #[cfg(not(test))]
 use tracing::{error, info, warn};
 
-#[cfg(not(test))]
+#[cfg(all(not(test), feature = "plugin-shortcuts"))]
 use crate::models::hotkeys::HotkeyAction;
 #[cfg(not(test))]
 use crate::services::Service;
@@ -33,54 +33,58 @@ use crate::services::Service;
 #[cfg(not(test))]
 #[allow(clippy::missing_errors_doc, clippy::too_many_lines)]
 pub fn run() -> Result<(), tauri::Error> {
-    let app = tauri::Builder::default()
+    let builder = tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_autostart::init(
             tauri_plugin_autostart::MacosLauncher::LaunchAgent,
             None,
-        ))
-        .plugin(
-            tauri_plugin_global_shortcut::Builder::new()
-                .with_handler(|app, _shortcut, event| {
-                    if !matches!(event.state, ShortcutState::Pressed) {
+        ));
+
+    #[cfg(feature = "plugin-shortcuts")]
+    let builder = builder.plugin(
+        tauri_plugin_global_shortcut::Builder::new()
+            .with_handler(|app, _shortcut, event| {
+                if !matches!(event.state, ShortcutState::Pressed) {
+                    return;
+                }
+
+                let app = app.clone();
+                tauri::async_runtime::spawn(async move {
+                    let Some(services) = app.try_state::<services::SharedAppServices>() else {
+                        warn!("shared services unavailable while handling global hotkey");
                         return;
-                    }
+                    };
 
-                    let app = app.clone();
-                    tauri::async_runtime::spawn(async move {
-                        let Some(services) = app.try_state::<services::SharedAppServices>() else {
-                            warn!("shared services unavailable while handling global hotkey");
-                            return;
-                        };
+                    let Some(action) = services.hotkeys.action_for_id(event.id) else {
+                        warn!("unmapped global hotkey id {}", event.id);
+                        return;
+                    };
 
-                        let Some(action) = services.hotkeys.action_for_id(event.id) else {
-                            warn!("unmapped global hotkey id {}", event.id);
-                            return;
-                        };
-
-                        let result = match action {
-                            HotkeyAction::StartRest => {
-                                services
-                                    .timer
-                                    .handle_user_event(services::timer::UserEvent::StartRest)
-                                    .await
-                            }
-                            HotkeyAction::SkipRest => {
-                                services
-                                    .timer
-                                    .handle_user_event(services::timer::UserEvent::Skip)
-                                    .await
-                            }
-                            HotkeyAction::TogglePause => services.timer.toggle_pause().await,
-                        };
-
-                        if let Err(err) = result {
-                            warn!("global hotkey action {action:?} failed: {err}");
+                    let result = match action {
+                        HotkeyAction::StartRest => {
+                            services
+                                .timer
+                                .handle_user_event(services::timer::UserEvent::StartRest)
+                                .await
                         }
-                    });
-                })
-                .build(),
-        )
+                        HotkeyAction::SkipRest => {
+                            services
+                                .timer
+                                .handle_user_event(services::timer::UserEvent::Skip)
+                                .await
+                        }
+                        HotkeyAction::TogglePause => services.timer.toggle_pause().await,
+                    };
+
+                    if let Err(err) = result {
+                        warn!("global hotkey action {action:?} failed: {err}");
+                    }
+                });
+            })
+            .build(),
+    );
+
+    let app = builder
         .invoke_handler(tauri::generate_handler![
             commands::get_state_snapshot,
             commands::start_rest,
@@ -139,10 +143,19 @@ pub fn run() -> Result<(), tauri::Error> {
                 config_service.subscribe(),
                 Arc::clone(&i18n_service),
             );
-            let hotkey_service = services::hotkeys::HotkeyService::new(
-                config_service.subscribe(),
-                app.handle().clone(),
-            );
+            let hotkey_service = {
+                #[cfg(feature = "plugin-shortcuts")]
+                {
+                    services::hotkeys::HotkeyService::new(
+                        config_service.subscribe(),
+                        app.handle().clone(),
+                    )
+                }
+                #[cfg(not(feature = "plugin-shortcuts"))]
+                {
+                    services::hotkeys::HotkeyService::new_disabled(config_service.subscribe())
+                }
+            };
 
             tauri::async_runtime::block_on(async {
                 config_service.init(&handle).await?;

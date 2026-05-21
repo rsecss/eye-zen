@@ -4,6 +4,14 @@ version = "0.2.0"
 edition = "2021"
 license = "GPL-3.0-or-later"
 
+[features]
+default = ["plugin-shortcuts"]
+# Wraps the global-shortcut Tauri plugin so `cargo test --no-default-features`
+# can skip linking it. The crate's Windows hook destructor races with rodio
+# during process exit and causes STATUS_ACCESS_VIOLATION in test binaries;
+# production builds always enable the feature via the default set.
+plugin-shortcuts = ["dep:tauri-plugin-global-shortcut"]
+
 [build-dependencies]
 tauri-build = { version = "~2.5", features = [] }
 
@@ -11,7 +19,7 @@ tauri-build = { version = "~2.5", features = [] }
 tauri = { version = "~2.10", features = ["tray-icon"] }
 tauri-plugin-shell = "~2.3"
 tauri-plugin-autostart = "~2.2"
-tauri-plugin-global-shortcut = "~2.3"
+tauri-plugin-global-shortcut = { version = "~2.3", optional = true }
 serde = { version = "~1.0", features = ["derive"] }
 serde_json = "~1.0"
 tokio = { version = "~1.50", features = ["full"] }
