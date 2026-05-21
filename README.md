@@ -11,7 +11,7 @@
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0--or--later-blue.svg" alt="License" /></a>
   <img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-brightgreen" alt="Platform" />
-  <img src="https://img.shields.io/badge/version-0.2.0-orange" alt="Version" />
+  <img src="https://img.shields.io/badge/version-0.3.0-orange" alt="Version" />
   <img src="https://img.shields.io/badge/tauri-v2-blue" alt="Tauri v2" />
 </p>
 
@@ -19,7 +19,7 @@
   English | <a href="README.zh-CN.md">简体中文</a>
 </p>
 
-> **Status**: v0.2.0 released. Download pre-built installers from [GitHub Releases](https://github.com/rsecss/eye-zen/releases/latest).
+> **Status**: v0.3.0 released. Download pre-built installers from [GitHub Releases](https://github.com/rsecss/eye-zen/releases/latest).
 
 ---
 
@@ -131,8 +131,8 @@ cargo fmt --all --manifest-path src-tauri/Cargo.toml --check
 
 - [x] **v0.1** — Core MVP (timer, tray, multi-monitor, fullscreen detection, settings, theme, auto-start, i18n)
 - [x] **v0.2** — Workday scheduling
-- [ ] **v0.3** — Usage statistics + charts
-- [ ] **v0.4** — Away detection
+- [x] **v0.3** — Usage statistics + charts, AFK detection, configurable global hotkeys
+- [ ] **v0.4** — Process whitelist
 - [ ] **v1.0** — Feature complete + stable release
 
 ## Configuration

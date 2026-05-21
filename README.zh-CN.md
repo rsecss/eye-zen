@@ -11,7 +11,7 @@
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0--or--later-blue.svg" alt="License" /></a>
   <img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-brightgreen" alt="Platform" />
-  <img src="https://img.shields.io/badge/version-0.2.0-orange" alt="Version" />
+  <img src="https://img.shields.io/badge/version-0.3.0-orange" alt="Version" />
   <img src="https://img.shields.io/badge/tauri-v2-blue" alt="Tauri v2" />
 </p>
 
@@ -19,7 +19,7 @@
   <a href="README.md">English</a> | 简体中文
 </p>
 
-> **项目状态**: v0.2.0 已发布。从 [GitHub Releases](https://github.com/rsecss/eye-zen/releases/latest) 下载预编译安装包。
+> **项目状态**: v0.3.0 已发布。从 [GitHub Releases](https://github.com/rsecss/eye-zen/releases/latest) 下载预编译安装包。
 
 ---
 
@@ -144,8 +144,8 @@ cargo fmt --all --manifest-path src-tauri/Cargo.toml --check
 
 - [x] **v0.1** — 核心 MVP（定时器、托盘、多显示器、全屏检测、设置、主题、自启动、i18n）
 - [x] **v0.2** — 工作日调度
-- [ ] **v0.3** — 使用统计 + 可视化图表
-- [ ] **v0.4** — 离席检测
+- [x] **v0.3** — 使用统计 + 图表、离席检测、可配置全局快捷键
+- [ ] **v0.4** — 进程白名单
 - [ ] **v1.0** — 功能完整 + 稳定发布
 
 ## 配置文件
