@@ -1,0 +1,10 @@
+{"file": ".trellis/spec/architecture/ipc-and-state.md", "reason": "Timer SkipFlags contract and state-machine purity rules for AFK skip behavior."}
+{"file": ".trellis/spec/architecture/change-management.md", "reason": "Config schema and platform capability change checklist."}
+{"file": ".trellis/spec/architecture/testing-quality.md", "reason": "Required Rust, frontend, and CI validation gates."}
+{"file": ".trellis/spec/backend/coding-standards.md", "reason": "Rust style, locking, error, and ts-rs binding rules."}
+{"file": ".trellis/spec/backend/service-pattern.md", "reason": "Service layering and detector/timer dependency constraints."}
+{"file": ".trellis/spec/backend/platform-storage.md", "reason": "PlatformApi capability degradation and TOML compatibility rules."}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Settings immediate-save and no optimistic update contract."}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Svelte 5 component and Settings control conventions."}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Binding import and generated DTO requirements."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Frontend testing and capability quality gates."}

@@ -6,6 +6,7 @@
     step,
     unit,
     label = '',
+    disabled = false,
     onchange,
   }: {
     value: number;
@@ -14,26 +15,29 @@
     step: number;
     unit: string;
     label?: string;
+    disabled?: boolean;
     onchange: (v: number) => void;
   } = $props();
 
   function increment() {
+    if (disabled) return;
     const next = Math.min(max, value + step);
     if (next !== value) onchange(next);
   }
 
   function decrement() {
+    if (disabled) return;
     const next = Math.max(min, value - step);
     if (next !== value) onchange(next);
   }
 </script>
 
-<div class="stepper-group">
+<div class="stepper-group" class:disabled aria-disabled={disabled}>
   <button
     class="stepper-btn"
     aria-label="Decrease {label}"
     onclick={decrement}
-    disabled={value <= min}>−</button
+    disabled={disabled || value <= min}>−</button
   >
 
   <div class="stepper-value">
@@ -45,7 +49,7 @@
     class="stepper-btn"
     aria-label="Increase {label}"
     onclick={increment}
-    disabled={value >= max}>+</button
+    disabled={disabled || value >= max}>+</button
   >
 </div>
 
@@ -61,6 +65,14 @@
 
   .stepper-group:hover {
     background: var(--accent-glow);
+  }
+
+  .stepper-group.disabled {
+    opacity: 0.55;
+  }
+
+  .stepper-group.disabled:hover {
+    background: transparent;
   }
 
   .stepper-btn {

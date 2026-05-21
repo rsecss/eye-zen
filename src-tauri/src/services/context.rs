@@ -18,7 +18,7 @@ use crate::services::schedule::is_schedule_active;
 #[cfg(not(test))]
 use super::timer::{
     collect_effects, collect_tick_effects, step_time, Effect, Inner, SkipFlags, TimerService,
-    TrayUpdate,
+    TimerState, TrayUpdate,
 };
 #[cfg(test)]
 use super::timer::{Effect, Inner};
@@ -148,6 +148,12 @@ impl ServiceContext {
 
                     match step_time(&guard, now, &flags) {
                         Some(transition) => {
+                            if transition.from == TimerState::Working
+                                && transition.to == TimerState::Working
+                                && flags.afk_active
+                            {
+                                info!("skip: afk");
+                            }
                             guard.apply_transition(transition);
                             collect_effects(transition, &guard, now)
                         }
@@ -200,8 +206,13 @@ fn current_skip_flags(app: &AppHandle) -> SkipFlags {
     let config = services.config.current();
     let fullscreen_skip = config.behavior.fullscreen_skip;
     let schedule_inactive = !is_schedule_active(chrono::Local::now(), &config.schedule);
+    let afk_active = config.behavior.afk_skip_enabled
+        && services
+            .detector
+            .is_afk_for_threshold(config.behavior.afk_threshold_minutes);
     SkipFlags {
         fullscreen_active: fullscreen_skip && services.detector.is_fullscreen(),
         schedule_inactive,
+        afk_active,
     }
 }

@@ -5,9 +5,13 @@ pub(crate) mod macos;
 #[cfg(target_os = "windows")]
 pub(crate) mod windows;
 
+use std::time::Duration;
+
 /// Platform abstraction for OS-specific capability detection.
 pub(crate) trait PlatformApi: Send + Sync {
     fn is_fullscreen_app_active(&self) -> bool;
+    fn idle_duration(&self) -> Option<Duration>;
+    fn supports_idle_detection(&self) -> bool;
 }
 
 /// Create the platform-specific implementation for the current target.

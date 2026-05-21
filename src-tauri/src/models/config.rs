@@ -45,11 +45,16 @@ impl Default for TimerConfig {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[cfg_attr(test, derive(ts_rs::TS))]
 #[cfg_attr(test, ts(export, export_to = "../../src/lib/bindings/"))]
+#[allow(clippy::struct_excessive_bools)]
 pub struct BehaviorConfig {
     #[serde(default = "default_true")]
     pub sound_enabled: bool,
     #[serde(default = "default_true")]
     pub fullscreen_skip: bool,
+    #[serde(default = "default_true")]
+    pub afk_skip_enabled: bool,
+    #[serde(default = "default_afk_threshold_minutes")]
+    pub afk_threshold_minutes: u32,
     #[serde(default)]
     pub auto_start: bool,
 }
@@ -59,6 +64,8 @@ impl Default for BehaviorConfig {
         Self {
             sound_enabled: true,
             fullscreen_skip: true,
+            afk_skip_enabled: true,
+            afk_threshold_minutes: default_afk_threshold_minutes(),
             auto_start: false,
         }
     }
@@ -126,6 +133,10 @@ const fn default_true() -> bool {
     true
 }
 
+const fn default_afk_threshold_minutes() -> u32 {
+    5
+}
+
 fn default_language() -> String {
     "zh-CN".to_string()
 }
@@ -151,6 +162,8 @@ mod tests {
         assert_eq!(config.timer.alert_timeout_seconds, 60);
         assert!(config.behavior.sound_enabled);
         assert!(config.behavior.fullscreen_skip);
+        assert!(config.behavior.afk_skip_enabled);
+        assert_eq!(config.behavior.afk_threshold_minutes, 5);
         assert!(!config.behavior.auto_start);
         assert_eq!(config.display.language, "zh-CN");
         assert_eq!(config.display.theme, "light");
@@ -180,6 +193,8 @@ work_minutes = 25
         assert_eq!(config.timer.work_minutes, 25);
         assert_eq!(config.timer.rest_seconds, 20);
         assert!(config.behavior.sound_enabled);
+        assert!(config.behavior.afk_skip_enabled);
+        assert_eq!(config.behavior.afk_threshold_minutes, 5);
         assert_eq!(config.display.theme, "light");
         assert_eq!(config.hotkeys, HotkeysConfig::default());
     }

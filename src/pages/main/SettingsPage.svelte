@@ -9,6 +9,7 @@
   import type { ScheduleConfig } from '$lib/bindings/ScheduleConfig';
   import type { TimerConfig } from '$lib/bindings/TimerConfig';
   import {
+    getDetectorCapabilities,
     getHotkeyStatus,
     updateBehaviorConfig,
     updateDisplayConfig,
@@ -26,6 +27,18 @@
   import Toggle from './components/Toggle.svelte';
 
   const cfg = $derived(configStore.current);
+
+  type BooleanBehaviorField =
+    | 'sound_enabled'
+    | 'fullscreen_skip'
+    | 'afk_skip_enabled'
+    | 'auto_start';
+
+  let detectorCapabilitiesLoaded = $state(false);
+  let afkDetectionSupported = $state(false);
+  const afkControlsDisabled = $derived(!detectorCapabilitiesLoaded || !afkDetectionSupported);
+  const afkThresholdDisabled = $derived(afkControlsDisabled || !cfg.behavior.afk_skip_enabled);
+
   let hotkeyStatus = $state<HotkeyStatus | null>(null);
   let hotkeySaveError = $state<string | null>(null);
 
@@ -34,7 +47,7 @@
     updateTimerConfig(updated).catch((err) => console.error('Failed to update timer config:', err));
   }
 
-  async function handleBehaviorChange(field: keyof BehaviorConfig, value: boolean) {
+  async function handleBehaviorChange(field: BooleanBehaviorField, value: boolean) {
     if (field === 'auto_start') {
       try {
         if (value) {
@@ -64,6 +77,14 @@
       return;
     }
     const updated: BehaviorConfig = { ...cfg.behavior, [field]: value };
+    updateBehaviorConfig(updated).catch((err) =>
+      console.error('Failed to update behavior config:', err),
+    );
+  }
+
+  function handleAfkThresholdChange(value: number) {
+    if (afkControlsDisabled) return;
+    const updated: BehaviorConfig = { ...cfg.behavior, afk_threshold_minutes: value };
     updateBehaviorConfig(updated).catch((err) =>
       console.error('Failed to update behavior config:', err),
     );
@@ -200,6 +221,19 @@
   }
 
   let autoStartSynced = false;
+
+  onMount(() => {
+    getDetectorCapabilities()
+      .then((capabilities) => {
+        afkDetectionSupported = capabilities.afk_detection_supported;
+        detectorCapabilitiesLoaded = true;
+      })
+      .catch((err) => {
+        console.error('Failed to load detector capabilities:', err);
+        afkDetectionSupported = false;
+        detectorCapabilitiesLoaded = true;
+      });
+  });
 
   $effect(() => {
     if (configStore.loaded && !autoStartSynced) {
@@ -407,6 +441,44 @@
       />
     </div>
 
+    <div class="setting-row separator" class:disabled={afkControlsDisabled}>
+      <div class="setting-info">
+        <span class="setting-label">{i18nStore.t('settings.behavior.afkSkip')}</span>
+        <span class="setting-desc">
+          {afkControlsDisabled
+            ? i18nStore.t('settings.behavior.afkUnsupported')
+            : i18nStore.t('settings.behavior.afkSkip.desc')}
+        </span>
+      </div>
+      <Toggle
+        checked={cfg.behavior.afk_skip_enabled}
+        disabled={afkControlsDisabled}
+        label={i18nStore.t('settings.behavior.afkSkip')}
+        onchange={(v) => handleBehaviorChange('afk_skip_enabled', v)}
+      />
+    </div>
+
+    <div class="setting-row separator" class:disabled={afkThresholdDisabled}>
+      <div class="setting-info">
+        <span class="setting-label">{i18nStore.t('settings.behavior.afkThreshold')}</span>
+        <span class="setting-desc">
+          {afkControlsDisabled
+            ? i18nStore.t('settings.behavior.afkUnsupported')
+            : i18nStore.t('settings.behavior.afkThreshold.desc')}
+        </span>
+      </div>
+      <Stepper
+        value={cfg.behavior.afk_threshold_minutes}
+        min={1}
+        max={120}
+        step={1}
+        unit={i18nStore.t('settings.behavior.afkThreshold.unit')}
+        label={i18nStore.t('settings.behavior.afkThreshold')}
+        disabled={afkThresholdDisabled}
+        onchange={(v) => handleAfkThresholdChange(v)}
+      />
+    </div>
+
     <div class="setting-row separator">
       <div class="setting-info">
         <span class="setting-label">{i18nStore.t('settings.behavior.autoStart')}</span>
@@ -589,6 +661,10 @@
     display: flex;
     flex-direction: column;
     gap: 2px;
+  }
+
+  .setting-row.disabled .setting-info {
+    opacity: 0.55;
   }
 
   .setting-label {

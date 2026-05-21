@@ -8,6 +8,7 @@ fn main() {
             "resume_timer",
             "get_config",
             "get_hotkey_status",
+            "get_detector_capabilities",
             "update_timer_config",
             "update_behavior_config",
             "update_display_config",
