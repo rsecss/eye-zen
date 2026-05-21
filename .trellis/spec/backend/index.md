@@ -32,9 +32,10 @@
 - 服务 trait 与 `AppServices`：`src-tauri/src/services/mod.rs`
 - 服务上下文与 effect 路由：`src-tauri/src/services/context.rs`
 - 配置服务范式：`src-tauri/src/services/config.rs`
+- 全局快捷键服务：`src-tauri/src/services/hotkeys.rs`
 - 统计服务范式：`src-tauri/src/services/stat.rs`
 - 状态机服务：`src-tauri/src/services/timer/`
 - 平台抽象：`src-tauri/src/platform/mod.rs`
 - 错误类型：`src-tauri/src/error.rs`
 - 日志初始化：`src-tauri/src/logging.rs`
-- 跨界类型定义：`src-tauri/src/models/config.rs`、`src-tauri/src/models/types.rs`
+- 跨界类型定义：`src-tauri/src/models/config.rs`、`src-tauri/src/models/hotkeys.rs`、`src-tauri/src/models/types.rs`

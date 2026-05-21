@@ -1,0 +1,9 @@
+{"file": ".trellis/tasks/archive/2026-05/05-21-global-hotkeys-timer-control/prd.md", "reason": "Verify the per-action refactor preserves the original PRD's ACR (duplicate rejection, macOS Accessibility degraded path, Settings immediate apply) and does not regress them."}
+{"file": ".trellis/spec/architecture/ipc-and-state.md", "reason": "Verify HotkeyStatus + HotkeyBindingStatus IPC shape, hotkey-status-changed event payload, and last_error semantics are unchanged."}
+{"file": ".trellis/spec/architecture/change-management.md", "reason": "Run the behavior-only change checklist: no IPC schema change, no new capability, no config field, ts-rs bindings frozen."}
+{"file": ".trellis/spec/architecture/testing-quality.md", "reason": "Verify npm run ci parity, that existing rollback test was updated (not duplicated), and new tests cover the mixed and all-fail cases plus the edit-conflict-to-free transition."}
+{"file": ".trellis/spec/backend/coding-standards.md", "reason": "Verify Mutex usage, AppError variant choices, no clippy warnings under --all-targets, tracing log level appropriateness for per-action failure path."}
+{"file": ".trellis/spec/backend/service-pattern.md", "reason": "Verify HotkeyService lifecycle still satisfies the watch-channel reconciliation contract and that publish_status emit ordering is preserved."}
+{"file": ".trellis/spec/backend/index.md", "reason": "Verify the backend service DAG and shutdown order are untouched (HotkeyService still depends on the same upstream services and stops in the same order)."}
+{"file": ".trellis/spec/frontend/store-and-ipc-patterns.md", "reason": "Verify the frontend hotkey event listener and store wiring remain valid — no listener change should be required since the event shape is unchanged."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Verify no new frontend code was added unnecessarily — the partial-conflict UX must emerge from backend behavior change alone."}

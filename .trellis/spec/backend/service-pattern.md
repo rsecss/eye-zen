@@ -27,6 +27,7 @@ ConfigService  ←  I18nService
                                 ←  TrayService
                                 ←  SoundService
                                 ←  StatService
+               ←  HotkeyService → TimerService (via app-level shortcut handler)
                ←  DetectorService → TimerService (via skip flags pull)
                ←  SoundService
                ←  TrayService
@@ -35,6 +36,7 @@ I18nService    ←  TrayService
 
 - **ConfigService** 是基础服务，MUST NOT 依赖其他服务（见 `src-tauri/src/services/config.rs`）
 - **TimerService** 依赖 ConfigService 的 `watch::Receiver<Arc<Config>>`（见 `TimerService::new` 入参），MUST NOT 调用 WindowService / TrayService / SoundService
+- **HotkeyService** 依赖 ConfigService 的 `watch::Receiver<Arc<Config>>` 与 Tauri global-shortcut 插件；快捷键 handler 通过 `AppServices` 调用 TimerService，MUST NOT 在 platform 层直接控制 timer
 - 副作用服务（Window / Tray / Sound / Stat）通过 `ServiceContext::execute_timer_effect` 被动接收 effect（见 `src-tauri/src/services/context.rs`），MUST NOT 反向调用 TimerService
 - I18nService 提供托盘菜单翻译，被 TrayService 通过 `Arc<I18nService>` 共享（见 `src-tauri/src/lib.rs` 中 `Arc::clone(&i18n_service)`）
 
@@ -52,6 +54,7 @@ pub(crate) struct AppServices {
     pub(crate) stat: stat::StatService,
     pub(crate) tray: tray::TrayService,
     pub(crate) i18n: Arc<i18n::I18nService>,
+    pub(crate) hotkeys: hotkeys::HotkeyService,
 }
 
 pub(crate) type SharedAppServices = Arc<AppServices>;
@@ -106,18 +109,19 @@ pub(crate) trait Service: Send + Sync {
 6. `WindowService::new`
 7. `I18nService::new(&initial_locale)` 并 `Arc::wrap`
 8. `TrayService::new(config_rx, Arc::clone(&i18n_service))`
-9. 顺序 `init`：config → i18n → detector → sound → stat → timer → window → tray
-10. `Arc<AppServices>` 包装并 `app.manage`
-11. 顺序 `start`：config → i18n → detector → sound → stat → window → tray → timer
+9. `HotkeyService::new(config_rx, app_handle)`（后端持有注册权限，前端不暴露 generic shortcut API）
+10. 顺序 `init`：config → i18n → detector → sound → stat → timer → window → tray → hotkeys
+11. `Arc<AppServices>` 包装并 `app.manage`
+12. 顺序 `start`：config → i18n → detector → sound → stat → window → tray → timer → hotkeys
 
-注意 `start` 阶段 timer 必须最后启动：上游事件源在前，下游 effect 执行器先就位才能收事件。
+注意 `start` 阶段 hotkeys 必须在 timer 之后启动：快捷键是用户事件源，必须等 timer 与下游 effect 执行器就位后再接收全局输入。
 
 ## 优雅关闭顺序
 
 监听 `RunEvent::ExitRequested` 后按依赖逆序关闭（见 `src-tauri/src/lib.rs` 末尾 `app.run`）：
 
 ```
-1. 停止事件源:     TrayService → TimerService → DetectorService
+1. 停止事件源:     HotkeyService → TrayService → TimerService → DetectorService
 2. 停止效果执行器:  WindowService → SoundService
 3. 停止基础设施:    I18nService → StatService → ConfigService
 ```

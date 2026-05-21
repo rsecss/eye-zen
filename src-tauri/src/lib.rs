@@ -20,21 +20,71 @@ use std::time::Duration;
 
 #[cfg(not(test))]
 use tauri::{Manager, RunEvent, WindowEvent};
+#[cfg(all(not(test), feature = "plugin-shortcuts"))]
+use tauri_plugin_global_shortcut::ShortcutState;
 #[cfg(not(test))]
 use tracing::{error, info, warn};
 
+#[cfg(all(not(test), feature = "plugin-shortcuts"))]
+use crate::models::hotkeys::HotkeyAction;
 #[cfg(not(test))]
 use crate::services::Service;
 
 #[cfg(not(test))]
 #[allow(clippy::missing_errors_doc, clippy::too_many_lines)]
 pub fn run() -> Result<(), tauri::Error> {
-    let app = tauri::Builder::default()
+    let builder = tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_autostart::init(
             tauri_plugin_autostart::MacosLauncher::LaunchAgent,
             None,
-        ))
+        ));
+
+    #[cfg(feature = "plugin-shortcuts")]
+    let builder = builder.plugin(
+        tauri_plugin_global_shortcut::Builder::new()
+            .with_handler(|app, _shortcut, event| {
+                if !matches!(event.state, ShortcutState::Pressed) {
+                    return;
+                }
+
+                let app = app.clone();
+                tauri::async_runtime::spawn(async move {
+                    let Some(services) = app.try_state::<services::SharedAppServices>() else {
+                        warn!("shared services unavailable while handling global hotkey");
+                        return;
+                    };
+
+                    let Some(action) = services.hotkeys.action_for_id(event.id) else {
+                        warn!("unmapped global hotkey id {}", event.id);
+                        return;
+                    };
+
+                    let result = match action {
+                        HotkeyAction::StartRest => {
+                            services
+                                .timer
+                                .handle_user_event(services::timer::UserEvent::StartRest)
+                                .await
+                        }
+                        HotkeyAction::SkipRest => {
+                            services
+                                .timer
+                                .handle_user_event(services::timer::UserEvent::Skip)
+                                .await
+                        }
+                        HotkeyAction::TogglePause => services.timer.toggle_pause().await,
+                    };
+
+                    if let Err(err) = result {
+                        warn!("global hotkey action {action:?} failed: {err}");
+                    }
+                });
+            })
+            .build(),
+    );
+
+    let app = builder
         .invoke_handler(tauri::generate_handler![
             commands::get_state_snapshot,
             commands::start_rest,
@@ -42,12 +92,14 @@ pub fn run() -> Result<(), tauri::Error> {
             commands::pause_timer,
             commands::resume_timer,
             commands::get_config,
+            commands::get_hotkey_status,
             commands::get_statistics_trends,
             commands::get_detector_capabilities,
             commands::update_timer_config,
             commands::update_behavior_config,
             commands::update_display_config,
-            commands::update_schedule_config
+            commands::update_schedule_config,
+            commands::update_hotkeys_config
         ])
         .setup(|app| {
             let log_dir = app
@@ -69,6 +121,8 @@ pub fn run() -> Result<(), tauri::Error> {
                 .map_err(|err| Box::new(err) as Box<dyn std::error::Error>)?
                 .join("data.db");
 
+            let handle = services::ServiceContext::from(app.handle().clone());
+
             let config_service =
                 services::config::ConfigService::new(config_path).map_err(|err| {
                     error!("failed to initialize ConfigService: {err}");
@@ -89,8 +143,20 @@ pub fn run() -> Result<(), tauri::Error> {
                 config_service.subscribe(),
                 Arc::clone(&i18n_service),
             );
+            let hotkey_service = {
+                #[cfg(feature = "plugin-shortcuts")]
+                {
+                    services::hotkeys::HotkeyService::new(
+                        config_service.subscribe(),
+                        app.handle().clone(),
+                    )
+                }
+                #[cfg(not(feature = "plugin-shortcuts"))]
+                {
+                    services::hotkeys::HotkeyService::new_disabled(config_service.subscribe())
+                }
+            };
 
-            let handle = services::ServiceContext::from(app.handle().clone());
             tauri::async_runtime::block_on(async {
                 config_service.init(&handle).await?;
                 i18n_service.init(&handle).await?;
@@ -100,6 +166,7 @@ pub fn run() -> Result<(), tauri::Error> {
                 timer_service.init(&handle).await?;
                 window_service.init(&handle).await?;
                 tray_service.init(&handle).await?;
+                hotkey_service.init(&handle).await?;
                 Ok::<(), crate::error::AppError>(())
             })
             .map_err(|err| Box::new(err) as Box<dyn std::error::Error>)?;
@@ -113,6 +180,7 @@ pub fn run() -> Result<(), tauri::Error> {
                 stat: stat_service,
                 tray: tray_service,
                 i18n: i18n_service,
+                hotkeys: hotkey_service,
             });
 
             app.manage(Arc::clone(&services));
@@ -126,6 +194,7 @@ pub fn run() -> Result<(), tauri::Error> {
                 services.window.start(&handle).await?;
                 services.tray.start(&handle).await?;
                 services.timer.start(&handle).await?;
+                services.hotkeys.start(&handle).await?;
                 Ok::<(), crate::error::AppError>(())
             })
             .map_err(|err| Box::new(err) as Box<dyn std::error::Error>)?;
@@ -150,6 +219,7 @@ pub fn run() -> Result<(), tauri::Error> {
                     info!("shutting down services");
                     // Keep reverse-dependency shutdown aligned with CLAUDE.md:
                     // event sources -> effect executors -> infrastructure.
+                    shutdown_service("hotkeys", services.hotkeys.shutdown()).await;
                     shutdown_service("tray", services.tray.shutdown()).await;
                     shutdown_service("timer", services.timer.shutdown()).await;
                     shutdown_service("detector", services.detector.shutdown()).await;

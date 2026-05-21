@@ -213,3 +213,72 @@ E2E acceptance for SQLite rest statistics on feat/stats: ran 5 working->resting 
 ### Next Steps
 
 - None - task complete
+
+
+## Session 7: Global hotkeys timer control
+
+**Date**: 2026-05-21
+**Task**: Global hotkeys timer control
+**Branch**: `feat/hotkeys`
+
+### Summary
+
+Implemented configurable backend-owned global hotkeys for start rest, skip alert, and pause/resume; added transactional rebinding with rollback/status UI, macOS permission degradation guidance, TOML defaults, generated bindings, tests, and passing npm run ci.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `084fa63` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
+
+
+## Session 8: Hotkeys per-action fallback (fix + 2x merge sync + spec align)
+
+**Date**: 2026-05-21
+**Task**: Hotkeys per-action fallback (fix + 2x merge sync + spec align)
+**Branch**: `feat/hotkeys`
+
+### Summary
+
+Refactored HotkeyService apply_config from transactional all-or-nothing rollback to per-action best-effort: each shortcut succeeds or fails independently, partial conflicts no longer disable other working bindings or surface the 'kuaijiejian-weishengxiao' top banner; last_error reserved for macOS Accessibility Missing or all-fail. Settings hotkey input width tightened to 150px with text centered, raw shortcut tokens prettified to Cmd/Ctrl+Alt+X. Updated 1 renamed test, added 3 new tests (partial mixed, all-fail, edit-conflict-to-free). Then merged origin/main twice to sync PR #10 (AFK detection) and PR #11 (SQLite rest statistics trends): resolved 9 additive-union conflicts across IPC table, capabilities/commands/lib.rs, backend service DAG/start/shutdown orders, workspace journal; dropped obsolete get_daily_stats placeholder now that get_statistics_trends ships. Aligned ipc-and-state.md Global Hotkey Contracts scenario (Commands table, Scope, Validation matrix, Good/Base/Bad, Tests Required, Wrong vs Correct) with per-action semantics. All npm run ci stages green: 124 Rust tests + 34 vitest tests + svelte-check + prettier + vite build.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `fafa885` | (see git log) |
+| `0de5bc5` | (see git log) |
+| `7c3de40` | (see git log) |
+| `60033b9` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

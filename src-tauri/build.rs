@@ -7,11 +7,13 @@ fn main() {
             "pause_timer",
             "resume_timer",
             "get_config",
+            "get_hotkey_status",
             "get_detector_capabilities",
             "update_timer_config",
             "update_behavior_config",
             "update_display_config",
             "update_schedule_config",
+            "update_hotkeys_config",
         ]),
     ))
     .expect("failed to build tauri app manifest");

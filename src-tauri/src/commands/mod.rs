@@ -5,9 +5,14 @@
 use tauri::State;
 
 use crate::error::AppError;
+#[cfg(not(test))]
+use tracing::warn;
+
 use crate::models::config::{BehaviorConfig, DisplayConfig, TimerConfig};
 #[cfg(not(test))]
 use crate::models::config::{Config, ScheduleConfig};
+#[cfg(not(test))]
+use crate::models::hotkeys::{HotkeyStatus, HotkeysConfig};
 #[cfg(not(test))]
 use crate::models::statistics::StatisticsTrendPayload;
 #[cfg(not(test))]
@@ -65,6 +70,13 @@ pub(crate) async fn get_statistics_trends(
     timezone: Option<String>,
 ) -> CmdResult<StatisticsTrendPayload> {
     services.stat.statistics_trends(timezone.as_deref()).await
+}
+
+#[cfg(not(test))]
+#[allow(clippy::unnecessary_wraps)]
+#[tauri::command]
+pub(crate) fn get_hotkey_status(services: Services<'_>) -> CmdResult<HotkeyStatus> {
+    Ok(services.hotkeys.status())
 }
 
 #[cfg(not(test))]
@@ -197,6 +209,35 @@ pub(crate) async fn update_schedule_config(
         .map_err(|err| AppError::IoError {
             message: format!("update_schedule_config task failed: {err}"),
         })?
+}
+
+#[cfg(not(test))]
+#[tauri::command]
+pub(crate) async fn update_hotkeys_config(
+    services: Services<'_>,
+    config: HotkeysConfig,
+) -> CmdResult<()> {
+    let previous = services.config.current().hotkeys.clone();
+    services.hotkeys.apply_config(&config)?;
+
+    let services_for_save = services.inner().clone();
+    let config_for_save = config.clone();
+    let save_result = tokio::task::spawn_blocking(move || {
+        services_for_save.config.update_hotkeys(config_for_save)
+    })
+    .await
+    .map_err(|err| AppError::IoError {
+        message: format!("update_hotkeys_config task failed: {err}"),
+    })?;
+
+    if let Err(err) = save_result {
+        if let Err(rollback_err) = services.hotkeys.apply_config(&previous) {
+            warn!("failed to roll back hotkeys after config save failure: {rollback_err}");
+        }
+        return Err(err);
+    }
+
+    Ok(())
 }
 
 #[cfg(test)]

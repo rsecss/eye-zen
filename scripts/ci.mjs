@@ -12,7 +12,11 @@ const steps = [
     'cargo',
     ['clippy', '--manifest-path', 'src-tauri/Cargo.toml', '--all-targets', '--', '-D', 'warnings'],
   ],
-  ['Rust tests', 'cargo', ['test', '--manifest-path', 'src-tauri/Cargo.toml']],
+  [
+    'Rust tests',
+    'cargo',
+    ['test', '--manifest-path', 'src-tauri/Cargo.toml', '--no-default-features'],
+  ],
   ['Frontend type check', 'npx', ['svelte-check', '--tsconfig', './tsconfig.json']],
   ['Frontend tests', 'npm', ['test', '--', '--run']],
   ['Frontend format check', 'npm', ['run', 'format:check']],

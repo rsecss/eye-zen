@@ -2,6 +2,8 @@
 
 use serde::{Deserialize, Serialize};
 
+use super::hotkeys::HotkeysConfig;
+
 /// Root application configuration persisted as TOML.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
 #[cfg_attr(test, derive(ts_rs::TS))]
@@ -12,6 +14,7 @@ pub struct Config {
     pub behavior: BehaviorConfig,
     pub display: DisplayConfig,
     pub schedule: ScheduleConfig,
+    pub hotkeys: HotkeysConfig,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -169,6 +172,7 @@ mod tests {
             config.schedule.active_days,
             [true, true, true, true, true, false, false]
         );
+        assert_eq!(config.hotkeys, HotkeysConfig::default());
     }
 
     #[test]
@@ -192,6 +196,7 @@ work_minutes = 25
         assert!(config.behavior.afk_skip_enabled);
         assert_eq!(config.behavior.afk_threshold_minutes, 5);
         assert_eq!(config.display.theme, "light");
+        assert_eq!(config.hotkeys, HotkeysConfig::default());
     }
 
     #[test]

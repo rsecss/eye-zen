@@ -9,10 +9,20 @@ vi.mock('@tauri-apps/plugin-autostart', () => ({
 
 vi.mock('$lib/commands', () => ({
   getDetectorCapabilities: vi.fn(),
+  getHotkeyStatus: vi.fn().mockResolvedValue({
+    bindings: [],
+    macos_accessibility: 'not_required',
+    last_error: null,
+  }),
   updateTimerConfig: vi.fn(),
   updateBehaviorConfig: vi.fn().mockResolvedValue(undefined),
   updateDisplayConfig: vi.fn(),
   updateScheduleConfig: vi.fn(),
+  updateHotkeysConfig: vi.fn(),
+}));
+
+vi.mock('$lib/events', () => ({
+  onHotkeyStatusChanged: vi.fn().mockResolvedValue(() => {}),
 }));
 
 const { getDetectorCapabilities, updateBehaviorConfig } = await import('$lib/commands');
