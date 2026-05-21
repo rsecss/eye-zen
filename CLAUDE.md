@@ -26,7 +26,8 @@
 - 工作日调度已实现：周几粒度按 Working→PreAlert 跳转点抑制弹窗，复用 SkipFlags
 - License 切换：MIT → GPL-3.0-or-later，自 v0.2.0 起生效（v0.1.0 二进制永久保留 MIT）
 - v0.2.0 已发布（GPL-3.0-or-later）：2026-05-20，10 个 artifact（多了 .rpm），latest published；含 weekday scheduling + 主窗 880×560 调整 + bump-version.mjs Cargo.lock 同步修复
-- 下一步：Phase 2 继续（Statistics / 离席检测）
+- v0.4.0 主功能进程白名单已实现（feat/process-whitelist 分支）：跨平台 exe basename 匹配，三平台真实实现（Win Query API / macOS kCGWindowOwnerName / Linux X11 _NET_WM_PID）；SkipFlags 新增 process_whitelisted；Settings 新增 Whitelist Card + 14 个 i18n key + capability 降级；vitest coverage 基线 59.5%（仅 reference）
+- 下一步：发版 v0.4.0（PR → main → tag → CI artifacts published）
 
 ---
 
