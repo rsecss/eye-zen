@@ -1,5 +1,8 @@
 use std::time::Instant;
 
+use chrono::Utc;
+
+use crate::models::statistics::RestSessionDraft;
 use crate::models::types::StatePayload;
 
 use super::effect::{Effect, SoundType, TrayTooltip, TrayUpdate};
@@ -124,6 +127,22 @@ pub(crate) fn collect_effects(transition: Transition, inner: &Inner, now: Instan
     effects
 }
 
+/// Apply a transition and collect the side effects that result from it.
+#[must_use]
+pub(crate) fn apply_transition_and_collect_effects(
+    inner: &mut Inner,
+    transition: Transition,
+    now: Instant,
+) -> Vec<Effect> {
+    let rest_session = rest_session_from_transition(transition, inner, now);
+    inner.apply_transition_at(transition, now);
+    let mut effects = collect_effects(transition, inner, now);
+    if let Some(session) = rest_session {
+        effects.push(Effect::RecordRestSession(session));
+    }
+    effects
+}
+
 /// Collect periodic effects for the current state without a transition.
 #[must_use]
 pub(crate) fn collect_tick_effects(inner: &Inner, now: Instant) -> Vec<Effect> {
@@ -170,6 +189,26 @@ fn duration_to_secs(duration: Option<std::time::Duration>) -> u32 {
 
 fn duration_minutes_to_u32(duration: std::time::Duration) -> u32 {
     u32::try_from(duration.as_secs() / 60).unwrap_or(u32::MAX)
+}
+
+fn rest_session_from_transition(
+    transition: Transition,
+    inner: &Inner,
+    now: Instant,
+) -> Option<RestSessionDraft> {
+    if transition.from != TimerState::Resting || transition.to != TimerState::Working {
+        return None;
+    }
+
+    let duration_secs = duration_to_secs(Some(inner.elapsed(now)));
+    let ended_at_utc = Utc::now();
+    let started_at_utc = ended_at_utc - chrono::Duration::seconds(i64::from(duration_secs));
+
+    Some(RestSessionDraft {
+        started_at_utc,
+        ended_at_utc,
+        duration_secs,
+    })
 }
 
 #[cfg(test)]
@@ -543,6 +582,28 @@ mod tests {
         assert!(effects
             .iter()
             .any(|effect| matches!(effect, Effect::ResetWorkTimer(_))));
+    }
+
+    #[test]
+    fn transition_resting_to_working_records_rest_session() {
+        let mut inner = make_inner(Resting);
+        let now = future_instant(21);
+        let effects = apply_transition_and_collect_effects(
+            &mut inner,
+            Transition {
+                from: Resting,
+                to: Working,
+            },
+            now,
+        );
+
+        assert!(effects.iter().any(|effect| matches!(
+            effect,
+            Effect::RecordRestSession(RestSessionDraft {
+                duration_secs: 20..=21,
+                ..
+            })
+        )));
     }
 
     #[test]

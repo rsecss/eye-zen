@@ -9,6 +9,8 @@ use crate::models::config::{BehaviorConfig, DisplayConfig, TimerConfig};
 #[cfg(not(test))]
 use crate::models::config::{Config, ScheduleConfig};
 #[cfg(not(test))]
+use crate::models::statistics::StatisticsTrendPayload;
+#[cfg(not(test))]
 use crate::models::types::{DetectorCapabilities, StatePayload};
 #[cfg(not(test))]
 use crate::services::timer::UserEvent;
@@ -54,6 +56,15 @@ pub(crate) async fn resume_timer(services: Services<'_>) -> CmdResult<()> {
 #[tauri::command]
 pub(crate) fn get_config(services: Services<'_>) -> CmdResult<Config> {
     Ok((*services.config.current()).clone())
+}
+
+#[cfg(not(test))]
+#[tauri::command]
+pub(crate) async fn get_statistics_trends(
+    services: Services<'_>,
+    timezone: Option<String>,
+) -> CmdResult<StatisticsTrendPayload> {
+    services.stat.statistics_trends(timezone.as_deref()).await
 }
 
 #[cfg(not(test))]

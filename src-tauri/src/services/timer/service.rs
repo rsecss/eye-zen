@@ -14,7 +14,9 @@ use crate::services::{Service, ServiceContext};
 
 use super::effect::Effect;
 use super::effect_executor;
-use super::machine::{collect_effects, collect_tick_effects, resolve_user_event, step_time};
+use super::machine::{
+    apply_transition_and_collect_effects, collect_tick_effects, resolve_user_event, step_time,
+};
 use super::state::{Inner, SkipFlags, UserEvent};
 
 pub(crate) struct TimerService {
@@ -52,8 +54,7 @@ impl TimerService {
             let now = Instant::now();
             match step_time(&inner, now, skip_flags) {
                 Some(transition) => {
-                    inner.apply_transition(transition);
-                    collect_effects(transition, &inner, now)
+                    apply_transition_and_collect_effects(&mut inner, transition, now)
                 }
                 None => collect_tick_effects(&inner, now),
             }
@@ -77,8 +78,7 @@ impl TimerService {
             let mut inner = self.inner.lock().await;
             if let Some(transition) = resolve_user_event(&inner.state, event, inner.paused_from) {
                 let now = Instant::now();
-                inner.apply_transition(transition);
-                collect_effects(transition, &inner, now)
+                apply_transition_and_collect_effects(&mut inner, transition, now)
             } else {
                 warn!("invalid timer event {event:?} in state {:?}", inner.state);
                 return Err(AppError::InvalidOperation {
@@ -238,7 +238,7 @@ mod tests {
 
         let mut inner = service.inner.lock().await;
         if let Some(transition) = step_time(&inner, future_now, &SkipFlags::default()) {
-            inner.apply_transition(transition);
+            inner.apply_transition_at(transition, future_now);
         }
         assert_eq!(inner.state, TimerState::PreAlert);
     }

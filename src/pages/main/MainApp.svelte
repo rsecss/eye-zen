@@ -6,8 +6,9 @@
   import { configStore } from '$lib/stores/config.svelte';
   import AboutPage from './AboutPage.svelte';
   import SettingsPage from './SettingsPage.svelte';
+  import StatisticsPage from './StatisticsPage.svelte';
 
-  const tabs = ['Settings', 'About'] as const;
+  const tabs = ['Settings', 'Statistics', 'About'] as const;
   type Tab = (typeof tabs)[number];
   let activeTab = $state<Tab>('Settings');
 
@@ -58,6 +59,23 @@
               d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"
             />
           </svg>
+        {:else if tab === 'Statistics'}
+          <svg
+            viewBox="0 0 24 24"
+            width="16"
+            height="16"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M4 19V5" />
+            <path d="M4 19h16" />
+            <path d="M8 15l3-4 3 2 4-6" />
+            <circle cx="8" cy="15" r="1" />
+            <circle cx="11" cy="11" r="1" />
+            <circle cx="14" cy="13" r="1" />
+            <circle cx="18" cy="7" r="1" />
+          </svg>
         {:else}
           <svg
             viewBox="0 0 24 24"
@@ -72,7 +90,13 @@
             <line x1="12" y1="8" x2="12.01" y2="8" />
           </svg>
         {/if}
-        {tab === 'Settings' ? i18nStore.t('tab.settings') : i18nStore.t('tab.about')}
+        {#if tab === 'Settings'}
+          {i18nStore.t('tab.settings')}
+        {:else if tab === 'Statistics'}
+          {i18nStore.t('tab.statistics')}
+        {:else}
+          {i18nStore.t('tab.about')}
+        {/if}
       </button>
     {/each}
   </nav>
@@ -80,6 +104,8 @@
   <div class="flex-1 overflow-y-auto" style="padding: 18px 20px;">
     {#if activeTab === 'Settings'}
       <SettingsPage />
+    {:else if activeTab === 'Statistics'}
+      <StatisticsPage />
     {:else}
       <AboutPage />
     {/if}

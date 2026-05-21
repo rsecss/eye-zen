@@ -26,7 +26,7 @@ ConfigService  ←  I18nService
                ←  TimerService  ←  WindowService
                                 ←  TrayService
                                 ←  SoundService
-                                ←  StatService (P2)
+                                ←  StatService
                ←  DetectorService → TimerService (via skip flags pull)
                ←  SoundService
                ←  TrayService
@@ -49,6 +49,7 @@ pub(crate) struct AppServices {
     pub(crate) detector: detector::DetectorService,
     pub(crate) window: window::WindowService,
     pub(crate) sound: sound::SoundService,
+    pub(crate) stat: stat::StatService,
     pub(crate) tray: tray::TrayService,
     pub(crate) i18n: Arc<i18n::I18nService>,
 }
@@ -101,12 +102,13 @@ pub(crate) trait Service: Send + Sync {
 2. `SoundService::new` → 启动音频线程
 3. `DetectorService::new(platform::create_platform())`
 4. `TimerService::new(config_service.subscribe())`
-5. `WindowService::new`
-6. `I18nService::new(&initial_locale)` 并 `Arc::wrap`
-7. `TrayService::new(config_rx, Arc::clone(&i18n_service))`
-8. 顺序 `init`：config → i18n → detector → sound → timer → window → tray
-9. `Arc<AppServices>` 包装并 `app.manage`
-10. 顺序 `start`：config → i18n → detector → sound → window → tray → timer
+5. `StatService::new(app_data_dir/data.db)`
+6. `WindowService::new`
+7. `I18nService::new(&initial_locale)` 并 `Arc::wrap`
+8. `TrayService::new(config_rx, Arc::clone(&i18n_service))`
+9. 顺序 `init`：config → i18n → detector → sound → stat → timer → window → tray
+10. `Arc<AppServices>` 包装并 `app.manage`
+11. 顺序 `start`：config → i18n → detector → sound → stat → window → tray → timer
 
 注意 `start` 阶段 timer 必须最后启动：上游事件源在前，下游 effect 执行器先就位才能收事件。
 
@@ -117,12 +119,12 @@ pub(crate) trait Service: Send + Sync {
 ```
 1. 停止事件源:     TrayService → TimerService → DetectorService
 2. 停止效果执行器:  WindowService → SoundService
-3. 停止基础设施:    I18nService → ConfigService
+3. 停止基础设施:    I18nService → StatService → ConfigService
 ```
 
 - 每个 `shutdown()` MUST 走 `shutdown_service()` 包装，超时 3 秒后强制放弃（`tokio::time::timeout(Duration::from_secs(3), ...)`）
 - 失败或超时 MUST 记录 `warn!`，MUST NOT 静默
-- StatService（P2）就位后插入到 `I18nService → ConfigService` 之间
+- StatService MUST 在 TimerService 停止之后关闭，避免 rest-session effect 仍在写库时提前关闭连接池
 
 ## 服务间通信
 
@@ -131,6 +133,7 @@ pub(crate) trait Service: Send + Sync {
 ```
 ConfigService    --tokio::sync::watch-->  TimerService, TrayService, ...
 TimerService     --Effect via ServiceContext-->  WindowService, TrayService, SoundService
+TimerService     --Effect::RecordRestSession-->  StatService
 DetectorService  --同步拉取 (current_skip_flags / capabilities)-->  TimerService loop / Settings command
 SoundService     --tokio::sync::mpsc-->  内部音频线程
 ```
