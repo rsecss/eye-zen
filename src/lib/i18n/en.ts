@@ -2,6 +2,7 @@ import type { TranslationDict } from './zh-CN';
 
 const en: TranslationDict = {
   'tab.settings': 'Settings',
+  'tab.statistics': 'Statistics',
   'tab.about': 'About',
 
   'settings.timer.title': 'Timer',
@@ -82,6 +83,26 @@ const en: TranslationDict = {
   'about.platform': 'Platform',
   'about.license': 'License',
   'about.source': 'Source',
+
+  'statistics.eyebrow': 'REST RHYTHM',
+  'statistics.title': 'Rest Trends',
+  'statistics.subtitle': 'Daily, weekly, and monthly completed rest sessions',
+  'statistics.refresh': 'Refresh',
+  'statistics.loading': 'Loading',
+  'statistics.error': 'Failed to load statistics',
+  'statistics.empty': 'No rest records yet',
+  'statistics.latest': 'Latest bucket: {label}',
+  'statistics.totalSessions': 'Rest sessions',
+  'statistics.totalMinutes': 'Rest minutes',
+  'statistics.timezone': 'Timezone',
+  'statistics.trends': 'Trends',
+  'statistics.chartLabel': 'Rest trend chart',
+  'statistics.rangeLabel': 'Trend range',
+  'statistics.range.daily': 'Day',
+  'statistics.range.weekly': 'Week',
+  'statistics.range.monthly': 'Month',
+  'statistics.chart.sessions': 'Sessions',
+  'statistics.chart.minutes': 'Minutes',
 
   'tray.working': 'Working',
   'tray.resting': 'Resting',

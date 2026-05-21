@@ -2,6 +2,7 @@
 
 use std::time::Duration;
 
+use crate::models::statistics::RestSessionDraft;
 use crate::models::types::StatePayload;
 
 use super::state::TimerState;
@@ -15,6 +16,7 @@ pub(crate) enum Effect {
     PlaySound(SoundType),
     UpdateTray(TrayUpdate),
     ResetWorkTimer(Duration),
+    RecordRestSession(RestSessionDraft),
 }
 
 /// Sound variants consumed by the sound service.

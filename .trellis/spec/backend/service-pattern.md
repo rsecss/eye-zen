@@ -26,7 +26,7 @@ ConfigService  ←  I18nService
                ←  TimerService  ←  WindowService
                                 ←  TrayService
                                 ←  SoundService
-                                ←  StatService (P2)
+                                ←  StatService
                ←  HotkeyService → TimerService (via app-level shortcut handler)
                ←  DetectorService → TimerService (via skip flags pull)
                ←  SoundService
@@ -51,6 +51,7 @@ pub(crate) struct AppServices {
     pub(crate) detector: detector::DetectorService,
     pub(crate) window: window::WindowService,
     pub(crate) sound: sound::SoundService,
+    pub(crate) stat: stat::StatService,
     pub(crate) tray: tray::TrayService,
     pub(crate) i18n: Arc<i18n::I18nService>,
     pub(crate) hotkeys: hotkeys::HotkeyService,
@@ -104,13 +105,14 @@ pub(crate) trait Service: Send + Sync {
 2. `SoundService::new` → 启动音频线程
 3. `DetectorService::new(platform::create_platform())`
 4. `TimerService::new(config_service.subscribe())`
-5. `WindowService::new`
-6. `I18nService::new(&initial_locale)` 并 `Arc::wrap`
-7. `TrayService::new(config_rx, Arc::clone(&i18n_service))`
-8. `HotkeyService::new(config_rx, app_handle)`（后端持有注册权限，前端不暴露 generic shortcut API）
-9. 顺序 `init`：config → i18n → detector → sound → timer → window → tray → hotkeys
-10. `Arc<AppServices>` 包装并 `app.manage`
-11. 顺序 `start`：config → i18n → detector → sound → window → tray → timer → hotkeys
+5. `StatService::new(app_data_dir/data.db)`
+6. `WindowService::new`
+7. `I18nService::new(&initial_locale)` 并 `Arc::wrap`
+8. `TrayService::new(config_rx, Arc::clone(&i18n_service))`
+9. `HotkeyService::new(config_rx, app_handle)`（后端持有注册权限，前端不暴露 generic shortcut API）
+10. 顺序 `init`：config → i18n → detector → sound → stat → timer → window → tray → hotkeys
+11. `Arc<AppServices>` 包装并 `app.manage`
+12. 顺序 `start`：config → i18n → detector → sound → stat → window → tray → timer → hotkeys
 
 注意 `start` 阶段 hotkeys 必须在 timer 之后启动：快捷键是用户事件源，必须等 timer 与下游 effect 执行器就位后再接收全局输入。
 
@@ -121,12 +123,12 @@ pub(crate) trait Service: Send + Sync {
 ```
 1. 停止事件源:     HotkeyService → TrayService → TimerService → DetectorService
 2. 停止效果执行器:  WindowService → SoundService
-3. 停止基础设施:    I18nService → ConfigService
+3. 停止基础设施:    I18nService → StatService → ConfigService
 ```
 
 - 每个 `shutdown()` MUST 走 `shutdown_service()` 包装，超时 3 秒后强制放弃（`tokio::time::timeout(Duration::from_secs(3), ...)`）
 - 失败或超时 MUST 记录 `warn!`，MUST NOT 静默
-- StatService（P2）就位后插入到 `I18nService → ConfigService` 之间
+- StatService MUST 在 TimerService 停止之后关闭，避免 rest-session effect 仍在写库时提前关闭连接池
 
 ## 服务间通信
 
@@ -135,6 +137,7 @@ pub(crate) trait Service: Send + Sync {
 ```
 ConfigService    --tokio::sync::watch-->  TimerService, TrayService, ...
 TimerService     --Effect via ServiceContext-->  WindowService, TrayService, SoundService
+TimerService     --Effect::RecordRestSession-->  StatService
 DetectorService  --同步拉取 (current_skip_flags / capabilities)-->  TimerService loop / Settings command
 SoundService     --tokio::sync::mpsc-->  内部音频线程
 ```

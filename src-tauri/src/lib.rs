@@ -89,6 +89,7 @@ pub fn run() -> Result<(), tauri::Error> {
             commands::resume_timer,
             commands::get_config,
             commands::get_hotkey_status,
+            commands::get_statistics_trends,
             commands::get_detector_capabilities,
             commands::update_timer_config,
             commands::update_behavior_config,
@@ -110,6 +111,11 @@ pub fn run() -> Result<(), tauri::Error> {
                 .app_config_dir()
                 .map_err(|err| Box::new(err) as Box<dyn std::error::Error>)?
                 .join("config.toml");
+            let data_path = app
+                .path()
+                .app_data_dir()
+                .map_err(|err| Box::new(err) as Box<dyn std::error::Error>)?
+                .join("data.db");
 
             let handle = services::ServiceContext::from(app.handle().clone());
 
@@ -125,6 +131,7 @@ pub fn run() -> Result<(), tauri::Error> {
             let detector_service =
                 services::detector::DetectorService::new(platform::create_platform());
             let timer_service = services::timer::TimerService::new(config_service.subscribe());
+            let stat_service = services::stat::StatService::new(data_path);
             let window_service = services::window::WindowService::new();
             let initial_locale = config_service.current().display.language.clone();
             let i18n_service = Arc::new(services::i18n::I18nService::new(&initial_locale));
@@ -142,6 +149,7 @@ pub fn run() -> Result<(), tauri::Error> {
                 i18n_service.init(&handle).await?;
                 detector_service.init(&handle).await?;
                 sound_service.init(&handle).await?;
+                stat_service.init(&handle).await?;
                 timer_service.init(&handle).await?;
                 window_service.init(&handle).await?;
                 tray_service.init(&handle).await?;
@@ -156,6 +164,7 @@ pub fn run() -> Result<(), tauri::Error> {
                 detector: detector_service,
                 window: window_service,
                 sound: sound_service,
+                stat: stat_service,
                 tray: tray_service,
                 i18n: i18n_service,
                 hotkeys: hotkey_service,
@@ -168,6 +177,7 @@ pub fn run() -> Result<(), tauri::Error> {
                 services.i18n.start(&handle).await?;
                 services.detector.start(&handle).await?;
                 services.sound.start(&handle).await?;
+                services.stat.start(&handle).await?;
                 services.window.start(&handle).await?;
                 services.tray.start(&handle).await?;
                 services.timer.start(&handle).await?;
@@ -196,7 +206,6 @@ pub fn run() -> Result<(), tauri::Error> {
                     info!("shutting down services");
                     // Keep reverse-dependency shutdown aligned with CLAUDE.md:
                     // event sources -> effect executors -> infrastructure.
-                    // StatService is not present in the current MVP wiring, so ConfigService is last.
                     shutdown_service("hotkeys", services.hotkeys.shutdown()).await;
                     shutdown_service("tray", services.tray.shutdown()).await;
                     shutdown_service("timer", services.timer.shutdown()).await;
@@ -204,6 +213,7 @@ pub fn run() -> Result<(), tauri::Error> {
                     shutdown_service("window", services.window.shutdown()).await;
                     shutdown_service("sound", services.sound.shutdown()).await;
                     shutdown_service("i18n", services.i18n.shutdown()).await;
+                    shutdown_service("stat", services.stat.shutdown()).await;
                     shutdown_service("config", services.config.shutdown()).await;
                     info!("all services shut down");
                 });

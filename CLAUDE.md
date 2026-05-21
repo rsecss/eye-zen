@@ -38,9 +38,9 @@
 | 前端 | Svelte 5 (Runes) | `~5.x` | `~5.54.0` | 零运行时编译 |
 | 构建 | Vite | `~6.x` | `~6.4.1` | 快速 HMR |
 | CSS | TailwindCSS | v4 (`~4.x`) | `~4.2.1` | 工具类优先 |
-| 图表 | ECharts | tree-shaken | 未安装 (P2) | |
+| 图表 | ECharts | tree-shaken | `~6.1.0` | Statistics 趋势图 |
 | 自启动 | tauri-plugin-autostart | `~2.2` | `~2.2` | 开机自启 |
-| 数据库 | SQLite | via sqlx | 未安装 (P2) | |
+| 数据库 | SQLite | via sqlx | `~0.8.6` | 统计数据持久化 |
 | 配置 | TOML | 人类可读 | `~0.8` | |
 | 类型桥接 | ts-rs | 最新稳定 | `~10.1` (dev-dep) | Rust → TS |
 | 日志 | tracing + 日轮转 | -- | `~0.1` / `~0.3` / `~0.2` | tracing + subscriber + appender |
@@ -67,7 +67,7 @@ Frontend (Svelte 5, per window)
                   ├── SoundService     rodio 独立线程
                   ├── TrayService      托盘菜单 + tooltip
                   ├── I18nService      语言切换 + 热切换
-                  └── StatService      SQLite (P2)
+                  └── StatService      SQLite 统计
 ```
 
 详细架构约束见 → [`.trellis/spec/architecture/layering.md`](.trellis/spec/architecture/layering.md) 与 [`.trellis/spec/backend/service-pattern.md`](.trellis/spec/backend/service-pattern.md)
@@ -104,10 +104,10 @@ graph TD
 | WindowService | `src-tauri/src/services/window.rs` | 已实现 | 多显示器 tip-window 管理 |
 | SoundService | `src-tauri/src/services/sound.rs` | 已实现 | rodio 独立线程 + mpsc |
 | TrayService | `src-tauri/src/services/tray.rs` | 已实现 | 托盘菜单 + tooltip + i18n 热切换 |
-| StatService | `src-tauri/src/services/stat.rs` | 计划 (P2) | SQLite 统计 |
+| StatService | `src-tauri/src/services/stat.rs` | 已实现 | SQLite 统计持久化与趋势聚合 |
 | I18nService | `src-tauri/src/services/i18n.rs` | 已实现 | zh-CN/en 双语 + 托盘翻译 |
 | PlatformApi | `src-tauri/src/platform/` | 已实现 | 跨平台抽象 (Windows/macOS/Linux) |
-| Commands | `src-tauri/src/commands/` | 已实现 | Tauri command 薄层 (9 个 commands) |
+| Commands | `src-tauri/src/commands/` | 已实现 | Tauri command 薄层 (10 个 commands) |
 | Models | `src-tauri/src/models/` | 已实现 | 共享类型 + IPC events + 配置模型 |
 | Error | `src-tauri/src/error.rs` | 已实现 | AppError + IPC 序列化 |
 | Logging | `src-tauri/src/logging.rs` | 已实现 | tracing + 日志轮转 |

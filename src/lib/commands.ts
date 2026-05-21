@@ -2,6 +2,7 @@ import { invoke } from '@tauri-apps/api/core';
 import type { StatePayload } from './bindings/StatePayload';
 import type { DetectorCapabilities } from './bindings/DetectorCapabilities';
 import type { Config } from './bindings/Config';
+import type { StatisticsTrendPayload } from './bindings/StatisticsTrendPayload';
 import type { TimerConfig } from './bindings/TimerConfig';
 import type { BehaviorConfig } from './bindings/BehaviorConfig';
 import type { DisplayConfig } from './bindings/DisplayConfig';
@@ -50,6 +51,10 @@ export function getConfig(): Promise<Config> {
 
 export function getHotkeyStatus(): Promise<HotkeyStatus> {
   return invokeWithTimeout('get_hotkey_status');
+}
+
+export function getStatisticsTrends(timezone: string): Promise<StatisticsTrendPayload> {
+  return invokeWithTimeout('get_statistics_trends', { timezone });
 }
 
 export function getDetectorCapabilities(): Promise<DetectorCapabilities> {

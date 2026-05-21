@@ -148,7 +148,74 @@ Implemented Phase 2 starter slice: weekday scheduling that suppresses rest remin
 Repo switched from dev+main double-branch to GitHub Flow (single main + short-lived feat/fix/chore branches). PR #7 merged, dev deleted. This commit is the trivial verification PR for the new flow.
 
 
-## Session 5: Global hotkeys timer control
+## Session 5: SQLite Rest Statistics Trends
+
+**Date**: 2026-05-21
+**Task**: SQLite Rest Statistics Trends
+**Branch**: `feat/stats`
+
+### Summary
+
+Implemented SQLite-backed rest statistics persistence, day/week/month aggregation, Statistics ECharts UI, tests, and updated Trellis specs.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `34db95d` | (see git log) |
+| `a4ffb0b` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
+
+
+## Session 6: E2E acceptance + merge origin/main for stats branch
+
+**Date**: 2026-05-21
+**Task**: E2E acceptance + merge origin/main for stats branch
+**Branch**: `feat/stats`
+
+### Summary
+
+E2E acceptance for SQLite rest statistics on feat/stats: ran 5 working->resting cycles with short-duration config (work=1min, rest=5s), verified 5 rows persisted to data.db (count=5, total=25s); restarted app and confirmed StatService re-reads same DB; confirmed cold-start auto-creates schema. Restored original config and cleaned test DB. Local npm run ci passed 8/8. Then origin/main had merged PR #10 (AFK detection); merged origin/main into feat/stats, resolved 7 conflicts (commands/mod.rs adopted #[cfg(not(test))] gating; context.rs kept apply_transition_and_collect_effects + added AFK skip log; capability/lib.rs/commands.ts unioned both new commands; spec docs kept both Statistics Trend IPC and AFK scenarios). Post-merge ci passed again.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `72ce247` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
+
+
+## Session 7: Global hotkeys timer control
 
 **Date**: 2026-05-21
 **Task**: Global hotkeys timer control
