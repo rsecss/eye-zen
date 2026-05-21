@@ -28,6 +28,9 @@
 
   const cfg = $derived(configStore.current);
 
+  const WHITELIST_MAX = 32;
+  const WHITELIST_RESERVED = new Set(['eyezen', 'eyezen.exe']);
+
   type BooleanBehaviorField =
     | 'sound_enabled'
     | 'fullscreen_skip'
@@ -36,8 +39,18 @@
 
   let detectorCapabilitiesLoaded = $state(false);
   let afkDetectionSupported = $state(false);
+  let foregroundProcessSupported = $state(false);
   const afkControlsDisabled = $derived(!detectorCapabilitiesLoaded || !afkDetectionSupported);
   const afkThresholdDisabled = $derived(afkControlsDisabled || !cfg.behavior.afk_skip_enabled);
+  const whitelistControlsDisabled = $derived(
+    !detectorCapabilitiesLoaded || !foregroundProcessSupported,
+  );
+  const whitelistEditingDisabled = $derived(
+    whitelistControlsDisabled || !cfg.behavior.process_whitelist_enabled,
+  );
+
+  let whitelistInput = $state('');
+  let whitelistError = $state<string | null>(null);
 
   let hotkeyStatus = $state<HotkeyStatus | null>(null);
   let hotkeySaveError = $state<string | null>(null);
@@ -113,6 +126,60 @@
     updateScheduleConfig(updated).catch((err) =>
       console.error('Failed to update schedule config:', err),
     );
+  }
+
+  function handleWhitelistEnabledChange(value: boolean) {
+    if (whitelistControlsDisabled) return;
+    whitelistError = null;
+    const updated: BehaviorConfig = { ...cfg.behavior, process_whitelist_enabled: value };
+    updateBehaviorConfig(updated).catch((err) =>
+      console.error('Failed to update whitelist enabled:', err),
+    );
+  }
+
+  function handleWhitelistAdd() {
+    if (whitelistEditingDisabled) return;
+    const raw = whitelistInput.trim().toLowerCase();
+    if (!raw) {
+      whitelistError = i18nStore.t('settings.whitelist.error.empty');
+      return;
+    }
+    if (WHITELIST_RESERVED.has(raw)) {
+      whitelistError = i18nStore.t('settings.whitelist.error.self');
+      return;
+    }
+    if (cfg.behavior.process_whitelist.includes(raw)) {
+      whitelistError = i18nStore.t('settings.whitelist.error.duplicate');
+      return;
+    }
+    if (cfg.behavior.process_whitelist.length >= WHITELIST_MAX) {
+      whitelistError = i18nStore
+        .t('settings.whitelist.error.limit')
+        .replace('{max}', String(WHITELIST_MAX));
+      return;
+    }
+    const next = [...cfg.behavior.process_whitelist, raw];
+    const updated: BehaviorConfig = { ...cfg.behavior, process_whitelist: next };
+    updateBehaviorConfig(updated)
+      .then(() => {
+        whitelistInput = '';
+        whitelistError = null;
+      })
+      .catch((err) => console.error('Failed to update whitelist:', err));
+  }
+
+  function handleWhitelistRemove(index: number) {
+    if (whitelistControlsDisabled) return;
+    const next = cfg.behavior.process_whitelist.filter((_, i) => i !== index);
+    const updated: BehaviorConfig = { ...cfg.behavior, process_whitelist: next };
+    updateBehaviorConfig(updated).catch((err) => console.error('Failed to update whitelist:', err));
+  }
+
+  function handleWhitelistInputKeydown(event: KeyboardEvent) {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      handleWhitelistAdd();
+    }
   }
 
   // MUST replace in order: CommandOrControl before Command/Control
@@ -226,11 +293,13 @@
     getDetectorCapabilities()
       .then((capabilities) => {
         afkDetectionSupported = capabilities.afk_detection_supported;
+        foregroundProcessSupported = capabilities.foreground_process_detection_supported;
         detectorCapabilitiesLoaded = true;
       })
       .catch((err) => {
         console.error('Failed to load detector capabilities:', err);
         afkDetectionSupported = false;
+        foregroundProcessSupported = false;
         detectorCapabilitiesLoaded = true;
       });
   });
@@ -492,6 +561,77 @@
     </div>
   </SettingsCard>
 
+  <SettingsCard title={i18nStore.t('settings.whitelist.title')}>
+    <div class="setting-row" class:disabled={whitelistControlsDisabled}>
+      <div class="setting-info">
+        <span class="setting-label">{i18nStore.t('settings.whitelist.enabled')}</span>
+        <span class="setting-desc">
+          {whitelistControlsDisabled
+            ? i18nStore.t('settings.whitelist.unsupported')
+            : i18nStore.t('settings.whitelist.enabled.desc')}
+        </span>
+      </div>
+      <Toggle
+        checked={cfg.behavior.process_whitelist_enabled}
+        disabled={whitelistControlsDisabled}
+        label={i18nStore.t('settings.whitelist.enabled')}
+        onchange={(v) => handleWhitelistEnabledChange(v)}
+      />
+    </div>
+
+    <div class="setting-row separator whitelist-list-row" class:disabled={whitelistEditingDisabled}>
+      <div class="setting-info">
+        <span class="setting-label">{i18nStore.t('settings.whitelist.list')}</span>
+        <span class="setting-desc">{i18nStore.t('settings.whitelist.list.desc')}</span>
+      </div>
+      <div class="whitelist-control">
+        <div class="whitelist-input-row">
+          <input
+            class="whitelist-input"
+            type="text"
+            bind:value={whitelistInput}
+            disabled={whitelistEditingDisabled}
+            placeholder={i18nStore.t('settings.whitelist.add.placeholder')}
+            aria-label={i18nStore.t('settings.whitelist.add')}
+            onkeydown={handleWhitelistInputKeydown}
+            oninput={() => (whitelistError = null)}
+          />
+          <button
+            type="button"
+            class="whitelist-add-btn"
+            disabled={whitelistEditingDisabled}
+            onclick={handleWhitelistAdd}
+          >
+            {i18nStore.t('settings.whitelist.add')}
+          </button>
+        </div>
+        {#if whitelistError}
+          <span class="whitelist-error">{whitelistError}</span>
+        {/if}
+        {#if cfg.behavior.process_whitelist.length === 0}
+          <span class="whitelist-empty">{i18nStore.t('settings.whitelist.empty')}</span>
+        {:else}
+          <ul class="whitelist-chips" aria-label={i18nStore.t('settings.whitelist.list')}>
+            {#each cfg.behavior.process_whitelist as name, index (name)}
+              <li class="whitelist-chip">
+                <span class="whitelist-chip-name">{name}</span>
+                <button
+                  type="button"
+                  class="whitelist-chip-remove"
+                  disabled={whitelistControlsDisabled}
+                  aria-label={`${i18nStore.t('settings.whitelist.remove')}: ${name}`}
+                  onclick={() => handleWhitelistRemove(index)}
+                >
+                  ×
+                </button>
+              </li>
+            {/each}
+          </ul>
+        {/if}
+      </div>
+    </div>
+  </SettingsCard>
+
   <SettingsCard title={i18nStore.t('settings.schedule.title')}>
     <div class="setting-row">
       <div class="setting-info">
@@ -734,5 +874,134 @@
     pointer-events: none;
     width: 0;
     height: 0;
+  }
+
+  .whitelist-list-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .whitelist-control {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .whitelist-input-row {
+    display: flex;
+    gap: 8px;
+  }
+
+  .whitelist-input {
+    flex: 1;
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+    color: var(--text-primary);
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+    transition:
+      border-color var(--transition),
+      box-shadow var(--transition);
+  }
+
+  .whitelist-input:focus-visible {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-soft);
+  }
+
+  .whitelist-input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .whitelist-add-btn {
+    padding: 6px 14px;
+    border: 1px solid var(--accent);
+    border-radius: var(--radius-sm);
+    background: var(--accent);
+    color: var(--accent-foreground, #fff);
+    font-size: 13px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    transition: opacity var(--transition);
+  }
+
+  .whitelist-add-btn:hover:not(:disabled) {
+    opacity: 0.9;
+  }
+
+  .whitelist-add-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .whitelist-error {
+    font-size: 12px;
+    color: var(--state-alert-label);
+  }
+
+  .whitelist-empty {
+    font-size: 12px;
+    color: var(--text-hint);
+    font-style: italic;
+  }
+
+  .whitelist-chips {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .whitelist-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 4px 4px 10px;
+    border-radius: 16px;
+    background: var(--accent-soft);
+    color: var(--text-primary);
+    font-size: 12px;
+  }
+
+  .whitelist-chip-name {
+    line-height: 1;
+  }
+
+  .whitelist-chip-remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--text-hint);
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+    transition:
+      background var(--transition),
+      color var(--transition);
+  }
+
+  .whitelist-chip-remove:hover:not(:disabled) {
+    background: var(--state-alert);
+    color: var(--accent-foreground, #fff);
+  }
+
+  .whitelist-chip-remove:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
   }
 </style>

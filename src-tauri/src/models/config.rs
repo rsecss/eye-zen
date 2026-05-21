@@ -57,6 +57,10 @@ pub struct BehaviorConfig {
     pub afk_threshold_minutes: u32,
     #[serde(default)]
     pub auto_start: bool,
+    #[serde(default)]
+    pub process_whitelist_enabled: bool,
+    #[serde(default)]
+    pub process_whitelist: Vec<String>,
 }
 
 impl Default for BehaviorConfig {
@@ -67,8 +71,47 @@ impl Default for BehaviorConfig {
             afk_skip_enabled: true,
             afk_threshold_minutes: default_afk_threshold_minutes(),
             auto_start: false,
+            process_whitelist_enabled: false,
+            process_whitelist: Vec::new(),
         }
     }
+}
+
+/// Maximum entries allowed in `BehaviorConfig::process_whitelist`. Entries
+/// beyond this cap are silently dropped at load time and rejected by the UI.
+pub const PROCESS_WHITELIST_MAX_LEN: usize = 32;
+
+/// Reserved process names that may never be added to the whitelist.
+/// Comparison is case-insensitive against the trimmed candidate.
+pub const PROCESS_WHITELIST_RESERVED: &[&str] = &["eyezen", "eyezen.exe"];
+
+/// Normalise a raw whitelist vector into canonical storage form:
+///   1. trim each entry
+///   2. lowercase each entry
+///   3. drop empty entries
+///   4. drop reserved names (eyezen / eyezen.exe)
+///   5. de-duplicate preserving first occurrence
+///   6. truncate to `PROCESS_WHITELIST_MAX_LEN`
+#[must_use]
+pub fn sanitize_process_whitelist(raw: Vec<String>) -> Vec<String> {
+    let mut out: Vec<String> = Vec::with_capacity(raw.len().min(PROCESS_WHITELIST_MAX_LEN));
+    for entry in raw {
+        let trimmed = entry.trim().to_lowercase();
+        if trimmed.is_empty() {
+            continue;
+        }
+        if PROCESS_WHITELIST_RESERVED.iter().any(|r| *r == trimmed) {
+            continue;
+        }
+        if out.iter().any(|existing| existing == &trimmed) {
+            continue;
+        }
+        out.push(trimmed);
+        if out.len() >= PROCESS_WHITELIST_MAX_LEN {
+            break;
+        }
+    }
+    out
 }
 
 /// Weekly schedule controlling when rest reminders are allowed to surface.
@@ -165,6 +208,8 @@ mod tests {
         assert!(config.behavior.afk_skip_enabled);
         assert_eq!(config.behavior.afk_threshold_minutes, 5);
         assert!(!config.behavior.auto_start);
+        assert!(!config.behavior.process_whitelist_enabled);
+        assert!(config.behavior.process_whitelist.is_empty());
         assert_eq!(config.display.language, "zh-CN");
         assert_eq!(config.display.theme, "light");
         assert!(!config.schedule.enabled);
@@ -203,5 +248,38 @@ work_minutes = 25
     fn empty_toml_uses_all_defaults() {
         let config: Config = toml::from_str("").expect("empty config should use defaults");
         assert_eq!(config, Config::default());
+    }
+
+    #[test]
+    fn sanitize_drops_empty_and_reserved() {
+        let raw = vec![
+            "  ".to_string(),
+            "eyezen".to_string(),
+            "Eyezen.EXE".to_string(),
+            "code.exe".to_string(),
+        ];
+        let out = sanitize_process_whitelist(raw);
+        assert_eq!(out, vec!["code.exe".to_string()]);
+    }
+
+    #[test]
+    fn sanitize_dedupes_case_insensitively() {
+        let raw = vec![
+            "Code".to_string(),
+            " code ".to_string(),
+            "CODE".to_string(),
+            "chrome".to_string(),
+        ];
+        let out = sanitize_process_whitelist(raw);
+        assert_eq!(out, vec!["code".to_string(), "chrome".to_string()]);
+    }
+
+    #[test]
+    fn sanitize_truncates_to_max_len() {
+        let raw: Vec<String> = (0..PROCESS_WHITELIST_MAX_LEN + 5)
+            .map(|i| format!("proc{i}"))
+            .collect();
+        let out = sanitize_process_whitelist(raw);
+        assert_eq!(out.len(), PROCESS_WHITELIST_MAX_LEN);
     }
 }

@@ -56,6 +56,22 @@ const en: TranslationDict = {
   'settings.schedule.weekday.sat': 'Sat',
   'settings.schedule.weekday.sun': 'Sun',
 
+  'settings.whitelist.title': 'Process Whitelist',
+  'settings.whitelist.enabled': 'Enable whitelist',
+  'settings.whitelist.enabled.desc': 'Skip reminders when a listed process is in front',
+  'settings.whitelist.list': 'Processes',
+  'settings.whitelist.list.desc':
+    'Names as shown in Task Manager / Activity Monitor (case-insensitive)',
+  'settings.whitelist.add.placeholder': 'e.g. code.exe / Google Chrome',
+  'settings.whitelist.add': 'Add',
+  'settings.whitelist.remove': 'Remove',
+  'settings.whitelist.empty': 'No whitelisted processes',
+  'settings.whitelist.error.duplicate': 'Already in list',
+  'settings.whitelist.error.self': 'Cannot whitelist Eyezen itself',
+  'settings.whitelist.error.empty': 'Name cannot be empty',
+  'settings.whitelist.error.limit': 'Up to {max} entries',
+  'settings.whitelist.unsupported': 'Foreground process detection unavailable in this session',
+
   'settings.hotkeys.title': 'Global Hotkeys',
   'settings.hotkeys.desc':
     'Changes are rebound immediately. If the system or another app owns a shortcut, Eyezen rolls back and shows the error.',

@@ -15,6 +15,8 @@ const DEFAULT_CONFIG: Config = {
     afk_skip_enabled: true,
     afk_threshold_minutes: 5,
     auto_start: false,
+    process_whitelist_enabled: false,
+    process_whitelist: [],
   },
   display: {
     language: 'zh-CN',

@@ -1,0 +1,21 @@
+{"file": ".trellis/spec/architecture/index.md", "reason": "Architecture spec index — points to layering/ipc-state/change-management/testing-quality, all relevant for a new SkipFlags + Config + Settings cross-layer change"}
+{"file": ".trellis/spec/architecture/layering.md", "reason": "Layer dependency rules — frontend invokes commands, never reaches into services directly; service DAG ordering"}
+{"file": ".trellis/spec/architecture/ipc-and-state.md", "reason": "Tauri command + event contracts + Timer state machine + SkipFlags semantics — new flag must follow this pattern"}
+{"file": ".trellis/spec/architecture/change-management.md", "reason": "Config schema compatibility (serde defaults), variant additions checklist — required when adding BehaviorConfig fields"}
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend spec index for service pattern, coding standards, platform-storage, error-and-logging"}
+{"file": ".trellis/spec/backend/service-pattern.md", "reason": "Service DAG + 4-phase lifecycle — DetectorService extension method follows this; ServiceContext composition rules"}
+{"file": ".trellis/spec/backend/platform-storage.md", "reason": "PlatformApi extension rules — explicitly pre-declares get_foreground_process_name; rules for three-platform parity, must-not-panic degradation"}
+{"file": ".trellis/spec/backend/coding-standards.md", "reason": "Rust error / Result / Option / lock / async patterns — applies to platform impls, detector method, command validation"}
+{"file": ".trellis/spec/backend/error-and-logging.md", "reason": "tracing log levels, warn-once pattern with AtomicBool — needed for platform downgrade warnings"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend spec index — Svelte 5 Runes, ts-rs bridge, CSP/capability, store/IPC, component patterns"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Component patterns — new SettingsCard for whitelist follows existing Schedule Card structure (setting-row + label + desc + control)"}
+{"file": ".trellis/spec/frontend/store-and-ipc-patterns.md", "reason": "configStore + commands + events flow — whitelist edit -> updateBehaviorConfig -> wait for config_changed"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "ts-rs bindings rules — new Vec<String> in BehaviorConfig auto-bridges to string[]"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Svelte 5 Runes correctness, $effect cleanup, accessibility checklist for new controls"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Cross-layer thinking — when a feature crosses platform / service / command / store / UI, follow this checklist"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Reuse rules — SkipFlags pattern is the third reuse (fullscreen / schedule / afk), DetectorCapabilities pattern is the second"}
+{"file": ".trellis/tasks/05-22-process-whitelist/prd.md", "reason": "The PRD itself — locked decisions, Acceptance Criteria, ADR-lite, OOS, Technical Approach"}
+{"file": ".trellis/tasks/05-22-process-whitelist/research/platform-foreground-process-apis.md", "reason": "Implementation-grade research: Windows feature flag, Cargo.toml diff, exact symbol paths, macOS core-graphics approach, Linux X11 atom additions, Wayland behavior"}
+{"file": ".trellis/tasks/05-22-process-whitelist/research/ux-decisions.md", "reason": "Aggregated UX decisions: list cap 32, exact match strategy, self-skip protection, Wayland degradation, full i18n key table (zh-CN + en)"}
+{"file": ".trellis/tasks/archive/2026-05/05-19-workday-scheduling/prd.md", "reason": "Closest precedent PRD — same SkipFlags + Config + SettingsCard + i18n + tests slice; new task should mirror its shape"}
+{"file": ".trellis/tasks/archive/2026-05/05-20-afk-skip-next-working-interval/prd.md", "reason": "Precedent for DetectorCapabilities + Settings disabled-banner pattern (settings.behavior.afkUnsupported); whitelist follows same degradation UX"}

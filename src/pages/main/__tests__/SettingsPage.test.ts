@@ -37,6 +37,7 @@ describe('SettingsPage AFK controls', () => {
   it('disables AFK controls when detector capabilities are unavailable', async () => {
     vi.mocked(getDetectorCapabilities).mockResolvedValue({
       afk_detection_supported: false,
+      foreground_process_detection_supported: false,
     });
 
     render(SettingsPage);
@@ -51,6 +52,7 @@ describe('SettingsPage AFK controls', () => {
   it('updates behavior config when AFK threshold changes', async () => {
     vi.mocked(getDetectorCapabilities).mockResolvedValue({
       afk_detection_supported: true,
+      foreground_process_detection_supported: true,
     });
 
     render(SettingsPage);
@@ -65,5 +67,39 @@ describe('SettingsPage AFK controls', () => {
         afk_threshold_minutes: 6,
       }),
     );
+  });
+});
+
+describe('SettingsPage process whitelist', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(updateBehaviorConfig).mockResolvedValue(undefined);
+  });
+
+  it('disables whitelist controls when foreground process detection is unsupported', async () => {
+    vi.mocked(getDetectorCapabilities).mockResolvedValue({
+      afk_detection_supported: true,
+      foreground_process_detection_supported: false,
+    });
+
+    render(SettingsPage);
+
+    await waitFor(() => expect(getDetectorCapabilities).toHaveBeenCalledOnce());
+
+    expect(screen.getByLabelText('启用白名单')).toBeDisabled();
+    expect(screen.getByText('当前会话不支持前台进程检测，已禁用')).toBeInTheDocument();
+  });
+
+  it('shows empty state when whitelist is empty', async () => {
+    vi.mocked(getDetectorCapabilities).mockResolvedValue({
+      afk_detection_supported: true,
+      foreground_process_detection_supported: true,
+    });
+
+    render(SettingsPage);
+
+    await waitFor(() => expect(getDetectorCapabilities).toHaveBeenCalledOnce());
+
+    expect(screen.getByText('暂无白名单进程')).toBeInTheDocument();
   });
 });

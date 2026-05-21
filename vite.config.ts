@@ -45,5 +45,18 @@ export default defineConfig(async () => ({
   test: {
     environment: 'jsdom',
     setupFiles: ['./src/test-setup.ts'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'html', 'json-summary'],
+      include: ['src/**/*.{ts,svelte}'],
+      exclude: [
+        'src/**/__tests__/**',
+        'src/**/*.test.{ts,svelte}',
+        'src/lib/bindings/**',
+        'src/test-setup.ts',
+        'src/vite-env.d.ts',
+        'src/entries/**',
+      ],
+    },
   },
 }));
