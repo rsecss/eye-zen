@@ -50,13 +50,14 @@ pub(crate) struct Transition {
 pub(crate) struct SkipFlags {
     pub(crate) fullscreen_active: bool,
     pub(crate) schedule_inactive: bool,
+    pub(crate) afk_active: bool,
 }
 
 impl SkipFlags {
     /// Return whether any skip condition is active.
     #[must_use]
     pub(crate) const fn any_active(&self) -> bool {
-        self.fullscreen_active || self.schedule_inactive
+        self.fullscreen_active || self.schedule_inactive || self.afk_active
     }
 }
 

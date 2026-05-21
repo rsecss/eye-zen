@@ -23,6 +23,14 @@ const en: TranslationDict = {
   'settings.behavior.sound.desc': 'Play sound on rest reminder',
   'settings.behavior.fullscreenSkip': 'Fullscreen Skip',
   'settings.behavior.fullscreenSkip.desc': 'Skip reminders in fullscreen apps',
+  'settings.behavior.afkSkip': 'AFK Skip',
+  'settings.behavior.afkSkip.desc':
+    'Skip the next reminder after keyboard and mouse idle exceeds the threshold',
+  'settings.behavior.afkThreshold': 'AFK Threshold',
+  'settings.behavior.afkThreshold.desc': 'How long without keyboard or mouse input counts as away',
+  'settings.behavior.afkThreshold.unit': 'min',
+  'settings.behavior.afkUnsupported':
+    'Keyboard and mouse idle detection is unavailable in this session',
   'settings.behavior.autoStart': 'Auto Start',
   'settings.behavior.autoStart.desc': 'Launch at system startup',
 

@@ -1,0 +1,9 @@
+{"file": ".trellis/spec/architecture/ipc-and-state.md", "reason": "Review timer state-machine and SkipFlags behavior against spec."}
+{"file": ".trellis/spec/architecture/change-management.md", "reason": "Review cross-layer config/platform/UI change completeness."}
+{"file": ".trellis/spec/architecture/testing-quality.md", "reason": "Verify required tests and npm run ci quality gate."}
+{"file": ".trellis/spec/backend/coding-standards.md", "reason": "Review Rust implementation style, errors, locking, clippy compliance."}
+{"file": ".trellis/spec/backend/platform-storage.md", "reason": "Review platform capability degradation and TOML compatibility."}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Review Settings immediate-save flow and single-source config state."}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Review Svelte 5 component patterns and accessibility."}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Review generated bindings and import discipline."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Review frontend tests, build, and formatting gates."}

@@ -1,20 +1,23 @@
 #![allow(clippy::module_name_repetitions)]
 
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::time::Duration;
 
 use tracing::warn;
 
 use super::PlatformApi;
 
 pub(crate) struct WindowsPlatform {
-    warned: AtomicBool,
+    fullscreen_warned: AtomicBool,
+    idle_warned: AtomicBool,
 }
 
 impl WindowsPlatform {
     #[must_use]
     pub(crate) const fn new() -> Self {
         Self {
-            warned: AtomicBool::new(false),
+            fullscreen_warned: AtomicBool::new(false),
+            idle_warned: AtomicBool::new(false),
         }
     }
 }
@@ -30,12 +33,28 @@ impl PlatformApi for WindowsPlatform {
         match detect_fullscreen() {
             Ok(result) => result,
             Err(error) => {
-                if !self.warned.swap(true, Ordering::Relaxed) {
+                if !self.fullscreen_warned.swap(true, Ordering::Relaxed) {
                     warn!("windows fullscreen detection failed: {error}");
                 }
                 false
             }
         }
+    }
+
+    fn idle_duration(&self) -> Option<Duration> {
+        match detect_idle_duration() {
+            Ok(duration) => Some(duration),
+            Err(error) => {
+                if !self.idle_warned.swap(true, Ordering::Relaxed) {
+                    warn!("windows idle detection failed: {error}");
+                }
+                None
+            }
+        }
+    }
+
+    fn supports_idle_detection(&self) -> bool {
+        true
     }
 }
 
@@ -80,5 +99,29 @@ fn detect_fullscreen() -> Result<bool, String> {
             && window_rect.bottom >= monitor_rect.bottom;
 
         Ok(is_fullscreen)
+    }
+}
+
+fn detect_idle_duration() -> Result<Duration, String> {
+    use windows::Win32::System::SystemInformation::GetTickCount;
+    use windows::Win32::UI::Input::KeyboardAndMouse::{GetLastInputInfo, LASTINPUTINFO};
+
+    let mut input_info = LASTINPUTINFO {
+        cbSize: u32::try_from(std::mem::size_of::<LASTINPUTINFO>())
+            .map_err(|error| format!("LASTINPUTINFO size conversion: {error}"))?,
+        dwTime: 0,
+    };
+
+    // SAFETY: LASTINPUTINFO is initialized with the documented cbSize, and the
+    // Win32 calls do not retain the pointer after returning.
+    unsafe {
+        if !GetLastInputInfo(&raw mut input_info).as_bool() {
+            return Err("GetLastInputInfo returned false".to_string());
+        }
+
+        let now = GetTickCount();
+        Ok(Duration::from_millis(u64::from(
+            now.wrapping_sub(input_info.dwTime),
+        )))
     }
 }

@@ -15,13 +15,14 @@
 ```rust
 pub(crate) trait PlatformApi: Send + Sync {
     fn is_fullscreen_app_active(&self) -> bool; // MVP 已实现
+    fn idle_duration(&self) -> Option<Duration>; // AFK 跳过
+    fn supports_idle_detection(&self) -> bool;   // Settings 能力灰显
 }
 ```
 
 P2 / P3 计划扩展（尚未实现，新增时 MUST 同步本文档）：
 
 ```rust
-fn get_cursor_position(&self) -> Option<(i32, i32)>;      // P2 离席检测
 fn get_system_audio_peak(&self) -> Option<f32>;           // P2 进程白名单
 fn get_foreground_process_name(&self) -> Option<String>;  // P2 进程白名单
 ```
@@ -38,7 +39,7 @@ fn get_foreground_process_name(&self) -> Option<String>;  // P2 进程白名单
 | 能力 | Windows | macOS | Linux X11 | Linux Wayland |
 |------|---------|-------|-----------|---------------|
 | 全屏检测 | `GetForegroundWindow` + `MonitorFromWindow` | `CGWindowListCopyWindowInfo` | `_NET_WM_STATE_FULLSCREEN` | 降级: `false` |
-| 光标位置 (P2) | `GetCursorPos` | `CGEventSource` | `XQueryPointer` | 有限 |
+| AFK idle 时长 | `GetLastInputInfo` + `GetTickCount` | `CGEventSourceSecondsSinceLastEventType` | XScreenSaver `query_info.ms_since_user_input` | 降级: `None` + Settings 灰显 |
 | 系统音频峰值 (P2) | `IAudioMeterInformation` COM | 降级: 无公共 API | PulseAudio peak | PulseAudio peak |
 | 前台进程 (P2) | `GetWindowThreadProcessId` | `NSWorkspace` | `_NET_ACTIVE_WINDOW` + `/proc` | 降级: `None` |
 
@@ -47,9 +48,9 @@ fn get_foreground_process_name(&self) -> Option<String>;  // P2 进程白名单
 ## 降级原则
 
 - 每个能力降级 MUST 只记录一次 `warn` 日志，MUST NOT 在每次调用都刷 warn
-  - 实现范式：`AtomicBool` 哨兵，见 `WindowsPlatform.warned`（`src-tauri/src/platform/windows.rs`）
+  - 实现范式：按能力拆分 `AtomicBool` 哨兵，见 `WindowsPlatform.fullscreen_warned` / `idle_warned`（`src-tauri/src/platform/windows.rs`）
 - 保守降级：宁可多提醒，不漏提醒。例：全屏检测失败 → 返回 `false`（让用户照常收到提示）
-- 设置 UI SHOULD 展示当前已降级的能力（P2 配合 Statistics 页面）
+- 设置 UI SHOULD 展示当前已降级的能力；AFK idle 不可用时 `get_detector_capabilities` MUST 返回 `afk_detection_supported = false`，Settings MUST 灰显 AFK 控件
 - 平台错误 MUST 在 platform 层捕获，MUST NOT 跨层抛 `Result` 给 service 强制处理（service 拿到的是 `bool` / `Option`）
 
 ## 存储策略
@@ -85,6 +86,8 @@ alert_timeout_seconds = 60
 [behavior]
 sound_enabled = true
 fullscreen_skip = true
+afk_skip_enabled = true
+afk_threshold_minutes = 5
 auto_start = false
 
 [display]
@@ -95,6 +98,7 @@ theme = "light"
 规则：
 
 - 所有字段 MUST 在 `models/config.rs` 中通过 `#[serde(default = "...")]` 提供默认值，缺字段不得报错
+- `BehaviorConfig` 当前包含多个布尔开关，是持久化 TOML schema 的扁平配置；新增 bool 字段允许局部 `#[allow(clippy::struct_excessive_bools)]`，但 MUST 避免把运行时能力（如 `afk_detection_supported`）写入 TOML。
 - 旧字段废弃 MUST 走 [`../architecture/change-management.md`](../architecture/change-management.md) 中的 deprecate → migrate → remove 流程，禁止直接删除导致老配置不可读
 - 默认值 MUST 与 `Config::default()` 单元测试一致（参见 `src-tauri/src/models/config.rs` 的 `default_values` 测试）
 
@@ -147,7 +151,7 @@ self.emit_config_changed(updated.as_ref());
 
 | 配置项 | 生效时机 | 说明 |
 |--------|---------|------|
-| `behavior.sound_enabled`、`behavior.fullscreen_skip` | 即时 | 下次 tick 直接读 `services.config.current()` |
+| `behavior.sound_enabled`、`behavior.fullscreen_skip`、`behavior.afk_skip_enabled`、`behavior.afk_threshold_minutes` | 即时 | 下次 tick 直接读 `services.config.current()`；AFK threshold 不进入 `TimerService::sync_runtime_config` |
 | `timer.work_minutes`、`timer.rest_seconds`、`timer.pre_alert_seconds`、`timer.alert_timeout_seconds` | 下周期 | 当前周期不中断，通过 `TimerService::sync_runtime_config` 同步 |
 | `display.language` | 即时 | I18nService 订阅 watch，托盘菜单与前端同步刷新 |
 | `display.theme` | 即时 | 前端监听 `config_changed` 事件即时切换 |

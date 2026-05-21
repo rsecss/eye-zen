@@ -2,10 +2,12 @@
   let {
     checked,
     label = 'Toggle',
+    disabled = false,
     onchange,
   }: {
     checked: boolean;
     label?: string;
+    disabled?: boolean;
     onchange: (v: boolean) => void;
   } = $props();
 </script>
@@ -16,7 +18,10 @@
   aria-label={label}
   class="toggle-track"
   class:on={checked}
-  onclick={() => onchange(!checked)}
+  {disabled}
+  onclick={() => {
+    if (!disabled) onchange(!checked);
+  }}
 >
   <span class="toggle-knob" class:on={checked}></span>
 </button>
@@ -39,6 +44,11 @@
 
   .toggle-track:focus-visible {
     box-shadow: 0 0 0 2px var(--accent-soft, rgba(34, 197, 94, 0.25));
+  }
+
+  .toggle-track:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
   }
 
   .toggle-track.on {

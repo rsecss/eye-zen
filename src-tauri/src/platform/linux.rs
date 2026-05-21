@@ -2,6 +2,7 @@
 
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
+use std::time::Duration;
 
 use tracing::warn;
 
@@ -10,7 +11,8 @@ use super::PlatformApi;
 static WAYLAND_WARNING_EMITTED: AtomicBool = AtomicBool::new(false);
 
 pub(crate) struct LinuxPlatform {
-    warned: AtomicBool,
+    fullscreen_warned: AtomicBool,
+    idle_warned: AtomicBool,
     is_x11: bool,
     x11_session: Option<Mutex<X11Session>>,
 }
@@ -23,7 +25,9 @@ impl LinuxPlatform {
             || std::env::var("DISPLAY").is_ok();
 
         if !is_x11 && !WAYLAND_WARNING_EMITTED.swap(true, Ordering::Relaxed) {
-            warn!("Wayland detected: fullscreen detection unavailable, reminders will always show");
+            warn!(
+                "Wayland detected: fullscreen and idle detection unavailable, reminders will always show"
+            );
         }
 
         let x11_session = if is_x11 {
@@ -39,7 +43,8 @@ impl LinuxPlatform {
         };
 
         Self {
-            warned: AtomicBool::new(false),
+            fullscreen_warned: AtomicBool::new(false),
+            idle_warned: AtomicBool::new(false),
             is_x11,
             x11_session,
         }
@@ -59,12 +64,39 @@ impl PlatformApi for LinuxPlatform {
         match detect_fullscreen_x11(session) {
             Ok(result) => result,
             Err(error) => {
-                if !self.warned.swap(true, Ordering::Relaxed) {
+                if !self.fullscreen_warned.swap(true, Ordering::Relaxed) {
                     warn!("X11 fullscreen detection failed: {error}");
                 }
                 false
             }
         }
+    }
+
+    fn idle_duration(&self) -> Option<Duration> {
+        if !self.supports_idle_detection() {
+            return None;
+        }
+
+        let session = self.x11_session.as_ref()?;
+
+        match detect_idle_duration_x11(session) {
+            Ok(duration) => Some(duration),
+            Err(error) => {
+                if !self.idle_warned.swap(true, Ordering::Relaxed) {
+                    warn!("X11 idle detection failed: {error}");
+                }
+                None
+            }
+        }
+    }
+
+    fn supports_idle_detection(&self) -> bool {
+        self.is_x11
+            && self.x11_session.as_ref().is_some_and(|session| {
+                session
+                    .lock()
+                    .is_ok_and(|guard| guard.screensaver_available)
+            })
     }
 }
 
@@ -74,10 +106,12 @@ struct X11Session {
     active_window_atom: u32,
     state_atom: u32,
     fullscreen_atom: u32,
+    screensaver_available: bool,
 }
 
 impl X11Session {
     fn connect() -> Result<Self, String> {
+        use x11rb::protocol::screensaver::ConnectionExt as ScreenSaverConnectionExt;
         use x11rb::protocol::xproto::ConnectionExt;
 
         let (connection, screen_num) =
@@ -104,12 +138,19 @@ impl X11Session {
             .map_err(|error| format!("reply _NET_WM_STATE_FULLSCREEN: {error}"))?
             .atom;
 
+        let screensaver_available = connection
+            .screensaver_query_version(1, 1)
+            .ok()
+            .and_then(|cookie| cookie.reply().ok())
+            .is_some();
+
         Ok(Self {
             connection,
             screen_num,
             active_window_atom,
             state_atom,
             fullscreen_atom,
+            screensaver_available,
         })
     }
 }
@@ -167,4 +208,27 @@ fn detect_fullscreen_x11(session: &Mutex<X11Session>) -> Result<bool, String> {
     });
 
     Ok(is_fullscreen)
+}
+
+fn detect_idle_duration_x11(session: &Mutex<X11Session>) -> Result<Duration, String> {
+    use x11rb::connection::Connection;
+    use x11rb::protocol::screensaver::ConnectionExt as ScreenSaverConnectionExt;
+
+    let session = session
+        .lock()
+        .map_err(|_| "X11 session lock poisoned".to_string())?;
+
+    if !session.screensaver_available {
+        return Err("XScreenSaver extension unavailable".to_string());
+    }
+
+    let screen = &session.connection.setup().roots[session.screen_num];
+    let reply = session
+        .connection
+        .screensaver_query_info(screen.root)
+        .map_err(|error| format!("screensaver query info: {error}"))?
+        .reply()
+        .map_err(|error| format!("reply screensaver query info: {error}"))?;
+
+    Ok(Duration::from_millis(u64::from(reply.ms_since_user_input)))
 }
