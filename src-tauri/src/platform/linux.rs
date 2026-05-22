@@ -324,9 +324,8 @@ fn detect_foreground_process_name_x11(
     }
 
     let exe_link = format!("/proc/{pid}/exe");
-    let exe_path = match std::fs::read_link(&exe_link) {
-        Ok(path) => path,
-        Err(_) => return Ok(None),
+    let Ok(exe_path) = std::fs::read_link(&exe_link) else {
+        return Ok(None);
     };
 
     Ok(exe_path

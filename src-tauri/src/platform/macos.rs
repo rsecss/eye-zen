@@ -205,7 +205,7 @@ unsafe fn read_cfnumber_i64(
     use core_foundation::dictionary::CFDictionaryGetValueIfPresent;
     use core_foundation::number::{CFNumberGetTypeID, CFNumberGetValue, CFNumberRef};
 
-    const K_CF_NUMBER_S_INT64_TYPE: i32 = 4;
+    const K_CF_NUMBER_S_INT64_TYPE: u32 = 4;
 
     let mut value: *const core::ffi::c_void = std::ptr::null();
     if CFDictionaryGetValueIfPresent(dict, key.cast::<core::ffi::c_void>(), &mut value) == 0 {
