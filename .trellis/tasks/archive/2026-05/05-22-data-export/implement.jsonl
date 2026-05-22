@@ -1,0 +1,7 @@
+{"file": ".trellis/spec/architecture/ipc-and-state.md", "reason": "新增 export_statistics command 必须按现有 IPC 契约（命名、错误传播、序列化）"}
+{"file": ".trellis/spec/architecture/change-management.md", "reason": "新增 command + 新增 plugin 必查变更清单（capability、lib.rs 注册、文档同步）"}
+{"file": ".trellis/spec/backend/service-pattern.md", "reason": "StatService 扩展 export_to 方法时遵循服务 DAG / 四阶段生命周期"}
+{"file": ".trellis/spec/backend/coding-standards.md", "reason": "Rust 错误处理、锁/异步、VACUUM INTO 调用模式"}
+{"file": ".trellis/spec/backend/error-and-logging.md", "reason": "AppError 跨 IPC 序列化到前端 toast 的契约"}
+{"file": ".trellis/spec/frontend/store-and-ipc-patterns.md", "reason": "invoke wrapper、timeout 与错误处理"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "StatisticsPage 按钮 + dialog 集成"}

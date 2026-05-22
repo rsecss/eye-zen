@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/architecture/testing-quality.md", "reason": "提交前自检清单（cargo fmt/clippy/test + svelte-check/vitest/build）"}
+{"file": ".trellis/spec/architecture/change-management.md", "reason": "新增 command + 新增 plugin 的变更清单核对"}
+{"file": ".trellis/spec/backend/coding-standards.md", "reason": "clippy --all-targets 标准 + 错误处理审查"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "vitest 覆盖、svelte-check、a11y 与 i18n 完整性审查"}
