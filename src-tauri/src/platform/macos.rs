@@ -172,8 +172,8 @@ fn detect_foreground_process_name_macos() -> Result<Option<String>, String> {
 }
 
 /// # Safety
-/// Caller must ensure `dict` is a valid non-null CFDictionaryRef and `key` is
-/// a valid static CFStringRef from CoreGraphics. The value is borrowed via
+/// Caller must ensure `dict` is a valid non-null `CFDictionaryRef` and `key` is
+/// a valid static `CFStringRef` from CoreGraphics. The value is borrowed via
 /// `wrap_under_get_rule`, which retains it for the lifetime of the returned String.
 unsafe fn read_cfstring(
     dict: core_foundation::dictionary::CFDictionaryRef,
@@ -184,7 +184,7 @@ unsafe fn read_cfstring(
     use core_foundation::string::{CFString, CFStringGetTypeID, CFStringRef};
 
     let mut value: *const core::ffi::c_void = std::ptr::null();
-    if CFDictionaryGetValueIfPresent(dict, key.cast::<core::ffi::c_void>(), &mut value) == 0 {
+    if CFDictionaryGetValueIfPresent(dict, key.cast::<core::ffi::c_void>(), &raw mut value) == 0 {
         return None;
     }
     if value.is_null() || CFGetTypeID(value) != CFStringGetTypeID() {
@@ -208,7 +208,7 @@ unsafe fn read_cfnumber_i64(
     const K_CF_NUMBER_S_INT64_TYPE: u32 = 4;
 
     let mut value: *const core::ffi::c_void = std::ptr::null();
-    if CFDictionaryGetValueIfPresent(dict, key.cast::<core::ffi::c_void>(), &mut value) == 0 {
+    if CFDictionaryGetValueIfPresent(dict, key.cast::<core::ffi::c_void>(), &raw mut value) == 0 {
         return None;
     }
     if value.is_null() || CFGetTypeID(value) != CFNumberGetTypeID() {
