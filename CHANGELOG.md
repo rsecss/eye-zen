@@ -19,6 +19,18 @@ Each version body uses the following categories (see
 Line format: `- imperative-lowercase description (#NN) (sha7)`. PR number is
 omitted when the change predates the pull-request workflow.
 
+## [0.5.0] - 2026-05-23
+
+### 🎉 Features
+
+- Pomodoro mode alongside 20-20-20 with configurable cycles and long break (#18) (52ae677)
+- statistics database export via VACUUM INTO with native save dialog (#19) (81ed092)
+
+### 🔧 Maintenance
+
+- defer echarts via dynamic import to slim main bundle (#17) (f9f79fd)
+- adopt chrome-devtools-mcp style for release notes (#16) (5817b03)
+
 ## [0.4.0] - 2026-05-22
 
 ### 🎉 Features
@@ -74,6 +86,7 @@ omitted when the change predates the pull-request workflow.
 - ts-rs auto-generated TypeScript bindings (3d96503)
 - three-platform CI matrix and four-target Release pipeline (b10533b)
 
+[0.5.0]: https://github.com/rsecss/eye-zen/releases/tag/v0.5.0
 [0.4.0]: https://github.com/rsecss/eye-zen/releases/tag/v0.4.0
 [0.3.0]: https://github.com/rsecss/eye-zen/releases/tag/v0.3.0
 [0.2.0]: https://github.com/rsecss/eye-zen/releases/tag/v0.2.0
