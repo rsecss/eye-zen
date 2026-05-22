@@ -2,10 +2,11 @@
 import type { BehaviorConfig } from "./BehaviorConfig";
 import type { DisplayConfig } from "./DisplayConfig";
 import type { HotkeysConfig } from "./HotkeysConfig";
+import type { PomodoroConfig } from "./PomodoroConfig";
 import type { ScheduleConfig } from "./ScheduleConfig";
 import type { TimerConfig } from "./TimerConfig";
 
 /**
  * Root application configuration persisted as TOML.
  */
-export type Config = { timer: TimerConfig, behavior: BehaviorConfig, display: DisplayConfig, schedule: ScheduleConfig, hotkeys: HotkeysConfig, };
+export type Config = { timer: TimerConfig, behavior: BehaviorConfig, display: DisplayConfig, schedule: ScheduleConfig, hotkeys: HotkeysConfig, pomodoro: PomodoroConfig, };

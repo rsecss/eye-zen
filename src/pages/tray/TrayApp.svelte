@@ -72,6 +72,12 @@
             : i18nStore.t('tray.alerting'),
   );
 
+  const pomodoroProgress = $derived.by(() => {
+    const { mode, pomodoro } = timerStore.current;
+    if (mode !== 'pomodoro' || !pomodoro) return null;
+    return `Pomo ${pomodoro.cycle_index}/${pomodoro.cycles_per_long}`;
+  });
+
   const labelColor = $derived(
     currentState === 'paused'
       ? '#9ca3af'
@@ -184,6 +190,9 @@
         style:color={dotGlowColor}
       ></div>
       <span class="state-label" style:color={labelColor}>{stateLabel}</span>
+      {#if pomodoroProgress}
+        <span class="pomo-chip">{pomodoroProgress}</span>
+      {/if}
     </div>
     <span class="countdown" class:dim={timeDimmed}>{formattedTime}</span>
   </div>
@@ -342,6 +351,17 @@
     font-size: 15px;
     font-weight: 650;
     letter-spacing: 0.1px;
+  }
+
+  .pomo-chip {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.4px;
+    color: rgba(110, 119, 134, 0.92);
+    background: rgba(110, 119, 134, 0.12);
+    padding: 2px 8px;
+    border-radius: 999px;
+    margin-left: 8px;
   }
 
   .countdown {

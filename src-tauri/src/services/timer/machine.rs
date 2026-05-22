@@ -2,10 +2,11 @@ use std::time::Instant;
 
 use chrono::Utc;
 
+use crate::models::config::TimerMode;
 use crate::models::statistics::RestSessionDraft;
-use crate::models::types::StatePayload;
+use crate::models::types::{PomodoroStatePayload, StatePayload};
 
-use super::effect::{Effect, SoundType, TrayTooltip, TrayUpdate};
+use super::effect::{Effect, PomodoroProgress, SoundType, TrayTooltip, TrayUpdate};
 use super::state::{Inner, SkipFlags, TimerState, Transition, UserEvent};
 
 /// Resolve a user action into a valid state transition.
@@ -168,7 +169,21 @@ fn state_payload(inner: &Inner, now: Instant) -> StatePayload {
         remaining_secs,
         work_minutes: duration_minutes_to_u32(inner.work_duration),
         rest_seconds: duration_to_secs(Some(inner.rest_duration)),
+        mode: inner.mode,
+        pomodoro: pomodoro_payload(inner),
     }
+}
+
+#[must_use]
+fn pomodoro_payload(inner: &Inner) -> Option<PomodoroStatePayload> {
+    if inner.mode != TimerMode::Pomodoro {
+        return None;
+    }
+    Some(PomodoroStatePayload {
+        cycle_index: inner.cycle_index,
+        cycles_per_long: inner.cycles_per_long,
+        is_long_break: inner.state == TimerState::Resting && inner.is_long_break,
+    })
 }
 
 #[must_use]
@@ -182,6 +197,14 @@ fn tray_tooltip(inner: &Inner, now: Instant) -> TrayTooltip {
     TrayTooltip {
         state: inner.state,
         remaining_secs,
+        pomodoro_progress: if inner.mode == TimerMode::Pomodoro {
+            Some(PomodoroProgress {
+                current: inner.cycle_index,
+                total: inner.cycles_per_long,
+            })
+        } else {
+            None
+        },
     }
 }
 
@@ -537,6 +560,7 @@ mod tests {
             Effect::UpdateTray(TrayUpdate::Tooltip(TrayTooltip {
                 state: Resting,
                 remaining_secs: Some(14..=15),
+                ..
             }))
         )));
     }
@@ -684,5 +708,182 @@ mod tests {
         assert!(effects
             .iter()
             .any(|effect| matches!(effect, Effect::UpdateTray(_))));
+    }
+
+    fn make_pomodoro_inner(cycle_index: u32, cycles_per_long: u32) -> Inner {
+        use crate::models::config::{Config, PomodoroConfig, TimerMode};
+        let mut config = Config::default();
+        config.timer.mode = TimerMode::Pomodoro;
+        config.pomodoro = PomodoroConfig {
+            focus_minutes: 25,
+            short_break_minutes: 5,
+            long_break_minutes: 15,
+            cycles_per_long,
+        };
+        let mut inner = Inner::from_config(&config);
+        inner.cycle_index = cycle_index;
+        inner
+    }
+
+    #[test]
+    fn pomodoro_entering_resting_picks_short_break_for_non_long_cycle() {
+        let mut inner = make_pomodoro_inner(1, 4);
+        let now = Instant::now();
+        let transition = Transition {
+            from: Working,
+            to: Resting,
+        };
+        inner.apply_transition_at(transition, now);
+
+        assert_eq!(inner.rest_duration, std::time::Duration::from_mins(5));
+        assert!(!inner.is_long_break);
+    }
+
+    #[test]
+    fn pomodoro_entering_resting_picks_long_break_at_cycle_boundary() {
+        let mut inner = make_pomodoro_inner(4, 4);
+        let now = Instant::now();
+        let transition = Transition {
+            from: Alerting,
+            to: Resting,
+        };
+        inner.apply_transition_at(transition, now);
+
+        assert_eq!(inner.rest_duration, std::time::Duration::from_mins(15));
+        assert!(inner.is_long_break);
+    }
+
+    #[test]
+    fn pomodoro_resting_to_working_advances_cycle_on_short_break() {
+        let mut inner = make_pomodoro_inner(2, 4);
+        inner.is_long_break = false;
+        inner.state = Resting;
+        let now = Instant::now();
+        inner.apply_transition_at(
+            Transition {
+                from: Resting,
+                to: Working,
+            },
+            now,
+        );
+
+        assert_eq!(inner.cycle_index, 3);
+        assert!(!inner.is_long_break);
+    }
+
+    #[test]
+    fn pomodoro_resting_to_working_resets_cycle_after_long_break() {
+        let mut inner = make_pomodoro_inner(4, 4);
+        inner.is_long_break = true;
+        inner.state = Resting;
+        let now = Instant::now();
+        inner.apply_transition_at(
+            Transition {
+                from: Resting,
+                to: Working,
+            },
+            now,
+        );
+
+        assert_eq!(inner.cycle_index, 1);
+        assert!(!inner.is_long_break);
+    }
+
+    #[test]
+    fn pomodoro_state_payload_includes_progress() {
+        let inner = make_pomodoro_inner(2, 4);
+        let effects = collect_tick_effects(&inner, Instant::now());
+        let payload = effects.iter().find_map(|effect| match effect {
+            Effect::EmitStateChanged(payload) => Some(payload.clone()),
+            _ => None,
+        });
+
+        let payload = payload.expect("state payload should be emitted");
+        assert_eq!(payload.mode, crate::models::config::TimerMode::Pomodoro);
+        let pomodoro = payload
+            .pomodoro
+            .expect("pomodoro payload should be present");
+        assert_eq!(pomodoro.cycle_index, 2);
+        assert_eq!(pomodoro.cycles_per_long, 4);
+        assert!(!pomodoro.is_long_break);
+    }
+
+    #[test]
+    fn pomodoro_is_long_break_only_during_long_resting() {
+        let mut inner = make_pomodoro_inner(4, 4);
+        inner.apply_transition_at(
+            Transition {
+                from: Working,
+                to: Resting,
+            },
+            Instant::now(),
+        );
+
+        let payload = state_payload(&inner, Instant::now());
+        let pomodoro = payload
+            .pomodoro
+            .expect("pomodoro payload should be present");
+        assert!(pomodoro.is_long_break);
+
+        // After long break completes, is_long_break clears and cycle resets.
+        inner.apply_transition_at(
+            Transition {
+                from: Resting,
+                to: Working,
+            },
+            Instant::now(),
+        );
+        let payload = state_payload(&inner, Instant::now());
+        let pomodoro = payload
+            .pomodoro
+            .expect("pomodoro payload should be present");
+        assert!(!pomodoro.is_long_break);
+        assert_eq!(pomodoro.cycle_index, 1);
+    }
+
+    #[test]
+    fn twenty_twenty_twenty_payload_has_no_pomodoro() {
+        let inner = make_inner(Working);
+        let payload = state_payload(&inner, Instant::now());
+        assert_eq!(
+            payload.mode,
+            crate::models::config::TimerMode::TwentyTwentyTwenty
+        );
+        assert!(payload.pomodoro.is_none());
+    }
+
+    #[test]
+    fn pomodoro_tray_tooltip_carries_progress() {
+        let inner = make_pomodoro_inner(3, 4);
+        let tooltip = tray_tooltip(&inner, Instant::now());
+        let progress = tooltip
+            .pomodoro_progress
+            .expect("pomodoro progress should be set");
+        assert_eq!(progress.current, 3);
+        assert_eq!(progress.total, 4);
+    }
+
+    #[test]
+    fn pomodoro_pause_resume_preserves_cycle() {
+        let mut inner = make_pomodoro_inner(3, 4);
+        inner.state = Working;
+        let now = Instant::now();
+        inner.apply_transition_at(
+            Transition {
+                from: Working,
+                to: Paused,
+            },
+            now,
+        );
+        assert_eq!(inner.cycle_index, 3);
+
+        inner.apply_transition_at(
+            Transition {
+                from: Paused,
+                to: Working,
+            },
+            now,
+        );
+        assert_eq!(inner.cycle_index, 3);
     }
 }

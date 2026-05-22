@@ -6,6 +6,10 @@ const en: TranslationDict = {
   'tab.about': 'About',
 
   'settings.timer.title': 'Timer',
+  'settings.timer.mode': 'Timer Mode',
+  'settings.timer.mode.desc': '20-20-20 eye care or Pomodoro (mutually exclusive)',
+  'settings.timer.mode.20-20-20': '20-20-20',
+  'settings.timer.mode.pomodoro': 'Pomodoro',
   'settings.timer.workMinutes': 'Work Duration',
   'settings.timer.workMinutes.desc': 'Work time before rest reminder',
   'settings.timer.workMinutes.unit': 'min',
@@ -18,6 +22,20 @@ const en: TranslationDict = {
   'settings.timer.alertTimeout': 'Alert Timeout',
   'settings.timer.alertTimeout.desc': 'Auto-rest after timeout',
   'settings.timer.alertTimeout.unit': 'sec',
+
+  'settings.pomodoro.title': 'Pomodoro Settings',
+  'settings.pomodoro.focusMinutes': 'Focus Duration',
+  'settings.pomodoro.focusMinutes.desc': 'Length of each focus session, default 25 minutes',
+  'settings.pomodoro.focusMinutes.unit': 'min',
+  'settings.pomodoro.shortBreakMinutes': 'Short Break',
+  'settings.pomodoro.shortBreakMinutes.desc': 'Regular break length, default 5 minutes',
+  'settings.pomodoro.shortBreakMinutes.unit': 'min',
+  'settings.pomodoro.longBreakMinutes': 'Long Break',
+  'settings.pomodoro.longBreakMinutes.desc': 'Long break length after N cycles, default 15 minutes',
+  'settings.pomodoro.longBreakMinutes.unit': 'min',
+  'settings.pomodoro.cyclesPerLong': 'Cycles per Long Break',
+  'settings.pomodoro.cyclesPerLong.desc': 'How many focus sessions before a long break, default 4',
+  'settings.pomodoro.cyclesPerLong.unit': '×',
 
   'settings.behavior.title': 'Behavior',
   'settings.behavior.sound': 'Sound',
@@ -135,12 +153,18 @@ const en: TranslationDict = {
   'tip.alerting.subtitle': 'Look at something 20 feet away\nand let your eyes rest',
   'tip.resting.title': 'Resting',
   'tip.resting.subtitle': 'Look at something 20 feet away',
+  'tip.pomodoro.shortBreak.title': 'Short break ({current}/{total})',
+  'tip.pomodoro.shortBreak.subtitle': 'Stand up, stretch, sip some water',
+  'tip.pomodoro.longBreak.title': 'Long break',
+  'tip.pomodoro.longBreak.subtitle': '{total} pomodoros done — take it easy',
   'tip.startRest': 'Start Rest',
   'tip.skip': 'Skip',
   'tip.waiting': 'Waiting...',
 
   'tipMinimal.resting': 'Resting... look away from the screen',
   'tipMinimal.alerting': 'Take a break... look away from the screen',
+  'tipMinimal.pomodoro.shortBreak': 'Short break {current}/{total}... stand up',
+  'tipMinimal.pomodoro.longBreak': 'Long break... {total} pomodoros done',
 };
 
 export default en;

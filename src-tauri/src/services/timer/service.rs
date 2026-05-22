@@ -8,8 +8,8 @@ use tokio::task::JoinHandle;
 use tracing::{info, warn};
 
 use crate::error::{AppError, Result};
-use crate::models::config::Config;
-use crate::models::types::StatePayload;
+use crate::models::config::{Config, TimerMode};
+use crate::models::types::{PomodoroStatePayload, StatePayload};
 use crate::services::{Service, ServiceContext};
 
 use super::effect::Effect;
@@ -32,12 +32,7 @@ impl TimerService {
     #[must_use]
     pub(crate) fn new(config_rx: watch::Receiver<Arc<Config>>) -> Self {
         let config = Arc::clone(&config_rx.borrow());
-        let inner = Inner::new(
-            config.timer.work_minutes,
-            config.timer.rest_seconds,
-            config.timer.pre_alert_seconds,
-            config.timer.alert_timeout_seconds,
-        );
+        let inner = Inner::from_config(&config);
 
         Self {
             inner: Arc::new(Mutex::new(inner)),
@@ -115,11 +110,16 @@ impl TimerService {
         Self::sync_runtime_config(&mut inner, config);
 
         info!(
-            "timer config updated: work={}m rest={}s pre_alert={}s timeout={}s",
+            "timer config updated: mode={:?} work={}m rest={}s pre_alert={}s timeout={}s focus={}m short={}m long={}m cycles={}",
+            config.timer.mode,
             config.timer.work_minutes,
             config.timer.rest_seconds,
             config.timer.pre_alert_seconds,
-            config.timer.alert_timeout_seconds
+            config.timer.alert_timeout_seconds,
+            config.pomodoro.focus_minutes,
+            config.pomodoro.short_break_minutes,
+            config.pomodoro.long_break_minutes,
+            config.pomodoro.cycles_per_long,
         );
     }
 
@@ -138,19 +138,61 @@ impl TimerService {
                 .map_or(0, |d| u32::try_from(d.as_secs()).unwrap_or(u32::MAX))
         };
 
+        let pomodoro = if inner.mode == TimerMode::Pomodoro {
+            Some(PomodoroStatePayload {
+                cycle_index: inner.cycle_index,
+                cycles_per_long: inner.cycles_per_long,
+                is_long_break: inner.state == super::state::TimerState::Resting
+                    && inner.is_long_break,
+            })
+        } else {
+            None
+        };
+
         StatePayload {
             state: inner.state.as_str().to_string(),
             remaining_secs,
             work_minutes: u32::try_from(inner.work_duration.as_secs() / 60).unwrap_or(u32::MAX),
             rest_seconds: u32::try_from(inner.rest_duration.as_secs()).unwrap_or(u32::MAX),
+            mode: inner.mode,
+            pomodoro,
         }
     }
 
     pub(crate) fn sync_runtime_config(inner: &mut Inner, config: &Config) {
-        inner.work_duration = Duration::from_secs(u64::from(config.timer.work_minutes) * 60);
-        inner.rest_duration = Duration::from_secs(u64::from(config.timer.rest_seconds));
+        let new_mode = config.timer.mode;
+        let mode_changed = inner.mode != new_mode;
+
+        // Pomodoro parameters always tracked so a later mode swap is cheap.
+        inner.cycles_per_long = config.pomodoro.cycles_per_long.max(1);
+        inner.short_break_duration =
+            Duration::from_secs(u64::from(config.pomodoro.short_break_minutes) * 60);
+        inner.long_break_duration =
+            Duration::from_secs(u64::from(config.pomodoro.long_break_minutes) * 60);
         inner.pre_alert_duration = Duration::from_secs(u64::from(config.timer.pre_alert_seconds));
         inner.alert_timeout = Duration::from_secs(u64::from(config.timer.alert_timeout_seconds));
+
+        let work_secs = match new_mode {
+            TimerMode::TwentyTwentyTwenty => u64::from(config.timer.work_minutes) * 60,
+            TimerMode::Pomodoro => u64::from(config.pomodoro.focus_minutes) * 60,
+        };
+        let rest_secs = match new_mode {
+            TimerMode::TwentyTwentyTwenty => u64::from(config.timer.rest_seconds),
+            TimerMode::Pomodoro => u64::from(config.pomodoro.short_break_minutes) * 60,
+        };
+        inner.work_duration = Duration::from_secs(work_secs);
+        inner.rest_duration = Duration::from_secs(rest_secs);
+
+        if mode_changed {
+            inner.mode = new_mode;
+            inner.cycle_index = 1;
+            inner.is_long_break = false;
+            inner.paused_from = None;
+            inner.paused_remaining = None;
+            inner.state = super::state::TimerState::Working;
+            inner.state_entered_at = Instant::now();
+            info!("timer mode switched to {:?}, runtime reset", new_mode);
+        }
     }
 }
 
@@ -343,6 +385,7 @@ mod tests {
                 rest_seconds: 40,
                 pre_alert_seconds: 10,
                 alert_timeout_seconds: 20,
+                mode: crate::models::config::TimerMode::default(),
             },
             ..Config::default()
         };

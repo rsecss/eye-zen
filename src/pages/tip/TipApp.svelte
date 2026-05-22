@@ -22,6 +22,8 @@
   const currentState = $derived(timerStore.current.state);
   const remainingSecs = $derived(timerStore.current.remaining_secs);
   const restSeconds = $derived(timerStore.current.rest_seconds);
+  const mode = $derived(timerStore.current.mode);
+  const pomodoro = $derived(timerStore.current.pomodoro);
 
   const formattedTime = $derived(formatTime(remainingSecs));
 
@@ -31,6 +33,29 @@
 
   const isAlerting = $derived(currentState === 'alerting');
   const isResting = $derived(currentState === 'resting');
+  const isPomodoro = $derived(mode === 'pomodoro');
+
+  const restTitle = $derived.by(() => {
+    if (!isPomodoro || !pomodoro) return i18nStore.t('tip.resting.title');
+    const key = pomodoro.is_long_break
+      ? 'tip.pomodoro.longBreak.title'
+      : 'tip.pomodoro.shortBreak.title';
+    return i18nStore
+      .t(key)
+      .replace('{current}', String(pomodoro.cycle_index))
+      .replace('{total}', String(pomodoro.cycles_per_long));
+  });
+
+  const restSubtitle = $derived.by(() => {
+    if (!isPomodoro || !pomodoro) return i18nStore.t('tip.resting.subtitle');
+    const key = pomodoro.is_long_break
+      ? 'tip.pomodoro.longBreak.subtitle'
+      : 'tip.pomodoro.shortBreak.subtitle';
+    return i18nStore
+      .t(key)
+      .replace('{current}', String(pomodoro.cycle_index))
+      .replace('{total}', String(pomodoro.cycles_per_long));
+  });
 
   function formatTime(secs: number): string {
     const minutes = Math.floor(secs / 60);
@@ -99,8 +124,8 @@
     <div class="tip-inner">
       <div class="tip-card">
         {@render eyeIcon()}
-        <p class="tip-h">{i18nStore.t('tip.resting.title')}</p>
-        <p class="tip-sub">{i18nStore.t('tip.resting.subtitle')}</p>
+        <p class="tip-h">{restTitle}</p>
+        <p class="tip-sub">{restSubtitle}</p>
         <p class="tip-time">{formattedTime}</p>
         <div class="tip-bar">
           <div class="tip-bar-fill" style:width="{progressPercent}%"></div>

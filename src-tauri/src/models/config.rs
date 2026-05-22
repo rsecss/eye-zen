@@ -15,6 +15,22 @@ pub struct Config {
     pub display: DisplayConfig,
     pub schedule: ScheduleConfig,
     pub hotkeys: HotkeysConfig,
+    pub pomodoro: PomodoroConfig,
+}
+
+/// Which rhythm the timer uses.
+///
+/// `TwentyTwentyTwenty` keeps the existing eye-care behavior (`work_minutes`
+/// ⇒ `rest_seconds`). `Pomodoro` follows classic 25/5/15 pacing using
+/// `PomodoroConfig`; cycle counter is held in the timer runtime, not in TOML.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Default)]
+#[cfg_attr(test, derive(ts_rs::TS))]
+#[cfg_attr(test, ts(export, export_to = "../../src/lib/bindings/"))]
+#[serde(rename_all = "snake_case")]
+pub enum TimerMode {
+    #[default]
+    TwentyTwentyTwenty,
+    Pomodoro,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -29,6 +45,8 @@ pub struct TimerConfig {
     pub pre_alert_seconds: u32,
     #[serde(default = "default_alert_timeout_seconds")]
     pub alert_timeout_seconds: u32,
+    #[serde(default)]
+    pub mode: TimerMode,
 }
 
 impl Default for TimerConfig {
@@ -38,6 +56,35 @@ impl Default for TimerConfig {
             rest_seconds: default_rest_seconds(),
             pre_alert_seconds: default_pre_alert_seconds(),
             alert_timeout_seconds: default_alert_timeout_seconds(),
+            mode: TimerMode::default(),
+        }
+    }
+}
+
+/// Pomodoro pacing knobs. Only consulted when `TimerConfig::mode ==
+/// TimerMode::Pomodoro`; the cycle counter itself is runtime-only and reset on
+/// every app start (matches the "session = single run" Pomodoro tradition).
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(test, derive(ts_rs::TS))]
+#[cfg_attr(test, ts(export, export_to = "../../src/lib/bindings/"))]
+pub struct PomodoroConfig {
+    #[serde(default = "default_focus_minutes")]
+    pub focus_minutes: u32,
+    #[serde(default = "default_short_break_minutes")]
+    pub short_break_minutes: u32,
+    #[serde(default = "default_long_break_minutes")]
+    pub long_break_minutes: u32,
+    #[serde(default = "default_cycles_per_long")]
+    pub cycles_per_long: u32,
+}
+
+impl Default for PomodoroConfig {
+    fn default() -> Self {
+        Self {
+            focus_minutes: default_focus_minutes(),
+            short_break_minutes: default_short_break_minutes(),
+            long_break_minutes: default_long_break_minutes(),
+            cycles_per_long: default_cycles_per_long(),
         }
     }
 }
@@ -180,6 +227,22 @@ const fn default_afk_threshold_minutes() -> u32 {
     5
 }
 
+const fn default_focus_minutes() -> u32 {
+    25
+}
+
+const fn default_short_break_minutes() -> u32 {
+    5
+}
+
+const fn default_long_break_minutes() -> u32 {
+    15
+}
+
+const fn default_cycles_per_long() -> u32 {
+    4
+}
+
 fn default_language() -> String {
     "zh-CN".to_string()
 }
@@ -203,6 +266,7 @@ mod tests {
         assert_eq!(config.timer.rest_seconds, 20);
         assert_eq!(config.timer.pre_alert_seconds, 15);
         assert_eq!(config.timer.alert_timeout_seconds, 60);
+        assert_eq!(config.timer.mode, TimerMode::TwentyTwentyTwenty);
         assert!(config.behavior.sound_enabled);
         assert!(config.behavior.fullscreen_skip);
         assert!(config.behavior.afk_skip_enabled);
@@ -218,6 +282,10 @@ mod tests {
             [true, true, true, true, true, false, false]
         );
         assert_eq!(config.hotkeys, HotkeysConfig::default());
+        assert_eq!(config.pomodoro.focus_minutes, 25);
+        assert_eq!(config.pomodoro.short_break_minutes, 5);
+        assert_eq!(config.pomodoro.long_break_minutes, 15);
+        assert_eq!(config.pomodoro.cycles_per_long, 4);
     }
 
     #[test]
@@ -237,11 +305,44 @@ work_minutes = 25
         let config: Config = toml::from_str(toml_str).expect("partial config should parse");
         assert_eq!(config.timer.work_minutes, 25);
         assert_eq!(config.timer.rest_seconds, 20);
+        assert_eq!(config.timer.mode, TimerMode::TwentyTwentyTwenty);
         assert!(config.behavior.sound_enabled);
         assert!(config.behavior.afk_skip_enabled);
         assert_eq!(config.behavior.afk_threshold_minutes, 5);
         assert_eq!(config.display.theme, "light");
         assert_eq!(config.hotkeys, HotkeysConfig::default());
+        assert_eq!(config.pomodoro, PomodoroConfig::default());
+    }
+
+    #[test]
+    fn pomodoro_mode_toml_parses() {
+        let toml_str = r#"
+[timer]
+mode = "pomodoro"
+
+[pomodoro]
+focus_minutes = 30
+short_break_minutes = 7
+long_break_minutes = 20
+cycles_per_long = 3
+"#;
+        let config: Config = toml::from_str(toml_str).expect("pomodoro config should parse");
+        assert_eq!(config.timer.mode, TimerMode::Pomodoro);
+        assert_eq!(config.pomodoro.focus_minutes, 30);
+        assert_eq!(config.pomodoro.short_break_minutes, 7);
+        assert_eq!(config.pomodoro.long_break_minutes, 20);
+        assert_eq!(config.pomodoro.cycles_per_long, 3);
+    }
+
+    #[test]
+    fn timer_mode_serializes_as_snake_case() {
+        let mode = TimerMode::Pomodoro;
+        let serialized = serde_json::to_string(&mode).expect("mode should serialize");
+        assert_eq!(serialized, "\"pomodoro\"");
+
+        let mode = TimerMode::TwentyTwentyTwenty;
+        let serialized = serde_json::to_string(&mode).expect("mode should serialize");
+        assert_eq!(serialized, "\"twenty_twenty_twenty\"");
     }
 
     #[test]

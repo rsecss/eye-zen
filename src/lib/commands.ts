@@ -9,6 +9,7 @@ import type { DisplayConfig } from './bindings/DisplayConfig';
 import type { ScheduleConfig } from './bindings/ScheduleConfig';
 import type { HotkeyStatus } from './bindings/HotkeyStatus';
 import type { HotkeysConfig } from './bindings/HotkeysConfig';
+import type { PomodoroConfig } from './bindings/PomodoroConfig';
 
 const INVOKE_TIMEOUT_MS = 5000;
 
@@ -79,4 +80,8 @@ export function updateScheduleConfig(config: ScheduleConfig): Promise<void> {
 
 export function updateHotkeysConfig(config: HotkeysConfig): Promise<void> {
   return invokeWithTimeout('update_hotkeys_config', { config });
+}
+
+export function updatePomodoroConfig(config: PomodoroConfig): Promise<void> {
+  return invokeWithTimeout('update_pomodoro_config', { config });
 }

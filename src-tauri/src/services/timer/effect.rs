@@ -37,4 +37,12 @@ pub(crate) enum TrayUpdate {
 pub(crate) struct TrayTooltip {
     pub(crate) state: TimerState,
     pub(crate) remaining_secs: Option<u32>,
+    /// Pomodoro progress shown as `(Pomo current/total)` suffix when present.
+    pub(crate) pomodoro_progress: Option<PomodoroProgress>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) struct PomodoroProgress {
+    pub(crate) current: u32,
+    pub(crate) total: u32,
 }

@@ -6,14 +6,17 @@
   import type { HotkeyBindingStatus } from '$lib/bindings/HotkeyBindingStatus';
   import type { HotkeyStatus } from '$lib/bindings/HotkeyStatus';
   import type { HotkeysConfig } from '$lib/bindings/HotkeysConfig';
+  import type { PomodoroConfig } from '$lib/bindings/PomodoroConfig';
   import type { ScheduleConfig } from '$lib/bindings/ScheduleConfig';
   import type { TimerConfig } from '$lib/bindings/TimerConfig';
+  import type { TimerMode } from '$lib/bindings/TimerMode';
   import {
     getDetectorCapabilities,
     getHotkeyStatus,
     updateBehaviorConfig,
     updateDisplayConfig,
     updateHotkeysConfig,
+    updatePomodoroConfig,
     updateScheduleConfig,
     updateTimerConfig,
   } from '$lib/commands';
@@ -58,6 +61,19 @@
   function handleTimerChange(field: keyof TimerConfig, value: number) {
     const updated: TimerConfig = { ...cfg.timer, [field]: value };
     updateTimerConfig(updated).catch((err) => console.error('Failed to update timer config:', err));
+  }
+
+  function handleTimerModeChange(value: string) {
+    if (value !== 'twenty_twenty_twenty' && value !== 'pomodoro') return;
+    const updated: TimerConfig = { ...cfg.timer, mode: value as TimerMode };
+    updateTimerConfig(updated).catch((err) => console.error('Failed to update timer mode:', err));
+  }
+
+  function handlePomodoroChange(field: keyof PomodoroConfig, value: number) {
+    const updated: PomodoroConfig = { ...cfg.pomodoro, [field]: value };
+    updatePomodoroConfig(updated).catch((err) =>
+      console.error('Failed to update pomodoro config:', err),
+    );
   }
 
   async function handleBehaviorChange(field: BooleanBehaviorField, value: boolean) {
@@ -237,6 +253,13 @@
     { value: 'en', label: 'English' },
   ];
 
+  const timerModeOptions = $derived([
+    { value: 'twenty_twenty_twenty', label: i18nStore.t('settings.timer.mode.20-20-20') },
+    { value: 'pomodoro', label: i18nStore.t('settings.timer.mode.pomodoro') },
+  ]);
+
+  const isPomodoroMode = $derived(cfg.timer.mode === 'pomodoro');
+
   const displayLanguage = $derived(
     cfg.display.language === 'en' || cfg.display.language === 'en-US' ? 'en' : 'zh-CN',
   );
@@ -347,6 +370,19 @@
   <SettingsCard title={i18nStore.t('settings.timer.title')}>
     <div class="setting-row">
       <div class="setting-info">
+        <span class="setting-label">{i18nStore.t('settings.timer.mode')}</span>
+        <span class="setting-desc">{i18nStore.t('settings.timer.mode.desc')}</span>
+      </div>
+      <Select
+        value={cfg.timer.mode}
+        options={timerModeOptions}
+        label={i18nStore.t('settings.timer.mode')}
+        onchange={handleTimerModeChange}
+      />
+    </div>
+
+    <div class="setting-row separator">
+      <div class="setting-info">
         <span class="setting-label">{i18nStore.t('settings.timer.workMinutes')}</span>
         <span class="setting-desc">{i18nStore.t('settings.timer.workMinutes.desc')}</span>
       </div>
@@ -409,6 +445,75 @@
       />
     </div>
   </SettingsCard>
+
+  {#if isPomodoroMode}
+    <SettingsCard title={i18nStore.t('settings.pomodoro.title')}>
+      <div class="setting-row">
+        <div class="setting-info">
+          <span class="setting-label">{i18nStore.t('settings.pomodoro.focusMinutes')}</span>
+          <span class="setting-desc">{i18nStore.t('settings.pomodoro.focusMinutes.desc')}</span>
+        </div>
+        <Stepper
+          value={cfg.pomodoro.focus_minutes}
+          min={1}
+          max={180}
+          step={1}
+          unit={i18nStore.t('settings.pomodoro.focusMinutes.unit')}
+          label={i18nStore.t('settings.pomodoro.focusMinutes')}
+          onchange={(v) => handlePomodoroChange('focus_minutes', v)}
+        />
+      </div>
+
+      <div class="setting-row separator">
+        <div class="setting-info">
+          <span class="setting-label">{i18nStore.t('settings.pomodoro.shortBreakMinutes')}</span>
+          <span class="setting-desc">{i18nStore.t('settings.pomodoro.shortBreakMinutes.desc')}</span
+          >
+        </div>
+        <Stepper
+          value={cfg.pomodoro.short_break_minutes}
+          min={1}
+          max={60}
+          step={1}
+          unit={i18nStore.t('settings.pomodoro.shortBreakMinutes.unit')}
+          label={i18nStore.t('settings.pomodoro.shortBreakMinutes')}
+          onchange={(v) => handlePomodoroChange('short_break_minutes', v)}
+        />
+      </div>
+
+      <div class="setting-row separator">
+        <div class="setting-info">
+          <span class="setting-label">{i18nStore.t('settings.pomodoro.longBreakMinutes')}</span>
+          <span class="setting-desc">{i18nStore.t('settings.pomodoro.longBreakMinutes.desc')}</span>
+        </div>
+        <Stepper
+          value={cfg.pomodoro.long_break_minutes}
+          min={1}
+          max={180}
+          step={1}
+          unit={i18nStore.t('settings.pomodoro.longBreakMinutes.unit')}
+          label={i18nStore.t('settings.pomodoro.longBreakMinutes')}
+          onchange={(v) => handlePomodoroChange('long_break_minutes', v)}
+        />
+      </div>
+
+      <div class="setting-row separator">
+        <div class="setting-info">
+          <span class="setting-label">{i18nStore.t('settings.pomodoro.cyclesPerLong')}</span>
+          <span class="setting-desc">{i18nStore.t('settings.pomodoro.cyclesPerLong.desc')}</span>
+        </div>
+        <Stepper
+          value={cfg.pomodoro.cycles_per_long}
+          min={1}
+          max={12}
+          step={1}
+          unit={i18nStore.t('settings.pomodoro.cyclesPerLong.unit')}
+          label={i18nStore.t('settings.pomodoro.cyclesPerLong')}
+          onchange={(v) => handlePomodoroChange('cycles_per_long', v)}
+        />
+      </div>
+    </SettingsCard>
+  {/if}
 
   <SettingsCard title={i18nStore.t('settings.hotkeys.title')}>
     <div class="hotkey-help">

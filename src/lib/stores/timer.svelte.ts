@@ -7,6 +7,8 @@ const DEFAULT_STATE: StatePayload = {
   remaining_secs: 0,
   work_minutes: 20,
   rest_seconds: 20,
+  mode: 'twenty_twenty_twenty',
+  pomodoro: null,
 };
 
 let state = $state<StatePayload>({ ...DEFAULT_STATE });

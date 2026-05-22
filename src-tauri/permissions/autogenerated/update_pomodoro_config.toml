@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-update-pomodoro-config"
+description = "Enables the update_pomodoro_config command without any pre-configured scope."
+commands.allow = ["update_pomodoro_config"]
+
+[[permission]]
+identifier = "deny-update-pomodoro-config"
+description = "Denies the update_pomodoro_config command without any pre-configured scope."
+commands.deny = ["update_pomodoro_config"]
