@@ -38,9 +38,15 @@ vi.mock('echarts/renderers', () => ({
 
 vi.mock('$lib/commands', () => ({
   getStatisticsTrends: vi.fn(),
+  exportStatistics: vi.fn(),
 }));
 
-const { getStatisticsTrends } = await import('$lib/commands');
+vi.mock('@tauri-apps/plugin-dialog', () => ({
+  save: vi.fn(),
+}));
+
+const { getStatisticsTrends, exportStatistics } = await import('$lib/commands');
+const { save } = await import('@tauri-apps/plugin-dialog');
 
 const payload: StatisticsTrendPayload = {
   timezone: 'UTC',
@@ -55,6 +61,8 @@ describe('StatisticsPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(getStatisticsTrends).mockResolvedValue(payload);
+    vi.mocked(exportStatistics).mockResolvedValue();
+    vi.mocked(save).mockResolvedValue(null);
   });
 
   it('loads statistics through the IPC wrapper and renders totals', async () => {
@@ -82,5 +90,51 @@ describe('StatisticsPage', () => {
         true,
       );
     });
+  });
+
+  it('invokes export_statistics and shows success banner when user picks a path', async () => {
+    vi.mocked(save).mockResolvedValueOnce('C:/tmp/backup.db');
+    render(StatisticsPage);
+    await waitFor(() => expect(getStatisticsTrends).toHaveBeenCalledOnce());
+
+    await fireEvent.click(screen.getByRole('button', { name: '导出备份' }));
+
+    await waitFor(() => {
+      expect(save).toHaveBeenCalledOnce();
+      expect(exportStatistics).toHaveBeenCalledWith('C:/tmp/backup.db');
+    });
+    const saveArgs = vi.mocked(save).mock.calls[0][0] as {
+      defaultPath?: string;
+      filters?: { extensions: string[] }[];
+    };
+    expect(saveArgs.defaultPath).toMatch(/^eyezen-stat-\d{4}-\d{2}-\d{2}\.db$/);
+    expect(saveArgs.filters?.[0]?.extensions).toContain('db');
+    expect(await screen.findByText('已备份到 C:/tmp/backup.db')).toBeInTheDocument();
+  });
+
+  it('does not invoke export when user cancels the dialog', async () => {
+    vi.mocked(save).mockResolvedValueOnce(null);
+    render(StatisticsPage);
+    await waitFor(() => expect(getStatisticsTrends).toHaveBeenCalledOnce());
+
+    await fireEvent.click(screen.getByRole('button', { name: '导出备份' }));
+
+    await waitFor(() => expect(save).toHaveBeenCalledOnce());
+    expect(exportStatistics).not.toHaveBeenCalled();
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
+  it('shows error banner when export_statistics rejects', async () => {
+    vi.mocked(save).mockResolvedValueOnce('C:/tmp/backup.db');
+    vi.mocked(exportStatistics).mockRejectedValueOnce({
+      detail: { reason: 'permission denied' },
+    });
+    render(StatisticsPage);
+    await waitFor(() => expect(getStatisticsTrends).toHaveBeenCalledOnce());
+
+    await fireEvent.click(screen.getByRole('button', { name: '导出备份' }));
+
+    expect(await screen.findByText('导出失败：permission denied')).toBeInTheDocument();
   });
 });

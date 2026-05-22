@@ -138,6 +138,11 @@ const en: TranslationDict = {
   'statistics.chart.sessions': 'Sessions',
   'statistics.chart.minutes': 'Minutes',
 
+  'statistics.exportBackup.button': 'Export Backup',
+  'statistics.exportBackup.dialogTitle': 'Save Eyezen statistics',
+  'statistics.exportBackup.toastSuccess': 'Backup saved to {path}',
+  'statistics.exportBackup.toastError': 'Export failed: {reason}',
+
   'tray.working': 'Working',
   'tray.resting': 'Resting',
   'tray.paused': 'Paused',

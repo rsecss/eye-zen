@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-export-statistics"
+description = "Enables the export_statistics command without any pre-configured scope."
+commands.allow = ["export_statistics"]
+
+[[permission]]
+identifier = "deny-export-statistics"
+description = "Denies the export_statistics command without any pre-configured scope."
+commands.deny = ["export_statistics"]

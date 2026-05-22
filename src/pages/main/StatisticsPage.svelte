@@ -3,8 +3,9 @@
   import type { ECharts, EChartsOption } from 'echarts';
   import type { StatBucket } from '$lib/bindings/StatBucket';
   import type { StatisticsTrendPayload } from '$lib/bindings/StatisticsTrendPayload';
-  import { getStatisticsTrends } from '$lib/commands';
+  import { exportStatistics, getStatisticsTrends } from '$lib/commands';
   import { i18nStore } from '$lib/i18n/index.svelte';
+  import { save } from '@tauri-apps/plugin-dialog';
 
   type TrendRange = 'daily' | 'weekly' | 'monthly';
 
@@ -14,6 +15,9 @@
   let activeRange = $state<TrendRange>('daily');
   let loading = $state(true);
   let errorMessage = $state('');
+  let exporting = $state(false);
+  let exportSuccess = $state<string | null>(null);
+  let exportError = $state<string | null>(null);
 
   const rangeOptions = [
     { value: 'daily', labelKey: 'statistics.range.daily' },
@@ -155,6 +159,68 @@
     return i18nStore.t('statistics.latest').replace('{label}', latest.label);
   }
 
+  function defaultExportFilename(): string {
+    // Local date in YYYY-MM-DD; UTC offset stays user-visible via timezone metric above.
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `eyezen-stat-${year}-${month}-${day}.db`;
+  }
+
+  function humanizeError(err: unknown): string {
+    if (err instanceof Error) return err.message;
+    if (
+      typeof err === 'object' &&
+      err !== null &&
+      'detail' in err &&
+      typeof (err as { detail?: unknown }).detail === 'object'
+    ) {
+      const detail = (err as { detail: Record<string, unknown> }).detail;
+      if (typeof detail.reason === 'string') return detail.reason;
+      if (typeof detail.message === 'string') return detail.message;
+    }
+    if (typeof err === 'string') return err;
+    return String(err);
+  }
+
+  async function handleExportBackup(): Promise<void> {
+    if (exporting) return;
+    exportError = null;
+    exportSuccess = null;
+
+    let targetPath: string | null;
+    try {
+      targetPath = await save({
+        title: i18nStore.t('statistics.exportBackup.dialogTitle'),
+        defaultPath: defaultExportFilename(),
+        filters: [{ name: 'SQLite Database', extensions: ['db'] }],
+      });
+    } catch (err) {
+      console.error('Failed to open save dialog:', err);
+      exportError = i18nStore
+        .t('statistics.exportBackup.toastError')
+        .replace('{reason}', humanizeError(err));
+      return;
+    }
+    if (targetPath === null) return;
+
+    exporting = true;
+    try {
+      await exportStatistics(targetPath);
+      exportSuccess = i18nStore
+        .t('statistics.exportBackup.toastSuccess')
+        .replace('{path}', targetPath);
+    } catch (err) {
+      console.error('Failed to export statistics:', err);
+      exportError = i18nStore
+        .t('statistics.exportBackup.toastError')
+        .replace('{reason}', humanizeError(err));
+    } finally {
+      exporting = false;
+    }
+  }
+
   function cssVar(name: string): string {
     return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
   }
@@ -171,10 +237,27 @@
       <h1>{i18nStore.t('statistics.title')}</h1>
       <p class="subtitle">{i18nStore.t('statistics.subtitle')}</p>
     </div>
-    <button class="refresh-button" onclick={loadStatistics} disabled={loading}>
-      {loading ? i18nStore.t('statistics.loading') : i18nStore.t('statistics.refresh')}
-    </button>
+    <div class="hero-actions">
+      <button
+        class="export-button"
+        onclick={handleExportBackup}
+        disabled={exporting}
+        aria-busy={exporting}
+      >
+        {i18nStore.t('statistics.exportBackup.button')}
+      </button>
+      <button class="refresh-button" onclick={loadStatistics} disabled={loading}>
+        {loading ? i18nStore.t('statistics.loading') : i18nStore.t('statistics.refresh')}
+      </button>
+    </div>
   </div>
+
+  {#if exportSuccess}
+    <div class="export-banner success" role="status">{exportSuccess}</div>
+  {/if}
+  {#if exportError}
+    <div class="export-banner error" role="alert">{exportError}</div>
+  {/if}
 
   <div class="metric-grid">
     <article class="metric-card">
@@ -299,6 +382,50 @@
   .refresh-button:disabled {
     cursor: wait;
     opacity: 0.72;
+  }
+
+  .hero-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .export-button {
+    padding: 9px 14px;
+    border: 1px solid var(--accent);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--accent-deep);
+    font-family: inherit;
+    font-weight: 650;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+
+  .export-button:hover:not(:disabled) {
+    background: var(--accent-soft);
+  }
+
+  .export-button:disabled {
+    cursor: wait;
+    opacity: 0.55;
+  }
+
+  .export-banner {
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--accent-border);
+    background: var(--accent-soft);
+    color: var(--text-secondary);
+    font-size: 12px;
+    line-height: 1.45;
+    word-break: break-word;
+  }
+
+  .export-banner.error {
+    border-color: var(--state-alert);
+    background: color-mix(in srgb, var(--state-alert) 10%, transparent);
+    color: var(--text-primary);
   }
 
   .metric-grid {

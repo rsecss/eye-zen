@@ -75,6 +75,40 @@ impl StatService {
         Ok(aggregate_sessions(&sessions, tz))
     }
 
+    /// Atomically export the statistics database to `target_path` via
+    /// `VACUUM INTO`. `VACUUM INTO` requires the destination not to exist,
+    /// so any pre-existing file at that path is removed first; the caller's
+    /// `dialog::save` already confirmed the overwrite.
+    ///
+    /// `SQLite`'s `VACUUM INTO` is a directive whose filename is a string
+    /// literal in the SQL grammar and does NOT accept a bind parameter, so
+    /// the path is interpolated and any embedded single quote is doubled
+    /// per the SQL escape rule. `target_path` is sourced from the OS save
+    /// dialog (no untrusted network input), so this stays within the
+    /// trusted boundary.
+    pub(crate) async fn export_to(&self, target_path: PathBuf) -> Result<()> {
+        let pool = self.pool().await?;
+
+        if let Some(parent) = target_path.parent() {
+            if !parent.as_os_str().is_empty() {
+                tokio::fs::create_dir_all(parent).await?;
+            }
+        }
+        match tokio::fs::remove_file(&target_path).await {
+            Ok(()) => {}
+            Err(err) if err.kind() == std::io::ErrorKind::NotFound => {}
+            Err(err) => return Err(err.into()),
+        }
+
+        let target_sql = target_path.to_string_lossy().replace('\'', "''");
+        sqlx::query(&format!("VACUUM INTO '{target_sql}'"))
+            .execute(&pool)
+            .await?;
+
+        info!("statistics database exported to {}", target_path.display());
+        Ok(())
+    }
+
     async fn pool(&self) -> Result<SqlitePool> {
         self.pool
             .lock()
@@ -458,5 +492,137 @@ mod tests {
         assert_eq!(payload.daily[0].label, "2026-11-01");
         assert_eq!(payload.daily[0].rest_sessions, 2);
         assert_eq!(payload.total_rest_secs, 40);
+    }
+
+    #[tokio::test]
+    async fn export_to_writes_a_valid_sqlite_file_preserving_rows() {
+        let dir = tempdir().expect("tempdir should be created");
+        let db_path = dir.path().join("data.db");
+        let service = StatService::new(db_path);
+        service
+            .init(&ServiceContext::default())
+            .await
+            .expect("stat service should init");
+
+        for offset in 0..3 {
+            service
+                .record_rest_session(session_at(
+                    Utc.with_ymd_and_hms(2026, 5, 20, 8, 0, 0)
+                        .single()
+                        .expect("valid UTC datetime")
+                        + chrono::Duration::minutes(offset * 20),
+                    20,
+                ))
+                .await
+                .expect("record should persist");
+        }
+
+        let target = dir.path().join("backup.db");
+        service
+            .export_to(target.clone())
+            .await
+            .expect("export should succeed");
+        assert!(target.exists(), "backup file should be created");
+
+        let pool = SqlitePoolOptions::new()
+            .max_connections(1)
+            .connect_with(SqliteConnectOptions::new().filename(&target))
+            .await
+            .expect("backup should open as sqlite");
+        let rows: i64 =
+            sqlx::query_scalar("SELECT COUNT(*) FROM activity_segments WHERE state = 'resting'")
+                .fetch_one(&pool)
+                .await
+                .expect("backup should expose activity_segments");
+        assert_eq!(rows, 3);
+
+        let user_version: i64 = sqlx::query_scalar("PRAGMA user_version")
+            .fetch_one(&pool)
+            .await
+            .expect("user_version should query");
+        assert_eq!(user_version, SCHEMA_VERSION);
+        pool.close().await;
+    }
+
+    #[tokio::test]
+    async fn export_to_succeeds_on_empty_database() {
+        let dir = tempdir().expect("tempdir should be created");
+        let db_path = dir.path().join("data.db");
+        let service = StatService::new(db_path);
+        service
+            .init(&ServiceContext::default())
+            .await
+            .expect("stat service should init");
+
+        let target = dir.path().join("empty-backup.db");
+        service
+            .export_to(target.clone())
+            .await
+            .expect("empty export should succeed");
+
+        let pool = SqlitePoolOptions::new()
+            .max_connections(1)
+            .connect_with(SqliteConnectOptions::new().filename(&target))
+            .await
+            .expect("empty backup should open as sqlite");
+        let rows: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM activity_segments")
+            .fetch_one(&pool)
+            .await
+            .expect("schema should still exist");
+        assert_eq!(rows, 0);
+        pool.close().await;
+    }
+
+    #[tokio::test]
+    async fn export_to_overwrites_existing_target_file() {
+        let dir = tempdir().expect("tempdir should be created");
+        let db_path = dir.path().join("data.db");
+        let service = StatService::new(db_path);
+        service
+            .init(&ServiceContext::default())
+            .await
+            .expect("stat service should init");
+
+        let target = dir.path().join("backup.db");
+        std::fs::write(&target, b"old contents that VACUUM INTO would reject")
+            .expect("seed file should write");
+        assert!(target.exists());
+
+        service
+            .export_to(target.clone())
+            .await
+            .expect("export should overwrite existing target");
+
+        let pool = SqlitePoolOptions::new()
+            .max_connections(1)
+            .connect_with(SqliteConnectOptions::new().filename(&target))
+            .await
+            .expect("overwritten file should be a valid sqlite db");
+        let user_version: i64 = sqlx::query_scalar("PRAGMA user_version")
+            .fetch_one(&pool)
+            .await
+            .expect("user_version should query");
+        assert_eq!(user_version, SCHEMA_VERSION);
+        pool.close().await;
+    }
+
+    #[tokio::test]
+    async fn export_to_returns_error_for_unwritable_target_directory() {
+        let dir = tempdir().expect("tempdir should be created");
+        let db_path = dir.path().join("data.db");
+        let service = StatService::new(db_path);
+        service
+            .init(&ServiceContext::default())
+            .await
+            .expect("stat service should init");
+
+        // Use the source database file itself as a fake "parent directory".
+        // `create_dir_all` will fail because that path is a file, not a dir.
+        let bogus_target = service.db_path.join("nested").join("backup.db");
+        let err = service
+            .export_to(bogus_target)
+            .await
+            .expect_err("export to invalid path should fail");
+        assert!(matches!(err, AppError::IoError { .. }));
     }
 }

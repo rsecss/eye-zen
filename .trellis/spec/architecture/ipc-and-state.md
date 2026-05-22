@@ -19,6 +19,7 @@
 | `get_config` | -- | `Config` | main | 读取完整配置（同步 `current()`，无 I/O）|
 | `get_hotkey_status` | -- | `HotkeyStatus` | main | 读取全局快捷键绑定状态（无 I/O）|
 | `get_statistics_trends` | `{ timezone?: string }` | `StatisticsTrendPayload` | main | SQLite 统计趋势（日/周/月）|
+| `export_statistics` | `{ target_path: string }` | `()` | main | 通过 `VACUUM INTO` 把统计 DB 原子复制到用户选定路径（备份/迁移）|
 | `get_detector_capabilities` | -- | `DetectorCapabilities` | main | 读取平台检测能力（当前用于 Settings 灰显 AFK 控件）|
 | `update_timer_config` | `TimerConfig` | `()` | main | 校验后通过 `spawn_blocking` 写 TOML |
 | `update_behavior_config` | `BehaviorConfig` | `()` | main | 校验 `afk_threshold_minutes` 后通过 `spawn_blocking` 写 TOML |

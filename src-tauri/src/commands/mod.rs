@@ -73,6 +73,25 @@ pub(crate) async fn get_statistics_trends(
 }
 
 #[cfg(not(test))]
+#[tauri::command]
+pub(crate) async fn export_statistics(
+    services: Services<'_>,
+    target_path: String,
+) -> CmdResult<()> {
+    let target_path = target_path.trim();
+    if target_path.is_empty() {
+        return Err(AppError::ConfigInvalid {
+            field: "target_path".to_string(),
+            reason: "must not be empty".to_string(),
+        });
+    }
+    services
+        .stat
+        .export_to(std::path::PathBuf::from(target_path))
+        .await
+}
+
+#[cfg(not(test))]
 #[allow(clippy::unnecessary_wraps)]
 #[tauri::command]
 pub(crate) fn get_hotkey_status(services: Services<'_>) -> CmdResult<HotkeyStatus> {

@@ -191,6 +191,7 @@ CREATE INDEX idx_activity_segments_state_started_at
 
 - Schema 变更 MUST 通过版本化迁移（当前用 `PRAGMA user_version` + 幂等 DDL），MUST NOT 手动修改用户数据库
 - 查询 MUST 使用参数化 SQL（当前通过 `sqlx::query(...).bind(...)`），MUST NOT 字符串拼接
+- 例外：SQLite `VACUUM INTO` 不支持 bind parameter（语法限制），MUST 用 `format!` 拼接并对路径做单引号 escape（`replace('\'', "''")`）；参数来源 MUST 为可信边界（如 OS save dialog 返回值），MUST NOT 直接拼接前端任意 string。实例见 `StatService::export_to`
 - 写入 MUST 在专属 service（`StatService`）内进行，其他 service MUST NOT 直接持有连接池
 - StatService 在 `shutdown` 中 MUST flush 待写记录并关闭连接池
 - 持久化时间戳 MUST 使用 UTC RFC3339；日/周/月 bucket MUST 在查询时按请求 IANA timezone 聚合，不能把单个 `date` 字段当作跨时区事实来源
