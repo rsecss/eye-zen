@@ -61,6 +61,7 @@ for effect in &effects {
 ## 异步
 
 - MUST NOT 在 async 上下文中做长时间同步 I/O；阻塞操作 SHOULD 用 `tokio::task::spawn_blocking` 或独立线程（如 `SoundService` 用 `std::thread` 跑 rodio）
+- async 函数内的文件 I/O MUST 优先用 `tokio::fs::*`（`create_dir_all` / `remove_file` / `metadata` 等），MUST NOT 在 async 上下文裸用 `std::fs::*`——即使单次调用很快，组合在热路径上仍会阻塞 runtime。`spawn_blocking` 留给真正重的批量操作（大文件复制、加密、压缩）。`std::fs` 仅在 `new()` 等纯同步构造路径下可用（例如 `ConfigService::new` 从 TOML 启动加载）
 - 后台 task MUST 通过显式 `JoinHandle::abort` 或 channel 信号支持取消（见 `TimerService::shutdown` 中 `handle.abort()`）
 - 精确周期性任务 MUST 使用 `tokio::time::interval(...)`，MUST NOT 用 `tokio::time::sleep` 串联（漂移）
 - 现有 timer loop 模板见 `src-tauri/src/services/context.rs::spawn_timer_loop`

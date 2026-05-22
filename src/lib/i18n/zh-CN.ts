@@ -132,6 +132,11 @@ const zhCN = {
   'statistics.chart.sessions': '次数',
   'statistics.chart.minutes': '分钟',
 
+  'statistics.exportBackup.button': '导出备份',
+  'statistics.exportBackup.dialogTitle': '保存 Eyezen 统计数据',
+  'statistics.exportBackup.toastSuccess': '已备份到 {path}',
+  'statistics.exportBackup.toastError': '导出失败：{reason}',
+
   'tray.working': '工作中',
   'tray.resting': '休息中',
   'tray.paused': '已暂停',

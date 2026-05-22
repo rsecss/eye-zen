@@ -58,6 +58,10 @@ export function getStatisticsTrends(timezone: string): Promise<StatisticsTrendPa
   return invokeWithTimeout('get_statistics_trends', { timezone });
 }
 
+export function exportStatistics(targetPath: string): Promise<void> {
+  return invokeWithTimeout('export_statistics', { targetPath });
+}
+
 export function getDetectorCapabilities(): Promise<DetectorCapabilities> {
   return invokeWithTimeout('get_detector_capabilities');
 }

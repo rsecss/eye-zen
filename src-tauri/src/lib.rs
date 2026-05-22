@@ -38,7 +38,8 @@ pub fn run() -> Result<(), tauri::Error> {
         .plugin(tauri_plugin_autostart::init(
             tauri_plugin_autostart::MacosLauncher::LaunchAgent,
             None,
-        ));
+        ))
+        .plugin(tauri_plugin_dialog::init());
 
     #[cfg(feature = "plugin-shortcuts")]
     let builder = builder.plugin(
@@ -94,6 +95,7 @@ pub fn run() -> Result<(), tauri::Error> {
             commands::get_config,
             commands::get_hotkey_status,
             commands::get_statistics_trends,
+            commands::export_statistics,
             commands::get_detector_capabilities,
             commands::update_timer_config,
             commands::update_behavior_config,
