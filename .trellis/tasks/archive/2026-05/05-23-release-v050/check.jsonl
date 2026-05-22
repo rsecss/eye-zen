@@ -1,0 +1,2 @@
+{"file": "docs/workflows/release.md", "reason": "Verify checklist (npm run ci, PR CI green, Release CI artifacts, draft notes accuracy, installer opens)"}
+{"file": "docs/workflows/release-naming.md", "reason": "Expected artifact filenames per target"}
