@@ -1,0 +1,2 @@
+{"file": "docs/workflows/release.md", "reason": "verify new template section is internally consistent (5 categories, line format, SHA rule)"}
+{"file": ".trellis/tasks/05-22-release-notes-style/prd.md", "reason": "verify CHANGELOG matches PRD's locked category set and SHA mapping"}
