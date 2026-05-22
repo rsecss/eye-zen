@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-statistics-cycle-outcomes"
+description = "Enables the statistics_cycle_outcomes command without any pre-configured scope."
+commands.allow = ["statistics_cycle_outcomes"]
+
+[[permission]]
+identifier = "deny-statistics-cycle-outcomes"
+description = "Denies the statistics_cycle_outcomes command without any pre-configured scope."
+commands.deny = ["statistics_cycle_outcomes"]

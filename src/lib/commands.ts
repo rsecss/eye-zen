@@ -3,6 +3,7 @@ import type { StatePayload } from './bindings/StatePayload';
 import type { DetectorCapabilities } from './bindings/DetectorCapabilities';
 import type { Config } from './bindings/Config';
 import type { StatisticsTrendPayload } from './bindings/StatisticsTrendPayload';
+import type { CycleOutcomesPayload } from './bindings/CycleOutcomesPayload';
 import type { TimerConfig } from './bindings/TimerConfig';
 import type { BehaviorConfig } from './bindings/BehaviorConfig';
 import type { DisplayConfig } from './bindings/DisplayConfig';
@@ -56,6 +57,10 @@ export function getHotkeyStatus(): Promise<HotkeyStatus> {
 
 export function getStatisticsTrends(timezone: string): Promise<StatisticsTrendPayload> {
   return invokeWithTimeout('get_statistics_trends', { timezone });
+}
+
+export function getStatisticsCycleOutcomes(timezone: string): Promise<CycleOutcomesPayload> {
+  return invokeWithTimeout('statistics_cycle_outcomes', { timezone });
 }
 
 export function exportStatistics(targetPath: string): Promise<void> {

@@ -95,6 +95,7 @@ pub fn run() -> Result<(), tauri::Error> {
             commands::get_config,
             commands::get_hotkey_status,
             commands::get_statistics_trends,
+            commands::statistics_cycle_outcomes,
             commands::export_statistics,
             commands::get_detector_capabilities,
             commands::update_timer_config,

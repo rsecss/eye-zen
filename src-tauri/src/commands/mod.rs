@@ -14,7 +14,7 @@ use crate::models::config::{Config, ScheduleConfig};
 #[cfg(not(test))]
 use crate::models::hotkeys::{HotkeyStatus, HotkeysConfig};
 #[cfg(not(test))]
-use crate::models::statistics::StatisticsTrendPayload;
+use crate::models::statistics::{CycleOutcomesPayload, StatisticsTrendPayload};
 #[cfg(not(test))]
 use crate::models::types::{DetectorCapabilities, StatePayload};
 #[cfg(not(test))]
@@ -70,6 +70,19 @@ pub(crate) async fn get_statistics_trends(
     timezone: Option<String>,
 ) -> CmdResult<StatisticsTrendPayload> {
     services.stat.statistics_trends(timezone.as_deref()).await
+}
+
+#[cfg(not(test))]
+#[tauri::command]
+pub(crate) async fn statistics_cycle_outcomes(
+    services: Services<'_>,
+    timezone: Option<String>,
+) -> CmdResult<CycleOutcomesPayload> {
+    let config = (*services.config.current()).clone();
+    services
+        .stat
+        .cycle_outcomes(timezone.as_deref(), &config)
+        .await
 }
 
 #[cfg(not(test))]

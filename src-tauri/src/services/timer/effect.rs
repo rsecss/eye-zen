@@ -2,7 +2,7 @@
 
 use std::time::Duration;
 
-use crate::models::statistics::RestSessionDraft;
+use crate::models::statistics::{CycleEventDraft, RestSessionDraft};
 use crate::models::types::StatePayload;
 
 use super::state::TimerState;
@@ -17,6 +17,9 @@ pub(crate) enum Effect {
     UpdateTray(TrayUpdate),
     ResetWorkTimer(Duration),
     RecordRestSession(RestSessionDraft),
+    /// Persist a rest-cycle outcome (taken / skipped / suppressed) with its
+    /// reason snapshot for v0.6 Health Analysis.
+    RecordCycleEvent(CycleEventDraft),
 }
 
 /// Sound variants consumed by the sound service.
