@@ -8,6 +8,7 @@ const DEFAULT_CONFIG: Config = {
     rest_seconds: 20,
     pre_alert_seconds: 15,
     alert_timeout_seconds: 60,
+    mode: 'twenty_twenty_twenty',
   },
   behavior: {
     sound_enabled: true,
@@ -30,6 +31,12 @@ const DEFAULT_CONFIG: Config = {
     start_rest: 'CommandOrControl+Alt+B',
     skip_rest: 'CommandOrControl+Alt+S',
     toggle_pause: 'CommandOrControl+Alt+P',
+  },
+  pomodoro: {
+    focus_minutes: 25,
+    short_break_minutes: 5,
+    long_break_minutes: 15,
+    cycles_per_long: 4,
   },
 };
 

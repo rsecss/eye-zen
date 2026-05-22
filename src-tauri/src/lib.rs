@@ -99,7 +99,8 @@ pub fn run() -> Result<(), tauri::Error> {
             commands::update_behavior_config,
             commands::update_display_config,
             commands::update_schedule_config,
-            commands::update_hotkeys_config
+            commands::update_hotkeys_config,
+            commands::update_pomodoro_config
         ])
         .setup(|app| {
             let log_dir = app

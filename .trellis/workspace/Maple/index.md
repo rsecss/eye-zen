@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 8
-- **Last Active**: 2026-05-21
+- **Total Sessions**: 9
+- **Last Active**: 2026-05-22
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~284 | Active |
+| `journal-1.md` | ~317 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 9 | 2026-05-22 | ECharts dynamic import + cleanup queue tidy | `f9f79fd` | `main` |
 | 8 | 2026-05-21 | Hotkeys per-action fallback (fix + 2x merge sync + spec align) | `fafa885`, `0de5bc5`, `7c3de40`, `60033b9` | `feat/hotkeys` |
 | 7 | 2026-05-21 | Global hotkeys timer control | `084fa63` | `feat/hotkeys` |
 | 6 | 2026-05-21 | E2E acceptance + merge origin/main for stats branch | `72ce247` | `feat/stats` |

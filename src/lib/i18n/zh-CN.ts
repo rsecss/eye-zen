@@ -4,6 +4,10 @@ const zhCN = {
   'tab.about': '关于',
 
   'settings.timer.title': '计时器',
+  'settings.timer.mode': '计时模式',
+  'settings.timer.mode.desc': '20-20-20 护眼或番茄工作法（互斥）',
+  'settings.timer.mode.20-20-20': '20-20-20 护眼',
+  'settings.timer.mode.pomodoro': '番茄工作法',
   'settings.timer.workMinutes': '工作时间',
   'settings.timer.workMinutes.desc': '工作时长，到时提醒休息',
   'settings.timer.workMinutes.unit': 'min',
@@ -16,6 +20,20 @@ const zhCN = {
   'settings.timer.alertTimeout': '提醒超时',
   'settings.timer.alertTimeout.desc': '提醒等待上限，超时自动休息',
   'settings.timer.alertTimeout.unit': 'sec',
+
+  'settings.pomodoro.title': '番茄设置',
+  'settings.pomodoro.focusMinutes': '专注时长',
+  'settings.pomodoro.focusMinutes.desc': '每个番茄的专注时长，默认 25 分钟',
+  'settings.pomodoro.focusMinutes.unit': 'min',
+  'settings.pomodoro.shortBreakMinutes': '短休时长',
+  'settings.pomodoro.shortBreakMinutes.desc': '常规休息时长，默认 5 分钟',
+  'settings.pomodoro.shortBreakMinutes.unit': 'min',
+  'settings.pomodoro.longBreakMinutes': '长休时长',
+  'settings.pomodoro.longBreakMinutes.desc': '每完成 N 个番茄后的长休时长，默认 15 分钟',
+  'settings.pomodoro.longBreakMinutes.unit': 'min',
+  'settings.pomodoro.cyclesPerLong': '长休间隔',
+  'settings.pomodoro.cyclesPerLong.desc': '每多少个番茄安排一次长休，默认 4 个',
+  'settings.pomodoro.cyclesPerLong.unit': '×',
 
   'settings.behavior.title': '行为',
   'settings.behavior.sound': '提示音',
@@ -129,12 +147,18 @@ const zhCN = {
   'tip.alerting.subtitle': '看向远处，让眼睛放松',
   'tip.resting.title': '休息中',
   'tip.resting.subtitle': '看向远处，让眼睛放松',
+  'tip.pomodoro.shortBreak.title': '短休 ({current}/{total})',
+  'tip.pomodoro.shortBreak.subtitle': '起身活动一下，喝口水',
+  'tip.pomodoro.longBreak.title': '长休时间',
+  'tip.pomodoro.longBreak.subtitle': '完成 {total} 个番茄，好好放松一下',
   'tip.startRest': '开始休息',
   'tip.skip': '跳过',
   'tip.waiting': '等待中...',
 
   'tipMinimal.resting': '休息中... 请看向远处',
   'tipMinimal.alerting': '休息一下... 请看向远处',
+  'tipMinimal.pomodoro.shortBreak': '短休 {current}/{total}... 起身活动一下',
+  'tipMinimal.pomodoro.longBreak': '长休时间... 完成 {total} 个番茄，好好放松',
 } as const;
 
 export type TranslationKey = keyof typeof zhCN;

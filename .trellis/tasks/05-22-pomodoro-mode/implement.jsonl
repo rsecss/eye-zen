@@ -1,0 +1,7 @@
+{"file": ".trellis/spec/architecture/ipc-and-state.md", "reason": "状态机契约扩展（新 cycle 字段）+ StatePayload 加 mode/pomodoro 字段 + 新增 update_pomodoro_config command"}
+{"file": ".trellis/spec/architecture/change-management.md", "reason": "Config schema 扩 + IPC payload 扩 + i18n + 文档变更必查清单"}
+{"file": ".trellis/spec/backend/service-pattern.md", "reason": "TimerService 编排 mode 切换 + cycle counter 重置"}
+{"file": ".trellis/spec/backend/coding-standards.md", "reason": "状态机纯函数语义保持 + 错误处理 + clippy --all-targets"}
+{"file": ".trellis/spec/frontend/store-and-ipc-patterns.md", "reason": "新增 mode store + Pomodoro config IPC 调用"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Settings 新增 Card + tip-window/tray 文案分支"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "新增 TimerMode/PomodoroConfig/PomodoroStatePayload 的 ts-rs 桥接"}

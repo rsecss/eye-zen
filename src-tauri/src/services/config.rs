@@ -9,7 +9,8 @@ use tracing::{info, warn};
 
 use crate::error::{AppError, Result};
 use crate::models::config::{
-    sanitize_process_whitelist, BehaviorConfig, Config, DisplayConfig, ScheduleConfig, TimerConfig,
+    sanitize_process_whitelist, BehaviorConfig, Config, DisplayConfig, PomodoroConfig,
+    ScheduleConfig, TimerConfig,
 };
 use crate::models::hotkeys::HotkeysConfig;
 use crate::services::{Service, ServiceContext};
@@ -94,6 +95,14 @@ impl ConfigService {
     pub(crate) fn update_hotkeys(&self, hotkeys: HotkeysConfig) -> Result<()> {
         self.update_with(move |config| {
             config.hotkeys = hotkeys;
+        })
+    }
+
+    /// Replace the pomodoro section and persist the new config.
+    #[allow(clippy::missing_errors_doc)]
+    pub(crate) fn update_pomodoro(&self, pomodoro: PomodoroConfig) -> Result<()> {
+        self.update_with(move |config| {
+            config.pomodoro = pomodoro;
         })
     }
 

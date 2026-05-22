@@ -18,11 +18,20 @@
     i18nStore.setLocale(configStore.current.display.language);
   });
 
-  const label = $derived(
-    timerStore.current.state === 'resting'
-      ? i18nStore.t('tipMinimal.resting')
-      : i18nStore.t('tipMinimal.alerting'),
-  );
+  const label = $derived.by(() => {
+    const { state, mode, pomodoro } = timerStore.current;
+    const isResting = state === 'resting';
+    if (mode === 'pomodoro' && pomodoro && isResting) {
+      const key = pomodoro.is_long_break
+        ? 'tipMinimal.pomodoro.longBreak'
+        : 'tipMinimal.pomodoro.shortBreak';
+      return i18nStore
+        .t(key)
+        .replace('{current}', String(pomodoro.cycle_index))
+        .replace('{total}', String(pomodoro.cycles_per_long));
+    }
+    return isResting ? i18nStore.t('tipMinimal.resting') : i18nStore.t('tipMinimal.alerting');
+  });
 </script>
 
 <main

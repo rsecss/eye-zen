@@ -27,6 +27,8 @@ describe('timerStore', () => {
       remaining_secs: 1200,
       work_minutes: 20,
       rest_seconds: 20,
+      mode: 'twenty_twenty_twenty' as const,
+      pomodoro: null,
     };
 
     vi.mocked(onStateChanged).mockResolvedValue(unlistenMock);
@@ -53,6 +55,8 @@ describe('timerStore', () => {
       remaining_secs: 20,
       work_minutes: 20,
       rest_seconds: 20,
+      mode: 'twenty_twenty_twenty' as const,
+      pomodoro: null,
     };
 
     vi.mocked(getStateSnapshot).mockResolvedValue({
@@ -60,6 +64,8 @@ describe('timerStore', () => {
       remaining_secs: 1200,
       work_minutes: 20,
       rest_seconds: 20,
+      mode: 'twenty_twenty_twenty',
+      pomodoro: null,
     });
 
     const { timerStore } = await import('$lib/stores/timer.svelte');
@@ -81,6 +87,8 @@ describe('timerStore', () => {
       remaining_secs: 0,
       work_minutes: 20,
       rest_seconds: 20,
+      mode: 'twenty_twenty_twenty',
+      pomodoro: null,
     });
 
     const { timerStore } = await import('$lib/stores/timer.svelte');

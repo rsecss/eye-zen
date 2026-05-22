@@ -44,6 +44,7 @@ impl TrayService {
             current_tooltip: Arc::new(Mutex::new(TrayTooltip {
                 state: TimerState::Working,
                 remaining_secs: Some(20 * 60),
+                pomodoro_progress: None,
             })),
             watch_handle: Mutex::new(None),
         }
@@ -352,12 +353,16 @@ impl TrayService {
             TimerState::Paused => i18n.get("tray.tooltip.paused"),
         };
 
+        let pomodoro_suffix = tooltip.pomodoro_progress.map_or(String::new(), |progress| {
+            format!(" (Pomo {}/{})", progress.current, progress.total)
+        });
+
         match tooltip.remaining_secs {
             Some(remaining_secs) => format!(
-                "{app_name} - {label} {}",
+                "{app_name} - {label} {}{pomodoro_suffix}",
                 Self::format_remaining(remaining_secs)
             ),
-            None => format!("{app_name} - {label}"),
+            None => format!("{app_name} - {label}{pomodoro_suffix}"),
         }
     }
 
@@ -499,6 +504,7 @@ impl Service for TrayService {
             TrayTooltip {
                 state: TimerState::Working,
                 remaining_secs: Some(config.timer.work_minutes.saturating_mul(60)),
+                pomodoro_progress: None,
             },
         );
 

@@ -8,7 +8,7 @@ use crate::error::AppError;
 #[cfg(not(test))]
 use tracing::warn;
 
-use crate::models::config::{BehaviorConfig, DisplayConfig, TimerConfig};
+use crate::models::config::{BehaviorConfig, DisplayConfig, PomodoroConfig, TimerConfig};
 #[cfg(not(test))]
 use crate::models::config::{Config, ScheduleConfig};
 #[cfg(not(test))]
@@ -150,6 +150,34 @@ fn validate_display_config(config: &DisplayConfig) -> CmdResult<()> {
     Ok(())
 }
 
+fn validate_pomodoro_config(config: &PomodoroConfig) -> CmdResult<()> {
+    if config.focus_minutes == 0 || config.focus_minutes > 180 {
+        return Err(AppError::ConfigInvalid {
+            field: "pomodoro.focus_minutes".to_string(),
+            reason: format!("must be 1-180, got {}", config.focus_minutes),
+        });
+    }
+    if config.short_break_minutes == 0 || config.short_break_minutes > 60 {
+        return Err(AppError::ConfigInvalid {
+            field: "pomodoro.short_break_minutes".to_string(),
+            reason: format!("must be 1-60, got {}", config.short_break_minutes),
+        });
+    }
+    if config.long_break_minutes == 0 || config.long_break_minutes > 180 {
+        return Err(AppError::ConfigInvalid {
+            field: "pomodoro.long_break_minutes".to_string(),
+            reason: format!("must be 1-180, got {}", config.long_break_minutes),
+        });
+    }
+    if config.cycles_per_long == 0 || config.cycles_per_long > 12 {
+        return Err(AppError::ConfigInvalid {
+            field: "pomodoro.cycles_per_long".to_string(),
+            reason: format!("must be 1-12, got {}", config.cycles_per_long),
+        });
+    }
+    Ok(())
+}
+
 #[cfg(not(test))]
 #[tauri::command]
 pub(crate) async fn update_timer_config(
@@ -208,6 +236,21 @@ pub(crate) async fn update_schedule_config(
         .await
         .map_err(|err| AppError::IoError {
             message: format!("update_schedule_config task failed: {err}"),
+        })?
+}
+
+#[cfg(not(test))]
+#[tauri::command]
+pub(crate) async fn update_pomodoro_config(
+    services: Services<'_>,
+    config: PomodoroConfig,
+) -> CmdResult<()> {
+    validate_pomodoro_config(&config)?;
+    let services = services.inner().clone();
+    tokio::task::spawn_blocking(move || services.config.update_pomodoro(config))
+        .await
+        .map_err(|err| AppError::IoError {
+            message: format!("update_pomodoro_config task failed: {err}"),
         })?
 }
 
@@ -287,5 +330,34 @@ mod tests {
         };
         assert_eq!(field, "afk_threshold_minutes");
         assert_eq!(reason, "must be 1-120, got 121");
+    }
+
+    #[test]
+    fn pomodoro_config_accepts_defaults() {
+        assert!(validate_pomodoro_config(&PomodoroConfig::default()).is_ok());
+    }
+
+    #[test]
+    fn pomodoro_config_rejects_zero_focus() {
+        let config = PomodoroConfig {
+            focus_minutes: 0,
+            ..PomodoroConfig::default()
+        };
+        let Err(AppError::ConfigInvalid { field, .. }) = validate_pomodoro_config(&config) else {
+            panic!("expected focus validation error");
+        };
+        assert_eq!(field, "pomodoro.focus_minutes");
+    }
+
+    #[test]
+    fn pomodoro_config_rejects_oversize_cycles() {
+        let config = PomodoroConfig {
+            cycles_per_long: 13,
+            ..PomodoroConfig::default()
+        };
+        let Err(AppError::ConfigInvalid { field, .. }) = validate_pomodoro_config(&config) else {
+            panic!("expected cycles validation error");
+        };
+        assert_eq!(field, "pomodoro.cycles_per_long");
     }
 }

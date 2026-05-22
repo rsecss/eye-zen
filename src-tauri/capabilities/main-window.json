@@ -27,6 +27,7 @@
     "allow-update-display-config",
     "allow-update-schedule-config",
     "allow-update-hotkeys-config",
+    "allow-update-pomodoro-config",
     "core:window:allow-set-theme",
     "autostart:allow-enable",
     "autostart:allow-disable",

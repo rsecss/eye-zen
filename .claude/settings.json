@@ -69,5 +69,8 @@
       }
     ]
   },
-  "enabledPlugins": {}
+  "enabledPlugins": {
+    "typescript-lsp@claude-plugins-official": true,
+    "rust-analyzer-lsp@claude-plugins-official": true
+  }
 }

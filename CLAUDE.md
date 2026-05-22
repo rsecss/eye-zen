@@ -27,6 +27,7 @@
 - License 切换：MIT → GPL-3.0-or-later，自 v0.2.0 起生效（v0.1.0 二进制永久保留 MIT）
 - v0.2.0 已发布（GPL-3.0-or-later）：2026-05-20，10 个 artifact（多了 .rpm），latest published；含 weekday scheduling + 主窗 880×560 调整 + bump-version.mjs Cargo.lock 同步修复
 - v0.4.0 主功能进程白名单已实现（feat/process-whitelist 分支）：跨平台 exe basename 匹配，三平台真实实现（Win Query API / macOS kCGWindowOwnerName / Linux X11 _NET_WM_PID）；SkipFlags 新增 process_whitelisted；Settings 新增 Whitelist Card + 14 个 i18n key + capability 降级；vitest coverage 基线 59.5%（仅 reference）
+- Phase 3 番茄模式已实现（feat/pomodoro-mode 分支，2026-05-23）：TimerMode 枚举 + PomodoroConfig + StatePayload 扩 mode/pomodoro 字段；Inner 加 cycle_index/cycles_per_long/short_break/long_break/is_long_break，长短休通过 rest_duration 动态切换（状态机不新增 state）；新增 update_pomodoro_config command + 校验范围 + Settings 加 Timer Mode 单选 + Pomodoro Card（4 个 Stepper）+ tip-window/tip-minimal/tray 文案适配；i18n zh-CN/en 新增 22 个 key；8 个新 Rust 单测覆盖 cycle 推进 / 长休切换 / mode 切换重置 / Pause-Resume 保留
 - 下一步：发版 v0.4.0（PR → main → tag → CI artifacts published）
 
 ---
