@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend spec index — pointers to component-guidelines, quality-guidelines, store-and-ipc-patterns for a Svelte 5 single-component refactor"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "onMount cleanup pattern, lifecycle disposal rules, async-in-onMount handling — needed when introducing dynamic import + disposed flag race-guard"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Svelte 5 Runes hygiene, no leaked listeners, $effect/onMount cleanup discipline — verify resize listener / chart.dispose still wired correctly through the new async flow"}
+{"file": ".trellis/spec/architecture/change-management.md", "reason": "Frontend-only refactor checklist — verifies the change does not touch IPC contracts, bindings, or config schema"}
