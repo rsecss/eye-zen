@@ -5,71 +5,76 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+Each version body uses the following categories (see
+[`docs/workflows/release.md`](docs/workflows/release.md#changelog-entry-style)):
+
+| Emoji | Category | Conventional Commit types |
+|-------|----------|---------------------------|
+| 🎉 | Features | `feat` |
+| 🛠️ | Fixes | `fix` |
+| 📃 | Documentation | `docs` |
+| 🧪 | Refactor | `refactor` |
+| 🔧 | Maintenance | `chore`, `ci`, `build`, `perf`, `style`, `test` |
+
+Line format: `- imperative-lowercase description (#NN) (sha7)`. PR number is
+omitted when the change predates the pull-request workflow.
+
 ## [0.4.0] - 2026-05-22
 
-### Added
+### 🎉 Features
 
-- **Process whitelist** (#14) — skip the next rest reminder when a whitelisted process is in the foreground at the `Working → PreAlert` transition. Cross-platform exe basename matching (case-insensitive), with three real platform implementations: Windows `QueryFullProcessImageNameW`, macOS `kCGWindowOwnerName` via `core-graphics`, Linux/X11 `_NET_WM_PID` + `/proc/<pid>/exe`. Linux Wayland gracefully degrades (controls disabled with explanation banner, mirroring the AFK pattern). Settings: new card with toggle, add/delete chip list, input validation rejecting empty / duplicate / self (`eyezen`) / over-32 entries. Full zh-CN + en i18n. Legacy TOML files load via serde defaults.
+- cross-platform process whitelist skip next rest reminder (#14) (6e0abbc)
 
 ## [0.3.0] - 2026-05-22
 
-### Added
+### 🎉 Features
 
-- **AFK detection** (#10) — detects system idle at each Working tick and skips the next rest reminder via `SkipFlags::afk_active`, logging `skip: afk`. Cross-platform: Windows / macOS / Linux X11; Wayland gracefully degrades (controls disabled with explanation). New Settings toggle and threshold stepper, effective on the next tick. Legacy TOML files without `afk_*` fields load via serde defaults.
-- **Rest statistics trends** (#11) — `StatService` persists each `Resting → Working` session to SQLite (`app_data_dir/eyezen/data.db`, WAL mode, auto-created schema). New Tauri command `get_statistics_trends(timezone?)` aggregates by day / week / month in the requested IANA timezone (DST-safe). New `StatisticsPage.svelte` renders trends with ECharts plus today's totals.
-- **Configurable global hotkeys** (#12) — backend-owned global shortcuts for `start_rest` / `skip_rest` / `toggle_pause`, configurable from Settings and persisted in TOML. Per-action best-effort registration: a single shortcut conflict no longer disables the other working bindings; the top "快捷键未生效" banner is reserved for macOS Accessibility missing or all-fail. macOS Accessibility missing path degrades gracefully with a permission banner.
+- AFK detection skips next rest reminder after idle threshold (#10) (58332ba)
+- SQLite rest statistics trends with daily/weekly/monthly charts (#11) (5a68535)
+- configurable global hotkeys for start/skip/toggle-pause (#12) (bc96fb5)
 
-### Changed
+### 🔧 Maintenance
 
-- **Spec docs** — `architecture/ipc-and-state.md` (AFK / Statistics Trend / Global Hotkey IPC scenarios with commands tables, validation/error matrices, Good/Base/Bad examples), `backend/service-pattern.md` (service DAG, lifecycle, start/shutdown order with `StatService` + `HotkeyService`), `backend/platform-storage.md` (idle capability + SQLite `app_data_dir`), `frontend/state-management.md`.
+- migrate from dev/main to GitHub Flow and sync Cargo.lock in bump-version.mjs (#7) (b15a993)
 
 ## [0.2.0] - 2026-05-20
 
-### Added
+### 🎉 Features
 
-- **Workday scheduling** — toggle to keep Eyezen quiet on selected weekdays (typically weekends) without manually pausing. Suppression fires only at the Working → PreAlert boundary, so cycles already in progress are never interrupted mid-rest. Day granularity only (hour-of-day ranges and holidays are out of scope by design).
+- weekday scheduling suppresses alerts on configured days (#4) (49be514)
 
-### Changed
+### 🛠️ Fixes
 
-- **License** — switched from **MIT** to **GPL-3.0-or-later**, effective for this release and onward. v0.1.0 binaries remain under MIT permanently. Applied across `LICENSE`, `package.json`, `src-tauri/Cargo.toml`, `src-tauri/tauri.conf.json`, and the in-app About page.
-- **Main window default size** — `520×640` → `880×560` (16:10) for a less cramped Settings/About layout.
+- sync Cargo.lock to v0.2.0 release (#5) (5b60ab8)
+
+### 🔧 Maintenance
+
+- switch license from MIT to GPL-3.0-or-later (#1) (bc4aa8f)
+- resize main window from 520×640 to 880×560 (#4) (49be514)
+- harden release pipeline with version sync gates (#2) (6e2e3ce)
+- add cargo-deny security audit and lint-staged Rust formatting (#3) (99eaa80)
+- adopt Trellis workflow and lock ts-rs to ~10.1 (#1) (bc4aa8f)
 
 ## [0.1.0] - 2026-03-21
 
-First public release. A fully functional 20-20-20 eye care desktop app.
+### 🎉 Features
 
-### Added
+- 20-20-20 timer state machine with Working/PreAlert/Alerting/Resting (9d431b5)
+- multi-monitor tip windows with glassmorphic design (f56cfeb)
+- system tray panel with quick actions and tray-icon positioning (f75fb5e)
+- in-app Settings UI with Timer/Behavior/Display cards (5748b27)
+- About page with version info and update check (a8191a2)
+- internationalization for zh-CN and en with hot switching (244a73b)
+- dark/light theme switching with native title bar adaptation (69bd8b4)
+- OS-level auto-start via tauri-plugin-autostart (e1d6f32)
 
-- **20-20-20 Timer** — configurable work/rest durations with full state machine (Working → PreAlert → Alerting → Resting)
-- **Multi-monitor support** — tip windows appear on all connected displays simultaneously
-- **Fullscreen detection** — auto-skip reminders when fullscreen apps are running (Windows / Linux X11; macOS and Wayland limited)
-- **System tray** — persistent tray icon with status tooltip, quick actions menu, and glassmorphic tray panel
-- **Settings UI** — in-app settings for Timer, Behavior, and Display preferences
-- **About page** — version info, platform details, GitHub links
-- **Dark / Light theme** — CSS variable overrides + native title bar theme + WebView2 color-scheme for native controls
-- **Auto-start** — OS-level launch at startup via `tauri-plugin-autostart`
-- **Internationalization** — Chinese (zh-CN) / English (en) with hot switching, covers all UI and tray menu
-- **Sound alerts** — gentle audio cue on rest reminder via rodio (dedicated audio thread)
-- **Typed IPC** — ts-rs auto-generated TypeScript bindings, typed commands (5s timeout) and event listeners
-- **Reactive stores** — Svelte 5 Runes stores with race condition protection (`version` counter + `loaded` flag)
-- **Config persistence** — TOML config with arc-swap hot reload and file watcher
-- **CI/CD** — GitHub Actions CI (three-platform matrix) + Release workflow (four-target build via `tauri-action@v0`)
+### 🔧 Maintenance
 
-### Known Limitations
+- initial Tauri v2 + Svelte 5 + Vite scaffold (cd57866)
+- ts-rs auto-generated TypeScript bindings (3d96503)
+- three-platform CI matrix and four-target Release pipeline (b10533b)
 
-- Fullscreen detection: macOS returns conservative `false`; Linux Wayland always shows reminders
-- No usage statistics or charts yet (planned for v0.2)
-- No away detection (planned for v0.3)
-- Native `<select>` dropdown popup may not fully follow dark theme on some WebView2 versions
-
-### Platform Support
-
-| Platform | Status |
-|----------|--------|
-| Windows 10/11 | ✅ Tested |
-| macOS (ARM/Intel) | ⚠️ Builds, untested |
-| Linux (X11/Wayland) | ⚠️ Builds, untested |
-
+[0.4.0]: https://github.com/rsecss/eye-zen/releases/tag/v0.4.0
 [0.3.0]: https://github.com/rsecss/eye-zen/releases/tag/v0.3.0
 [0.2.0]: https://github.com/rsecss/eye-zen/releases/tag/v0.2.0
 [0.1.0]: https://github.com/rsecss/eye-zen/releases/tag/v0.1.0

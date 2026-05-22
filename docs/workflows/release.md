@@ -60,6 +60,49 @@ git push origin v$NEW_VERSION
 
 If GitHub repo Settings has "Automatically delete head branches" enabled (see `docs/workflows/branch-protection.md`), the `release/vX.Y.Z` branch is deleted on PR merge. Otherwise: `git push origin --delete "$RELEASE_BRANCH"`.
 
+## CHANGELOG entry style
+
+Each `## [X.Y.Z]` body uses categorized H3 sections with emoji titles. Line
+format is `- imperative-lowercase description (#NN) (sha7)`. PR number is
+omitted only when the change predates the pull-request workflow (v0.1.0).
+
+| Emoji | Category | Conventional Commit types | When to use |
+|-------|----------|---------------------------|-------------|
+| 🎉 | Features | `feat` | user-visible new capability |
+| 🛠️ | Fixes | `fix` | bug fix users would notice |
+| 📃 | Documentation | `docs` | doc-only PR worth surfacing in release notes |
+| 🧪 | Refactor | `refactor` | internal restructuring with no behavior change |
+| 🔧 | Maintenance | `chore`, `ci`, `build`, `perf`, `style`, `test` | infra, deps, CI, build, perf, formatting |
+
+Conventions:
+
+- one bullet per merged PR; squash commit's first-line subject is the source of truth
+- omit trailing punctuation on bullet lines
+- list features first; within a category, list higher-impact items first
+- `release: vX.Y.Z` and `chore(task): archive *` PRs are excluded
+- security-relevant fixes also call out the constraint inside the bullet (e.g. `(GHSA-...)`)
+- breaking changes get their own section above Features: `### 🚨 Breaking Changes`
+
+Example (v0.3.0):
+
+```markdown
+## [0.3.0] - 2026-05-22
+
+### 🎉 Features
+
+- AFK detection skips next rest reminder after idle threshold (#10) (58332ba)
+- SQLite rest statistics trends with daily/weekly/monthly charts (#11) (5a68535)
+- configurable global hotkeys for start/skip/toggle-pause (#12) (bc96fb5)
+
+### 🔧 Maintenance
+
+- migrate from dev/main to GitHub Flow and sync Cargo.lock in bump-version.mjs (#7) (b15a993)
+```
+
+`scripts/extract-changelog.mjs <version>` extracts the body between
+`## [X.Y.Z]` markers — no rendering hooks, so anything you write here lands
+verbatim in the GitHub release body.
+
 ## Verify
 
 - `npm run ci` passed locally (includes version sync gate).
