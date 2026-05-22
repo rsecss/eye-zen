@@ -1,0 +1,2 @@
+{"file": ".trellis/spec/backend/coding-standards.md", "reason": "Rust test conventions; cfg-gate justification"}
+{"file": "docs/workflows/release.md", "reason": "Verify changes don't regress release SOP"}
