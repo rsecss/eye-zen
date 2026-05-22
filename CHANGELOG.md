@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.4.0] - 2026-05-22
+
+### Added
+
+- **Process whitelist** (#14) — skip the next rest reminder when a whitelisted process is in the foreground at the `Working → PreAlert` transition. Cross-platform exe basename matching (case-insensitive), with three real platform implementations: Windows `QueryFullProcessImageNameW`, macOS `kCGWindowOwnerName` via `core-graphics`, Linux/X11 `_NET_WM_PID` + `/proc/<pid>/exe`. Linux Wayland gracefully degrades (controls disabled with explanation banner, mirroring the AFK pattern). Settings: new card with toggle, add/delete chip list, input validation rejecting empty / duplicate / self (`eyezen`) / over-32 entries. Full zh-CN + en i18n. Legacy TOML files load via serde defaults.
+
 ## [0.3.0] - 2026-05-22
 
 ### Added
