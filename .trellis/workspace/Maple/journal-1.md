@@ -282,3 +282,36 @@ Refactored HotkeyService apply_config from transactional all-or-nothing rollback
 ### Next Steps
 
 - None - task complete
+
+
+## Session 9: ECharts dynamic import + cleanup queue tidy
+
+**Date**: 2026-05-22
+**Task**: ECharts dynamic import + cleanup queue tidy
+**Branch**: `main`
+
+### Summary
+
+Defer ECharts (echarts/{core,charts,components,renderers}) via onMount dynamic import in StatisticsPage.svelte; type-only import stays static. Main entry chunk drops 575.63 KB -> 40.97 KB (gzip 195.10 -> 12.78 KB, -93%); echarts now ships as 8 async chunks loaded on Statistics page open; vite chunks-larger-than-500-kB warning eliminated. disposed flag guards three unmount races. Tests untouched (hoisted vi.mock survives dynamic import). PR #17 squash-merged after 3-platform CI all green. Memory reconciliation: corrected post-v030-cleanup-queue.md — ECharts done, but hotkeys.rs 5 unused warnings still pending (cargo test compile output is the real signal, not cargo clippy).
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `f9f79fd` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
