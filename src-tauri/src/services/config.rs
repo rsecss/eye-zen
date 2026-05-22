@@ -8,7 +8,9 @@ use tokio::sync::watch;
 use tracing::{info, warn};
 
 use crate::error::{AppError, Result};
-use crate::models::config::{BehaviorConfig, Config, DisplayConfig, ScheduleConfig, TimerConfig};
+use crate::models::config::{
+    sanitize_process_whitelist, BehaviorConfig, Config, DisplayConfig, ScheduleConfig, TimerConfig,
+};
 use crate::models::hotkeys::HotkeysConfig;
 use crate::services::{Service, ServiceContext};
 
@@ -58,10 +60,16 @@ impl ConfigService {
     }
 
     /// Replace the behavior section and persist the new config.
+    ///
+    /// The `process_whitelist` is sanitised (trim, lowercase, dedupe, drop
+    /// reserved names, truncate to cap) before storage so callers do not need
+    /// to do it themselves.
     #[allow(clippy::missing_errors_doc)]
     pub(crate) fn update_behavior(&self, behavior: BehaviorConfig) -> Result<()> {
+        let mut sanitised = behavior;
+        sanitised.process_whitelist = sanitize_process_whitelist(sanitised.process_whitelist);
         self.update_with(move |config| {
-            config.behavior = behavior;
+            config.behavior = sanitised;
         })
     }
 
@@ -100,7 +108,9 @@ impl ConfigService {
 
         let content = std::fs::read_to_string(path)?;
         match toml::from_str::<Config>(&content) {
-            Ok(config) => {
+            Ok(mut config) => {
+                config.behavior.process_whitelist =
+                    sanitize_process_whitelist(config.behavior.process_whitelist);
                 info!("config loaded from {}", path.display());
                 Ok(config)
             }

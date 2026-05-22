@@ -6,13 +6,14 @@ use std::time::Duration;
 
 use tracing::warn;
 
-use super::PlatformApi;
+use super::{normalize_process_name, PlatformApi};
 
 static WAYLAND_WARNING_EMITTED: AtomicBool = AtomicBool::new(false);
 
 pub(crate) struct LinuxPlatform {
     fullscreen_warned: AtomicBool,
     idle_warned: AtomicBool,
+    foreground_warned: AtomicBool,
     is_x11: bool,
     x11_session: Option<Mutex<X11Session>>,
 }
@@ -26,7 +27,7 @@ impl LinuxPlatform {
 
         if !is_x11 && !WAYLAND_WARNING_EMITTED.swap(true, Ordering::Relaxed) {
             warn!(
-                "Wayland detected: fullscreen and idle detection unavailable, reminders will always show"
+                "Wayland detected: fullscreen, idle, and foreground-process detection unavailable; reminders will always show"
             );
         }
 
@@ -45,6 +46,7 @@ impl LinuxPlatform {
         Self {
             fullscreen_warned: AtomicBool::new(false),
             idle_warned: AtomicBool::new(false),
+            foreground_warned: AtomicBool::new(false),
             is_x11,
             x11_session,
         }
@@ -98,6 +100,28 @@ impl PlatformApi for LinuxPlatform {
                     .is_ok_and(|guard| guard.screensaver_available)
             })
     }
+
+    fn get_foreground_process_name(&self) -> Option<String> {
+        if !self.is_x11 {
+            return None;
+        }
+        let session = self.x11_session.as_ref()?;
+
+        match detect_foreground_process_name_x11(session) {
+            Ok(Some(name)) => normalize_process_name(&name),
+            Ok(None) => None,
+            Err(error) => {
+                if !self.foreground_warned.swap(true, Ordering::Relaxed) {
+                    warn!("X11 foreground process detection failed: {error}");
+                }
+                None
+            }
+        }
+    }
+
+    fn supports_foreground_process_detection(&self) -> bool {
+        self.is_x11 && self.x11_session.is_some()
+    }
 }
 
 struct X11Session {
@@ -106,6 +130,7 @@ struct X11Session {
     active_window_atom: u32,
     state_atom: u32,
     fullscreen_atom: u32,
+    wm_pid_atom: u32,
     screensaver_available: bool,
 }
 
@@ -138,6 +163,13 @@ impl X11Session {
             .map_err(|error| format!("reply _NET_WM_STATE_FULLSCREEN: {error}"))?
             .atom;
 
+        let wm_pid_atom = connection
+            .intern_atom(false, b"_NET_WM_PID")
+            .map_err(|error| format!("intern _NET_WM_PID: {error}"))?
+            .reply()
+            .map_err(|error| format!("reply _NET_WM_PID: {error}"))?
+            .atom;
+
         let screensaver_available = connection
             .screensaver_query_version(1, 1)
             .ok()
@@ -150,6 +182,7 @@ impl X11Session {
             active_window_atom,
             state_atom,
             fullscreen_atom,
+            wm_pid_atom,
             screensaver_available,
         })
     }
@@ -231,4 +264,72 @@ fn detect_idle_duration_x11(session: &Mutex<X11Session>) -> Result<Duration, Str
         .map_err(|error| format!("reply screensaver query info: {error}"))?;
 
     Ok(Duration::from_millis(u64::from(reply.ms_since_user_input)))
+}
+
+fn detect_foreground_process_name_x11(
+    session: &Mutex<X11Session>,
+) -> Result<Option<String>, String> {
+    use x11rb::connection::Connection;
+    use x11rb::protocol::xproto::{AtomEnum, ConnectionExt};
+
+    let session = session
+        .lock()
+        .map_err(|_| "X11 session lock poisoned".to_string())?;
+    let screen = &session.connection.setup().roots[session.screen_num];
+
+    let active_window_reply = session
+        .connection
+        .get_property(
+            false,
+            screen.root,
+            session.active_window_atom,
+            AtomEnum::WINDOW,
+            0,
+            1,
+        )
+        .map_err(|error| format!("get _NET_ACTIVE_WINDOW: {error}"))?
+        .reply()
+        .map_err(|error| format!("reply active window property: {error}"))?;
+
+    let active_window = active_window_reply
+        .value32()
+        .and_then(|mut values| values.next())
+        .unwrap_or(0);
+
+    if active_window == 0 {
+        return Ok(None);
+    }
+
+    let pid_reply = session
+        .connection
+        .get_property(
+            false,
+            active_window,
+            session.wm_pid_atom,
+            AtomEnum::CARDINAL,
+            0,
+            1,
+        )
+        .map_err(|error| format!("get _NET_WM_PID: {error}"))?
+        .reply()
+        .map_err(|error| format!("reply pid property: {error}"))?;
+
+    let pid = pid_reply
+        .value32()
+        .and_then(|mut values| values.next())
+        .unwrap_or(0);
+
+    if pid == 0 {
+        return Ok(None);
+    }
+
+    let exe_link = format!("/proc/{pid}/exe");
+    let Ok(exe_path) = std::fs::read_link(&exe_link) else {
+        return Ok(None);
+    };
+
+    Ok(exe_path
+        .file_name()
+        .and_then(|s| s.to_str())
+        .map(str::to_owned))
 }

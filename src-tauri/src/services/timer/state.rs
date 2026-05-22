@@ -47,17 +47,22 @@ pub(crate) struct Transition {
 
 /// Conditions that suppress the rest prompt and reset the work cycle.
 #[derive(Debug, Clone, Default)]
+#[allow(clippy::struct_excessive_bools)]
 pub(crate) struct SkipFlags {
     pub(crate) fullscreen_active: bool,
     pub(crate) schedule_inactive: bool,
     pub(crate) afk_active: bool,
+    pub(crate) process_whitelisted: bool,
 }
 
 impl SkipFlags {
     /// Return whether any skip condition is active.
     #[must_use]
     pub(crate) const fn any_active(&self) -> bool {
-        self.fullscreen_active || self.schedule_inactive || self.afk_active
+        self.fullscreen_active
+            || self.schedule_inactive
+            || self.afk_active
+            || self.process_whitelisted
     }
 }
 

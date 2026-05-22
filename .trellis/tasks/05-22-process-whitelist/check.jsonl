@@ -1,0 +1,16 @@
+{"file": ".trellis/spec/architecture/testing-quality.md", "reason": "Pre-commit / pre-push self-check list, npm run ci composition, three-platform CI matrix expectations"}
+{"file": ".trellis/spec/architecture/change-management.md", "reason": "Variant addition / config compatibility / IPC contract change checklist — needed to verify all dimensions of the change were touched correctly"}
+{"file": ".trellis/spec/architecture/ipc-and-state.md", "reason": "SkipFlags semantics + state-machine reset contract — verify new flag participates correctly in Working->Working reset path only, not Resting/Alerting"}
+{"file": ".trellis/spec/backend/coding-standards.md", "reason": "Rust patterns to verify: no unwrap/panic on platform, AtomicBool warn-once, Result<_, AppError> internal, Option<String> external, lock ordering"}
+{"file": ".trellis/spec/backend/error-and-logging.md", "reason": "Verify tracing levels (warn-once for platform misses, info for capability discovery), no leaked errors to logs in tight loops"}
+{"file": ".trellis/spec/backend/platform-storage.md", "reason": "Platform parity check — all 3 platforms implement get_foreground_process_name with sensible degradation; no unimplemented!()"}
+{"file": ".trellis/spec/backend/service-pattern.md", "reason": "Service DAG order + lifecycle compliance — DetectorService method addition does not break existing init/start/shutdown contracts"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Component contract: setting-row pattern, separator usage, disabled state, ARIA labels — verify new Whitelist Card matches Schedule Card discipline"}
+{"file": ".trellis/spec/frontend/store-and-ipc-patterns.md", "reason": "Verify Settings flow: edit -> updateBehaviorConfig -> wait config_changed -> UI re-renders (no optimistic writes; no double-source-of-truth)"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Svelte 5 Runes hygiene, $effect cleanup, no setTimeout leaks, accessible focus management on add/remove"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "ts-rs bindings regenerated correctly, no manual edits to src/lib/bindings/, .prettierignore still excludes bindings"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Cross-layer change auditing — for a feature spanning platform/service/command/store/UI/i18n, verify nothing is missed"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Verify reuse: SkipFlags pattern follows fullscreen/schedule/afk shape, did not introduce a fourth bespoke gating mechanism"}
+{"file": ".trellis/tasks/05-22-process-whitelist/prd.md", "reason": "Acceptance Criteria check — every checkbox in PRD must verifiably hold"}
+{"file": ".trellis/tasks/05-22-process-whitelist/research/platform-foreground-process-apis.md", "reason": "Verify implementation matches the recommended chains (no shortcuts like libproc on macOS, no missed Win32_System_Threading feature flag)"}
+{"file": ".trellis/tasks/05-22-process-whitelist/research/ux-decisions.md", "reason": "Verify UX decisions implemented: list cap 32 enforced, exact-match (not substring), self-skip rejection toast, Wayland banner, all 14 i18n keys present in both locales"}

@@ -5,11 +5,13 @@ use std::time::Duration;
 
 use tracing::warn;
 
-use super::PlatformApi;
+use super::{normalize_process_name, PlatformApi};
 
+#[allow(clippy::struct_field_names)]
 pub(crate) struct WindowsPlatform {
     fullscreen_warned: AtomicBool,
     idle_warned: AtomicBool,
+    foreground_warned: AtomicBool,
 }
 
 impl WindowsPlatform {
@@ -18,6 +20,7 @@ impl WindowsPlatform {
         Self {
             fullscreen_warned: AtomicBool::new(false),
             idle_warned: AtomicBool::new(false),
+            foreground_warned: AtomicBool::new(false),
         }
     }
 }
@@ -54,6 +57,22 @@ impl PlatformApi for WindowsPlatform {
     }
 
     fn supports_idle_detection(&self) -> bool {
+        true
+    }
+
+    fn get_foreground_process_name(&self) -> Option<String> {
+        match detect_foreground_process_name() {
+            Ok(name) => name.as_deref().and_then(normalize_process_name),
+            Err(error) => {
+                if !self.foreground_warned.swap(true, Ordering::Relaxed) {
+                    warn!("windows foreground process detection failed: {error}");
+                }
+                None
+            }
+        }
+    }
+
+    fn supports_foreground_process_detection(&self) -> bool {
         true
     }
 }
@@ -123,5 +142,54 @@ fn detect_idle_duration() -> Result<Duration, String> {
         Ok(Duration::from_millis(u64::from(
             now.wrapping_sub(input_info.dwTime),
         )))
+    }
+}
+
+fn detect_foreground_process_name() -> Result<Option<String>, String> {
+    use windows::core::PWSTR;
+    use windows::Win32::Foundation::{CloseHandle, MAX_PATH};
+    use windows::Win32::System::Threading::{
+        OpenProcess, QueryFullProcessImageNameW, PROCESS_NAME_WIN32,
+        PROCESS_QUERY_LIMITED_INFORMATION,
+    };
+    use windows::Win32::UI::WindowsAndMessaging::{GetForegroundWindow, GetWindowThreadProcessId};
+
+    // SAFETY: Win32 APIs are invoked with validated handles, buffers sized to
+    // MAX_PATH, and explicit CloseHandle on the process handle path.
+    unsafe {
+        let hwnd = GetForegroundWindow();
+        if hwnd.0.is_null() {
+            return Ok(None);
+        }
+
+        let mut pid: u32 = 0;
+        let tid = GetWindowThreadProcessId(hwnd, Some(&raw mut pid));
+        if tid == 0 || pid == 0 {
+            return Ok(None);
+        }
+
+        let Ok(handle) = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid) else {
+            return Ok(None);
+        };
+
+        let mut buf = vec![0u16; MAX_PATH as usize];
+        let mut len: u32 = MAX_PATH;
+        let pwstr = PWSTR::from_raw(buf.as_mut_ptr());
+
+        let result = QueryFullProcessImageNameW(handle, PROCESS_NAME_WIN32, pwstr, &raw mut len);
+        let _ = CloseHandle(handle);
+
+        if let Err(error) = result {
+            return Err(format!("QueryFullProcessImageNameW: {error}"));
+        }
+
+        let len_usize = usize::try_from(len)
+            .map_err(|error| format!("QueryFullProcessImageNameW length: {error}"))?;
+        let path = String::from_utf16_lossy(&buf[..len_usize]);
+        let basename = std::path::Path::new(&path)
+            .file_name()
+            .and_then(|s| s.to_str())
+            .map(str::to_owned);
+        Ok(basename)
     }
 }

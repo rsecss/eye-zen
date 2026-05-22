@@ -159,9 +159,13 @@ impl ServiceContext {
                         Some(transition) => {
                             if transition.from == TimerState::Working
                                 && transition.to == TimerState::Working
-                                && flags.afk_active
                             {
-                                info!("skip: afk");
+                                if flags.afk_active {
+                                    info!("skip: afk");
+                                }
+                                if flags.process_whitelisted {
+                                    info!("skip: process whitelist");
+                                }
                             }
                             apply_transition_and_collect_effects(&mut guard, transition, now)
                         }
@@ -218,9 +222,15 @@ fn current_skip_flags(app: &AppHandle) -> SkipFlags {
         && services
             .detector
             .is_afk_for_threshold(config.behavior.afk_threshold_minutes);
+    let process_whitelisted = config.behavior.process_whitelist_enabled
+        && !config.behavior.process_whitelist.is_empty()
+        && services
+            .detector
+            .is_foreground_in_whitelist(&config.behavior.process_whitelist);
     SkipFlags {
         fullscreen_active: fullscreen_skip && services.detector.is_fullscreen(),
         schedule_inactive,
         afk_active,
+        process_whitelisted,
     }
 }

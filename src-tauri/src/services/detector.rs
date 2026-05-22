@@ -30,10 +30,28 @@ impl DetectorService {
         idle_reaches_threshold(self.platform.idle_duration(), threshold_minutes)
     }
 
+    /// Whether the current foreground process matches any entry in `whitelist`.
+    /// The whitelist is expected to already be sanitised (lowercase, trimmed).
+    /// Returns `false` when no foreground process can be resolved (Wayland,
+    /// transient race, no focused window) or when the list is empty.
+    #[must_use]
+    pub(crate) fn is_foreground_in_whitelist(&self, whitelist: &[String]) -> bool {
+        if whitelist.is_empty() {
+            return false;
+        }
+        let Some(name) = self.platform.get_foreground_process_name() else {
+            return false;
+        };
+        whitelist.iter().any(|entry| entry == &name)
+    }
+
     #[must_use]
     pub(crate) fn capabilities(&self) -> DetectorCapabilities {
         DetectorCapabilities {
             afk_detection_supported: self.platform.supports_idle_detection(),
+            foreground_process_detection_supported: self
+                .platform
+                .supports_foreground_process_detection(),
         }
     }
 }
@@ -72,6 +90,8 @@ mod tests {
         fullscreen: bool,
         idle_duration: Option<Duration>,
         supports_idle_detection: bool,
+        foreground_process: Option<String>,
+        supports_foreground_process: bool,
     }
 
     impl PlatformApi for MockPlatform {
@@ -86,6 +106,14 @@ mod tests {
         fn supports_idle_detection(&self) -> bool {
             self.supports_idle_detection
         }
+
+        fn get_foreground_process_name(&self) -> Option<String> {
+            self.foreground_process.clone()
+        }
+
+        fn supports_foreground_process_detection(&self) -> bool {
+            self.supports_foreground_process
+        }
     }
 
     impl MockPlatform {
@@ -94,6 +122,8 @@ mod tests {
                 fullscreen,
                 idle_duration: None,
                 supports_idle_detection: false,
+                foreground_process: None,
+                supports_foreground_process: false,
             }
         }
     }
@@ -136,6 +166,8 @@ mod tests {
             fullscreen: false,
             idle_duration: Some(Duration::from_mins(5)),
             supports_idle_detection: true,
+            foreground_process: None,
+            supports_foreground_process: false,
         }));
 
         assert!(detector.is_afk_for_threshold(5));
@@ -147,8 +179,67 @@ mod tests {
             fullscreen: false,
             idle_duration: None,
             supports_idle_detection: true,
+            foreground_process: None,
+            supports_foreground_process: true,
         }));
 
-        assert!(detector.capabilities().afk_detection_supported);
+        let caps = detector.capabilities();
+        assert!(caps.afk_detection_supported);
+        assert!(caps.foreground_process_detection_supported);
+    }
+
+    #[test]
+    fn empty_whitelist_returns_false() {
+        let detector = DetectorService::new(Box::new(MockPlatform {
+            fullscreen: false,
+            idle_duration: None,
+            supports_idle_detection: false,
+            foreground_process: Some("code.exe".to_string()),
+            supports_foreground_process: true,
+        }));
+
+        assert!(!detector.is_foreground_in_whitelist(&[]));
+    }
+
+    #[test]
+    fn whitelist_match_returns_true() {
+        let detector = DetectorService::new(Box::new(MockPlatform {
+            fullscreen: false,
+            idle_duration: None,
+            supports_idle_detection: false,
+            foreground_process: Some("code.exe".to_string()),
+            supports_foreground_process: true,
+        }));
+
+        let list = vec!["chrome.exe".to_string(), "code.exe".to_string()];
+        assert!(detector.is_foreground_in_whitelist(&list));
+    }
+
+    #[test]
+    fn whitelist_miss_returns_false() {
+        let detector = DetectorService::new(Box::new(MockPlatform {
+            fullscreen: false,
+            idle_duration: None,
+            supports_idle_detection: false,
+            foreground_process: Some("notepad.exe".to_string()),
+            supports_foreground_process: true,
+        }));
+
+        let list = vec!["chrome.exe".to_string(), "code.exe".to_string()];
+        assert!(!detector.is_foreground_in_whitelist(&list));
+    }
+
+    #[test]
+    fn whitelist_returns_false_when_platform_returns_none() {
+        let detector = DetectorService::new(Box::new(MockPlatform {
+            fullscreen: false,
+            idle_duration: None,
+            supports_idle_detection: false,
+            foreground_process: None,
+            supports_foreground_process: false,
+        }));
+
+        let list = vec!["code.exe".to_string()];
+        assert!(!detector.is_foreground_in_whitelist(&list));
     }
 }
