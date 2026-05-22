@@ -1,0 +1,3 @@
+{"file": "docs/workflows/release.md", "reason": "Authoritative release SOP — branch cut, bump-version, CHANGELOG fill, PR, tag steps"}
+{"file": "docs/workflows/pr.md", "reason": "PR template and squash merge expectations"}
+{"file": "CHANGELOG.md", "reason": "Existing entry style reference (categories, emoji, line format)"}
