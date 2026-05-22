@@ -1,0 +1,3 @@
+{"file": ".trellis/spec/architecture/testing-quality.md", "reason": "Pre-commit checklist (fmt + clippy + test + svelte-check + build) — verifies all required local gates are green before commit"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Verify no listener leaks, no race against disposed component, cleanup function order matches Svelte 5 contract"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Verify component contract preserved: chartEl bind, loading/errorMessage state, range tab semantics unchanged"}

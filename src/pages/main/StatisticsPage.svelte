@@ -1,23 +1,10 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import * as echarts from 'echarts/core';
-  import { BarChart, LineChart } from 'echarts/charts';
-  import { GridComponent, LegendComponent, TooltipComponent } from 'echarts/components';
-  import { CanvasRenderer } from 'echarts/renderers';
   import type { ECharts, EChartsOption } from 'echarts';
   import type { StatBucket } from '$lib/bindings/StatBucket';
   import type { StatisticsTrendPayload } from '$lib/bindings/StatisticsTrendPayload';
   import { getStatisticsTrends } from '$lib/commands';
   import { i18nStore } from '$lib/i18n/index.svelte';
-
-  echarts.use([
-    BarChart,
-    LineChart,
-    GridComponent,
-    LegendComponent,
-    TooltipComponent,
-    CanvasRenderer,
-  ]);
 
   type TrendRange = 'daily' | 'weekly' | 'monthly';
 
@@ -37,13 +24,41 @@
   const totalMinutes = $derived(stats ? Math.round(stats.total_rest_secs / 60) : 0);
 
   onMount(() => {
-    chart = echarts.init(chartEl);
-    const resize = () => chart?.resize();
-    window.addEventListener('resize', resize);
-    loadStatistics();
+    let disposed = false;
+    let resize: (() => void) | null = null;
+
+    (async () => {
+      const [core, charts, components, renderers] = await Promise.all([
+        import('echarts/core'),
+        import('echarts/charts'),
+        import('echarts/components'),
+        import('echarts/renderers'),
+      ]);
+      if (disposed) return;
+
+      core.use([
+        charts.BarChart,
+        charts.LineChart,
+        components.GridComponent,
+        components.LegendComponent,
+        components.TooltipComponent,
+        renderers.CanvasRenderer,
+      ]);
+      chart = core.init(chartEl);
+      resize = () => chart?.resize();
+      window.addEventListener('resize', resize);
+      await loadStatistics();
+    })().catch((err) => {
+      console.error('Failed to initialize echarts:', err);
+      if (!disposed) {
+        errorMessage = i18nStore.t('statistics.error');
+        loading = false;
+      }
+    });
 
     return () => {
-      window.removeEventListener('resize', resize);
+      disposed = true;
+      if (resize) window.removeEventListener('resize', resize);
       chart?.dispose();
       chart = null;
     };
