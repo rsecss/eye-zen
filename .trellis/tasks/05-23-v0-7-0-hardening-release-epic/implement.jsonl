@@ -1,0 +1,8 @@
+{"file": "docs/.local/v1.0.0-audit-report.md", "reason": "epic source — 29 findings, P0+P1 are the AC; section 3.2 maps to branch plan"}
+{"file": ".trellis/spec/architecture/testing-quality.md", "reason": "testing standards — coverage gate must align with this spec"}
+{"file": ".trellis/spec/architecture/change-management.md", "reason": "PR + variant checklist for cross-layer changes (defensive-code refactor)"}
+{"file": ".trellis/spec/backend/coding-standards.md", "reason": "Rust error/lock/async patterns — reference when removing defensive code in services"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "frontend quality — IPC edge tests + entry-page tests must follow this"}
+{"file": "CLAUDE.md", "reason": "global rules; especially 'Writing code — minimum sufficient' (no fallbacks for impossible cases) and Stop signals"}
+{"file": "docs/workflows/release.md", "reason": "release pipeline — coverage gate addition must update this doc"}
+{"file": "docs/workflows/dev.md", "reason": "dev workflow — coverage gate touches local CI script"}
