@@ -9,8 +9,10 @@ pub(crate) mod stat;
 pub(crate) mod timer;
 #[cfg(not(test))]
 pub(crate) mod tray;
+pub(crate) mod tray_tooltip;
 #[cfg(not(test))]
 pub(crate) mod window;
+pub(crate) mod window_layout;
 
 #[cfg(not(test))]
 use std::sync::Arc;

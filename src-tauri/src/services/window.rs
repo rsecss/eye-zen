@@ -32,28 +32,23 @@ impl WindowService {
         }
 
         let primary = app.primary_monitor().ok().flatten();
+        let primary_name: Option<super::window_layout::MonitorName<'_>> =
+            primary.as_ref().map(|m| m.name().map(String::as_str));
 
         for (index, monitor) in monitors.iter().enumerate() {
-            let is_primary = primary.as_ref().map_or(index == 0, |primary_monitor| {
-                primary_monitor.name() == monitor.name()
-            });
+            let monitor_name: super::window_layout::MonitorName<'_> =
+                monitor.name().map(String::as_str);
+            let is_primary =
+                super::window_layout::is_primary_monitor(index, monitor_name, primary_name);
 
-            let label = if is_primary {
-                "tip-window-0".to_string()
-            } else {
-                format!("tip-window-minimal-{index}")
-            };
+            let label = super::window_layout::tip_window_label(index, is_primary);
 
             if app.get_webview_window(&label).is_some() {
                 info!("window {label} already exists, skipping creation");
                 continue;
             }
 
-            let url = if is_primary {
-                "tip.html"
-            } else {
-                "tip-minimal.html"
-            };
+            let url = super::window_layout::tip_window_url(is_primary);
 
             let position = monitor.position();
             let size = monitor.size();
@@ -90,7 +85,7 @@ impl WindowService {
         let labels_to_close: Vec<String> = app
             .webview_windows()
             .keys()
-            .filter(|label| label.starts_with("tip-window"))
+            .filter(|label| super::window_layout::is_tip_window_label(label))
             .cloned()
             .collect();
 
