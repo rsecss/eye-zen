@@ -57,7 +57,10 @@ impl TimerService {
 
         let app = self.app.lock().await.clone();
         for effect in &effects {
-            effect_executor::execute_effect(app.as_ref(), effect);
+            effect_executor::execute_effect(
+                app.as_ref().map(|c| c as &dyn super::EffectSink),
+                effect,
+            );
         }
 
         effects
@@ -85,7 +88,10 @@ impl TimerService {
 
         let app = self.app.lock().await.clone();
         for effect in &effects {
-            effect_executor::execute_effect(app.as_ref(), effect);
+            effect_executor::execute_effect(
+                app.as_ref().map(|c| c as &dyn super::EffectSink),
+                effect,
+            );
         }
 
         Ok(())

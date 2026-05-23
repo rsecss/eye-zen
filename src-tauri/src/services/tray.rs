@@ -286,11 +286,7 @@ impl TrayService {
         tooltip.state = state;
         Self::store_tooltip(&self.current_tooltip, tooltip);
 
-        let text = if is_paused {
-            self.i18n.get("tray.resume")
-        } else {
-            self.i18n.get("tray.pause")
-        };
+        let text = super::tray_tooltip::pause_menu_text(&self.i18n, is_paused);
 
         let items = Self::menu_items_snapshot(&self.menu_items);
         if let Some(item) = items.pause {
@@ -340,36 +336,11 @@ impl TrayService {
     }
 
     fn render_tooltip_text(&self, tooltip: TrayTooltip) -> String {
-        Self::render_tooltip(&self.i18n, tooltip)
+        super::tray_tooltip::render_tooltip(&self.i18n, tooltip)
     }
 
     fn render_tooltip(i18n: &I18nService, tooltip: TrayTooltip) -> String {
-        let app_name = i18n.get("tray.tooltip.app_name");
-        let label = match tooltip.state {
-            TimerState::Working => i18n.get("tray.tooltip.working"),
-            TimerState::PreAlert => i18n.get("tray.tooltip.pre_alert"),
-            TimerState::Alerting => i18n.get("tray.tooltip.alerting"),
-            TimerState::Resting => i18n.get("tray.tooltip.resting"),
-            TimerState::Paused => i18n.get("tray.tooltip.paused"),
-        };
-
-        let pomodoro_suffix = tooltip.pomodoro_progress.map_or(String::new(), |progress| {
-            format!(" (Pomo {}/{})", progress.current, progress.total)
-        });
-
-        match tooltip.remaining_secs {
-            Some(remaining_secs) => format!(
-                "{app_name} - {label} {}{pomodoro_suffix}",
-                Self::format_remaining(remaining_secs)
-            ),
-            None => format!("{app_name} - {label}{pomodoro_suffix}"),
-        }
-    }
-
-    fn format_remaining(total_secs: u32) -> String {
-        let minutes = total_secs / 60;
-        let seconds = total_secs % 60;
-        format!("{minutes:02}:{seconds:02}")
+        super::tray_tooltip::render_tooltip(i18n, tooltip)
     }
 
     fn apply_tooltip(app: &AppHandle, i18n: &I18nService, tooltip: TrayTooltip) {
@@ -384,11 +355,7 @@ impl TrayService {
         let items = Self::menu_items_snapshot(menu_items);
 
         if let Some(item) = items.pause {
-            let text = if is_paused {
-                i18n.get("tray.resume")
-            } else {
-                i18n.get("tray.pause")
-            };
+            let text = super::tray_tooltip::pause_menu_text(i18n, is_paused);
             if let Err(err) = item.set_text(text) {
                 warn!("failed to update pause item text: {err}");
             }
