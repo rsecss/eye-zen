@@ -45,6 +45,14 @@ export default defineConfig(async () => ({
   test: {
     environment: 'jsdom',
     setupFiles: ['./src/test-setup.ts'],
+    exclude: [
+      '**/node_modules/**',
+      '**/dist/**',
+      // Worktree copies under .claude/worktrees/** are duplicates of the
+      // current source tree; vitest's repo-wide *.test.ts glob would otherwise
+      // double-count them and slow CI.
+      '.claude/worktrees/**',
+    ],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html', 'lcov', 'json-summary'],
@@ -59,10 +67,10 @@ export default defineConfig(async () => ({
         'src/entries/**',
       ],
       thresholds: {
-        lines: 80,
-        functions: 70,
-        branches: 70,
-        statements: 80,
+        lines: 90,
+        functions: 85,
+        branches: 80,
+        statements: 90,
       },
     },
   },

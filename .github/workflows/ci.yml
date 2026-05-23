@@ -98,11 +98,19 @@ jobs:
         run: cargo test --manifest-path src-tauri/Cargo.toml
 
   # Backend coverage gate. Linux-only because cargo-llvm-cov produces consistent
-  # numbers on a single platform; local baseline on 2026-05-23 was 83.79% lines.
-  # Threshold set at 80% — raise as coverage improves; do not lower without ADR.
+  # numbers on a single platform. Thresholds are 90% lines / 85% functions —
+  # raise as coverage improves; do not lower without an ADR. Files excluded
+  # from the count are thin OS/IPC shims that cannot be unit-tested:
+  #   - platform/{windows,macos,linux}.rs : OS API thin wrappers
+  #   - services/sound.rs                 : rodio audio-device wrapper
+  #   - logging.rs / main.rs              : startup-only entry shims
+  #   - commands/mod.rs                   : Tauri IPC command wrappers
+  #     (#[cfg(not(test))]). Helper validate_* functions inside it ARE
+  #     fully covered by unit tests; the file is excluded only because the
+  #     IPC surface dominates the line count and pollutes the threshold.
   cargo-coverage:
     runs-on: ubuntu-22.04
-    name: Rust coverage (>=80% lines)
+    name: Rust coverage (>=90% lines, >=85% functions)
     steps:
       - uses: actions/checkout@v4
 
@@ -128,4 +136,9 @@ jobs:
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libasound2-dev
 
       - name: cargo llvm-cov
-        run: cargo llvm-cov --manifest-path src-tauri/Cargo.toml --fail-under-lines 80 --summary-only
+        run: |
+          cargo llvm-cov --manifest-path src-tauri/Cargo.toml \
+            --ignore-filename-regex 'platform/(windows|macos|linux)\.rs|services/sound\.rs|logging\.rs|main\.rs|commands/mod\.rs' \
+            --fail-under-lines 90 \
+            --fail-under-functions 85 \
+            --summary-only
