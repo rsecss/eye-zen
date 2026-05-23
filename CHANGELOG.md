@@ -19,6 +19,16 @@ Each version body uses the following categories (see
 Line format: `- imperative-lowercase description (#NN) (sha7)`. PR number is
 omitted when the change predates the pull-request workflow.
 
+## [0.6.0] - 2026-05-23
+
+### 🎉 Features
+
+- health-analysis with eye-care index, adherence breakdown, and rhythm tracking (#23) (457c204)
+
+### 🛠️ Fixes
+
+- bump-version stub placement and Windows sound test flake (#22) (0980f9d)
+
 ## [0.5.0] - 2026-05-23
 
 ### 🎉 Features
