@@ -34,13 +34,13 @@ GitHub Actions adds two extra jobs beyond `npm run ci`:
 
 ## Coverage gate
 
-The frontend coverage threshold lives in `vitest.config.ts` under
+The frontend coverage threshold lives in `vite.config.ts` under
 `test.coverage.thresholds` and is currently:
 
-- lines: 80%
-- functions: 70%
-- branches: 70%
-- statements: 80%
+- lines: 90%
+- functions: 85%
+- branches: 80%
+- statements: 90%
 
 `npm run test:ci` (step 6 of `npm run ci`) enforces this — any PR that drops
 overall coverage below the threshold fails locally and in CI.
@@ -55,11 +55,14 @@ open coverage/index.html # browse uncovered lines per file
 The threshold MUST NOT be lowered without an explicit ADR. New features that
 add untested code SHOULD be paired with the corresponding tests in the same
 PR. Files that genuinely cannot be unit-tested (e.g. thin Tauri-API bootstrap
-shims) belong in `vitest.config.ts`'s `coverage.exclude` array with a code
+shims) belong in `vite.config.ts`'s `coverage.exclude` array with a code
 comment justifying the exclusion.
 
 The backend coverage threshold is enforced in CI via
-`cargo llvm-cov --fail-under-lines 80`. Run it locally with:
+`cargo llvm-cov --fail-under-lines 90 --fail-under-functions 85`. Thin OS/IPC
+shim files are excluded from the count via `--ignore-filename-regex`; see
+`.github/workflows/ci.yml`'s `cargo-coverage` job for the exact regex and
+rationale. Run it locally with:
 
 ```bash
 cargo install cargo-llvm-cov --locked

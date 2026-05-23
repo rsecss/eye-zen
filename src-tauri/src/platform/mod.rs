@@ -68,3 +68,30 @@ pub(crate) fn create_platform() -> Box<dyn PlatformApi> {
         compile_error!("unsupported platform");
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::normalize_process_name;
+
+    #[test]
+    fn trims_and_lowercases() {
+        assert_eq!(
+            normalize_process_name("  Chrome.exe  "),
+            Some("chrome.exe".into())
+        );
+    }
+
+    #[test]
+    fn returns_none_for_empty_after_trim() {
+        assert_eq!(normalize_process_name(""), None);
+        assert_eq!(normalize_process_name("   "), None);
+    }
+
+    #[test]
+    fn preserves_inner_characters() {
+        assert_eq!(
+            normalize_process_name("MyApp-Beta.exe"),
+            Some("myapp-beta.exe".into())
+        );
+    }
+}

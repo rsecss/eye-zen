@@ -2,6 +2,7 @@ dist/
 build/
 out/
 node_modules/
+target/
 src-tauri/target/
 src-tauri/gen/
 package-lock.json

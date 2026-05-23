@@ -43,8 +43,8 @@ P0 + P1 共 14 项，分 9 个独立 PR 推进。所有改动落在 `main` 上�
 |---|--------|---------|
 | AC-01 | `npm audit --production` 无 high 漏洞 | 跑 `npm audit --production` 退出码 0 + 无 high |
 | AC-02 | `cargo deny check` CI 全绿（保持） | CI 看 audit job 5 次连绿 |
-| AC-03 | 前端覆盖率行 ≥80%、函数 ≥70% | `vitest --coverage` 报告 + ci.mjs 内置阈值断言 |
-| AC-04 | 后端覆盖率行 ≥80%（启用 cargo-llvm-cov 或 tarpaulin） | `cargo llvm-cov --fail-under-lines 80` 退出码 0 |
+| AC-03 | 前端覆盖率行 ≥90%、函数 ≥85% | `vitest --coverage` 报告 + ci.mjs 内置阈值断言 |
+| AC-04 | 后端覆盖率行 ≥90%、函数 ≥85%（启用 cargo-llvm-cov） | `cargo llvm-cov --fail-under-lines 90 --fail-under-functions 85` 退出码 0 |
 | AC-05 | `cargo test --no-default-features` 加入 CI matrix 且绿 | `.github/workflows/ci.yml` 新增 job |
 | AC-06 | 代码库内 `let _ = ` / `catch (_)` / `unwrap_or` 兜底数值 / `// future phases` 数量为 0（或加白名单审批） | `grep -RE` 输出比对 + PR review |
 | AC-07 | macOS fullscreen：实测可用 OR UI 禁用 + capability 反馈 false | manual verify on macOS + 单测验证 capability 与实际行为一致 |
@@ -153,7 +153,6 @@ P0 + P1 共 14 项，分 9 个独立 PR 推进。所有改动落在 `main` 上�
 ### v0.7.x follow-up（不在本 epic 内）
 
 - macOS fullscreen 真实现（待 mac 设备/CI runner 就位）
-- 覆盖率 80% → 90%（用户硬指标，留 v0.7.x 推进）
 - 大文件拆分（F17, F18）
 - 性能 P2 项（F15, F16）
 - 文档漂移修复（F25）
