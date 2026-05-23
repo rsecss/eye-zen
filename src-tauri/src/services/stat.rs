@@ -548,41 +548,53 @@ async fn migrate(pool: &SqlitePool) -> Result<()> {
         .await?;
 
     if version < 1 {
-        sqlx::query(
-            r"
-            CREATE TABLE IF NOT EXISTS activity_segments (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                state TEXT NOT NULL,
-                started_at TEXT NOT NULL,
-                ended_at TEXT NOT NULL,
-                duration_secs INTEGER NOT NULL,
-                date TEXT NOT NULL
-            )
-            ",
-        )
-        .execute(pool)
-        .await?;
-
-        sqlx::query(
-            "CREATE INDEX IF NOT EXISTS idx_activity_segments_date ON activity_segments(date)",
-        )
-        .execute(pool)
-        .await?;
-        sqlx::query(
-            r"
-            CREATE INDEX IF NOT EXISTS idx_activity_segments_state_started_at
-            ON activity_segments(state, started_at)
-            ",
-        )
-        .execute(pool)
-        .await?;
-        sqlx::query("PRAGMA user_version = 1").execute(pool).await?;
+        migrate_initial_to_v1(pool).await?;
     }
 
     if version < 2 {
         migrate_v1_to_v2(pool).await?;
     }
 
+    Ok(())
+}
+
+/// Initial schema creation (v0 -> v1). Wrapped in a single transaction so a
+/// partial failure (process crash mid-step, disk error) rolls back cleanly
+/// and the next launch retries from `user_version = 0`.
+async fn migrate_initial_to_v1(pool: &SqlitePool) -> Result<()> {
+    let mut tx = pool.begin().await?;
+
+    sqlx::query(
+        r"
+        CREATE TABLE activity_segments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            state TEXT NOT NULL,
+            started_at TEXT NOT NULL,
+            ended_at TEXT NOT NULL,
+            duration_secs INTEGER NOT NULL,
+            date TEXT NOT NULL
+        )
+        ",
+    )
+    .execute(&mut *tx)
+    .await?;
+
+    sqlx::query("CREATE INDEX idx_activity_segments_date ON activity_segments(date)")
+        .execute(&mut *tx)
+        .await?;
+    sqlx::query(
+        r"
+        CREATE INDEX idx_activity_segments_state_started_at
+        ON activity_segments(state, started_at)
+        ",
+    )
+    .execute(&mut *tx)
+    .await?;
+    sqlx::query("PRAGMA user_version = 1")
+        .execute(&mut *tx)
+        .await?;
+
+    tx.commit().await?;
     Ok(())
 }
 
@@ -593,7 +605,11 @@ async fn migrate(pool: &SqlitePool) -> Result<()> {
 /// `PRAGMA user_version = 1`. The next launch retries from a clean slate.
 ///
 /// Steps:
-/// - Create `rest_cycle_events` and its two indexes.
+/// - Create `rest_cycle_events` and its two indexes. `IF NOT EXISTS` here is
+///   intentional: a user-restored snapshot can carry a v1 `user_version` yet
+///   already contain a partially populated `rest_cycle_events` table; we
+///   want the migration to converge instead of failing with "table already
+///   exists" and leaving the user stranded at v1.
 /// - Backfill `state = 'resting'` rows from `activity_segments` as
 ///   `outcome = 'taken'` cycles (mode = NULL because legacy rows predate
 ///   the per-cycle mode snapshot). Guarded by a `WHERE NOT EXISTS` clause

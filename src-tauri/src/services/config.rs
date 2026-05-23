@@ -162,6 +162,9 @@ impl ConfigService {
             self.save(&config)?;
             let config = Arc::new(config);
             self.config.store(Arc::clone(&config));
+            // watch::Sender::send only errors when every Receiver has been
+            // dropped. At runtime that means every consumer service has shut
+            // down, so a config update has no audience anyway — safe to drop.
             let _ = self.tx.send(Arc::clone(&config));
             config
         };

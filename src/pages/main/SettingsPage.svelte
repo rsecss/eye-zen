@@ -61,6 +61,7 @@
 
   let hotkeyStatus = $state<HotkeyStatus | null>(null);
   let hotkeySaveError = $state<string | null>(null);
+  let autoStartError = $state<string | null>(null);
 
   function handleTimerChange(field: keyof TimerConfig, value: number) {
     const updated: TimerConfig = { ...cfg.timer, [field]: value };
@@ -82,6 +83,7 @@
 
   async function handleBehaviorChange(field: BooleanBehaviorField, value: boolean) {
     if (field === 'auto_start') {
+      autoStartError = null;
       try {
         if (value) {
           await enable();
@@ -96,15 +98,22 @@
         const updated: BehaviorConfig = { ...cfg.behavior, auto_start: value };
         await updateBehaviorConfig(updated);
       } catch (err) {
-        console.error('Failed to save autostart config, rolling back:', err);
+        // OS-level autostart toggle succeeded but config save failed; attempt
+        // to revert the OS state so it matches the saved config. If that
+        // revert also fails, surface the drift to the user via the autoStart
+        // banner so they know to retry instead of silently swallowing it.
+        console.error('Failed to save autostart config, attempting OS-level revert:', err);
         try {
           if (value) {
             await disable();
           } else {
             await enable();
           }
-        } catch (_) {
-          /* best-effort rollback */
+        } catch (revertErr) {
+          console.error('Failed to revert autostart after save failure:', revertErr);
+          autoStartError = i18nStore
+            .t('settings.behavior.autoStart.error.save')
+            .replace('{reason}', errorMessage(err));
         }
       }
       return;
@@ -675,6 +684,10 @@
         onchange={(v) => handleBehaviorChange('auto_start', v)}
       />
     </div>
+
+    {#if autoStartError}
+      <div class="setting-error" role="alert">{autoStartError}</div>
+    {/if}
   </SettingsCard>
 
   <SettingsCard title={i18nStore.t('settings.whitelist.title')}>
@@ -833,6 +846,17 @@
     border-top: 1px solid var(--separator, #f0f3f1);
     padding-top: 12px;
     margin-top: 8px;
+  }
+
+  .setting-error {
+    margin-top: 8px;
+    padding: 8px 10px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--state-alert);
+    background: color-mix(in srgb, var(--state-alert) 10%, transparent);
+    color: var(--state-alert-label);
+    font-size: 12px;
+    line-height: 1.45;
   }
 
   .hotkey-help {

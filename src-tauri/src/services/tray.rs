@@ -455,18 +455,28 @@ impl TrayService {
     }
 
     fn show_main_window(app: &AppHandle, tab: &str) {
-        if let Some(window) = app.get_webview_window("main-window") {
-            let _ = window.emit("navigate_tab", tab);
-            let _ = window.unminimize();
-            if let Err(err) = window.show() {
-                warn!("failed to show main window: {err}");
-                return;
-            }
-            if let Err(err) = window.set_focus() {
-                warn!("failed to focus main window: {err}");
-            }
-        } else {
+        let Some(window) = app.get_webview_window("main-window") else {
             warn!("main-window not found");
+            return;
+        };
+
+        // User just clicked a tray menu item that expects navigation; emit the
+        // tab and surface every step's failure (was previously a chain of
+        // silent `let _ = ...`). `unminimize` is allowed to fail when the
+        // window is already restored — that path returns Ok and is handled
+        // below; only true OS errors are logged.
+        if let Err(err) = window.emit("navigate_tab", tab) {
+            warn!("failed to emit navigate_tab for '{tab}': {err}");
+        }
+        if let Err(err) = window.unminimize() {
+            warn!("failed to unminimize main window: {err}");
+        }
+        if let Err(err) = window.show() {
+            warn!("failed to show main window: {err}");
+            return;
+        }
+        if let Err(err) = window.set_focus() {
+            warn!("failed to focus main window: {err}");
         }
     }
 

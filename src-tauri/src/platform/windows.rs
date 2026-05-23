@@ -181,7 +181,13 @@ fn detect_foreground_process_name() -> Result<Option<String>, String> {
         let pwstr = PWSTR::from_raw(buf.as_mut_ptr());
 
         let result = QueryFullProcessImageNameW(handle, PROCESS_NAME_WIN32, pwstr, &raw mut len);
-        let _ = CloseHandle(handle);
+        // CloseHandle releases the kernel reference returned by OpenProcess.
+        // Logging a failure is the only sensible action; we cannot retry an
+        // opaque handle, and the upstream query result is what callers care
+        // about. Suppressing the must-use warning here is intentional.
+        if let Err(err) = CloseHandle(handle) {
+            warn!("CloseHandle failed: {err}");
+        }
 
         if let Err(error) = result {
             return Err(format!("QueryFullProcessImageNameW: {error}"));
