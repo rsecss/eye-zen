@@ -1,0 +1,2 @@
+{"file": "docs/workflows/release.md", "reason": "Confirm CHANGELOG header structure expected by release SOP"}
+{"file": "CHANGELOG.md", "reason": "Current layout reference (description block + version sections order)"}

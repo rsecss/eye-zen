@@ -211,7 +211,10 @@ impl Drop for SoundService {
     }
 }
 
-#[cfg(test)]
+// Skipped on Windows: rodio's OutputStream init occasionally faults with
+// STATUS_ACCESS_VIOLATION on headless GitHub Actions runners that have no
+// audio device. Linux/macOS runners cover the same code paths.
+#[cfg(all(test, not(target_os = "windows")))]
 mod tests {
     use super::*;
 

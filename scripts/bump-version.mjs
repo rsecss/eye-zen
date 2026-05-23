@@ -83,14 +83,26 @@ function prependChangelogSection(relPath) {
     return;
   }
   const today = new Date().toISOString().slice(0, 10);
+  const stub = `## [${version}] - ${today}\n\n### Added\n\n- TODO\n\n### Changed\n\n- TODO\n\n### Fixed\n\n- TODO\n\n`;
+
+  // Anchor on the first existing version heading so the stub lands after the
+  // header's description block (categories table + line-format guidance).
+  const firstHeading = text.match(/^## \[\d/m);
+  if (firstHeading) {
+    const insertAt = firstHeading.index;
+    writeFileSync(abs, `${text.slice(0, insertAt)}${stub}${text.slice(insertAt)}`);
+    console.log(`  prepended ## [${version}] section to ${relPath}`);
+    return;
+  }
+
+  // Greenfield CHANGELOG: fall back to inserting after the header marker.
   const marker = '\nand this project adheres to [Semantic Versioning](https://semver.org/).\n';
   const idx = text.indexOf(marker);
   if (idx === -1) {
     throw new Error('CHANGELOG header not found; insert section manually');
   }
   const insertAt = idx + marker.length;
-  const stub = `\n## [${version}] - ${today}\n\n### Added\n\n- TODO\n\n### Changed\n\n- TODO\n\n### Fixed\n\n- TODO\n`;
-  writeFileSync(abs, `${text.slice(0, insertAt)}${stub}${text.slice(insertAt)}`);
+  writeFileSync(abs, `${text.slice(0, insertAt)}\n${stub}${text.slice(insertAt)}`);
   console.log(`  prepended ## [${version}] section to ${relPath}`);
 }
 
