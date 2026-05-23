@@ -38,6 +38,7 @@ describe('SettingsPage AFK controls', () => {
     vi.mocked(getDetectorCapabilities).mockResolvedValue({
       afk_detection_supported: false,
       foreground_process_detection_supported: false,
+      fullscreen_detection_supported: false,
     });
 
     render(SettingsPage);
@@ -53,6 +54,7 @@ describe('SettingsPage AFK controls', () => {
     vi.mocked(getDetectorCapabilities).mockResolvedValue({
       afk_detection_supported: true,
       foreground_process_detection_supported: true,
+      fullscreen_detection_supported: true,
     });
 
     render(SettingsPage);
@@ -80,6 +82,7 @@ describe('SettingsPage process whitelist', () => {
     vi.mocked(getDetectorCapabilities).mockResolvedValue({
       afk_detection_supported: true,
       foreground_process_detection_supported: false,
+      fullscreen_detection_supported: true,
     });
 
     render(SettingsPage);
@@ -94,6 +97,7 @@ describe('SettingsPage process whitelist', () => {
     vi.mocked(getDetectorCapabilities).mockResolvedValue({
       afk_detection_supported: true,
       foreground_process_detection_supported: true,
+      fullscreen_detection_supported: true,
     });
 
     render(SettingsPage);
@@ -101,5 +105,42 @@ describe('SettingsPage process whitelist', () => {
     await waitFor(() => expect(getDetectorCapabilities).toHaveBeenCalledOnce());
 
     expect(screen.getByText('暂无白名单进程')).toBeInTheDocument();
+  });
+});
+
+describe('SettingsPage fullscreen detection', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(updateBehaviorConfig).mockResolvedValue(undefined);
+  });
+
+  it('disables the fullscreen skip toggle when capability is unavailable', async () => {
+    vi.mocked(getDetectorCapabilities).mockResolvedValue({
+      afk_detection_supported: true,
+      foreground_process_detection_supported: true,
+      fullscreen_detection_supported: false,
+    });
+
+    render(SettingsPage);
+
+    await waitFor(() => expect(getDetectorCapabilities).toHaveBeenCalledOnce());
+
+    expect(screen.getByLabelText('全屏跳过')).toBeDisabled();
+    expect(screen.getByText('当前平台暂不支持全屏检测，将于 v0.7.x 版本提供')).toBeInTheDocument();
+  });
+
+  it('keeps the fullscreen skip toggle enabled when capability is available', async () => {
+    vi.mocked(getDetectorCapabilities).mockResolvedValue({
+      afk_detection_supported: true,
+      foreground_process_detection_supported: true,
+      fullscreen_detection_supported: true,
+    });
+
+    render(SettingsPage);
+
+    await waitFor(() => expect(getDetectorCapabilities).toHaveBeenCalledOnce());
+
+    expect(screen.getByLabelText('全屏跳过')).not.toBeDisabled();
+    expect(screen.getByText('全屏应用时跳过提醒')).toBeInTheDocument();
   });
 });

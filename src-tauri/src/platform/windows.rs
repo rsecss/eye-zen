@@ -60,6 +60,10 @@ impl PlatformApi for WindowsPlatform {
         true
     }
 
+    fn supports_fullscreen_detection(&self) -> bool {
+        true
+    }
+
     fn get_foreground_process_name(&self) -> Option<String> {
         match detect_foreground_process_name() {
             Ok(name) => name.as_deref().and_then(normalize_process_name),

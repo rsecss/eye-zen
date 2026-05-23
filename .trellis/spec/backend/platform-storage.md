@@ -17,14 +17,10 @@ pub(crate) trait PlatformApi: Send + Sync {
     fn is_fullscreen_app_active(&self) -> bool; // MVP 已实现
     fn idle_duration(&self) -> Option<Duration>; // AFK 跳过
     fn supports_idle_detection(&self) -> bool;   // Settings 能力灰显
+    fn supports_fullscreen_detection(&self) -> bool; // Settings 全屏跳过灰显
+    fn get_foreground_process_name(&self) -> Option<String>;  // P2 进程白名单
+    fn supports_foreground_process_detection(&self) -> bool;  // Settings 白名单灰显
 }
-```
-
-P2 / P3 计划扩展（尚未实现，新增时 MUST 同步本文档）：
-
-```rust
-fn get_system_audio_peak(&self) -> Option<f32>;           // P2 进程白名单
-fn get_foreground_process_name(&self) -> Option<String>;  // P2 进程白名单
 ```
 
 规则：
@@ -38,7 +34,7 @@ fn get_foreground_process_name(&self) -> Option<String>;  // P2 进程白名单
 
 | 能力 | Windows | macOS | Linux X11 | Linux Wayland |
 |------|---------|-------|-----------|---------------|
-| 全屏检测 | `GetForegroundWindow` + `MonitorFromWindow` | `CGWindowListCopyWindowInfo` | `_NET_WM_STATE_FULLSCREEN` | 降级: `false` |
+| 全屏检测 | `GetForegroundWindow` + `MonitorFromWindow` | 待实现（v0.7.x），capability=false，Settings 灰显 | `_NET_WM_STATE_FULLSCREEN` | 降级: `false`，Settings 灰显 |
 | AFK idle 时长 | `GetLastInputInfo` + `GetTickCount` | `CGEventSourceSecondsSinceLastEventType` | XScreenSaver `query_info.ms_since_user_input` | 降级: `None` + Settings 灰显 |
 | 系统音频峰值 (P2) | `IAudioMeterInformation` COM | 降级: 无公共 API | PulseAudio peak | PulseAudio peak |
 | 前台进程 (P2) | `GetWindowThreadProcessId` | `NSWorkspace` | `_NET_ACTIVE_WINDOW` + `/proc` | 降级: `None` |
@@ -50,7 +46,7 @@ fn get_foreground_process_name(&self) -> Option<String>;  // P2 进程白名单
 - 每个能力降级 MUST 只记录一次 `warn` 日志，MUST NOT 在每次调用都刷 warn
   - 实现范式：按能力拆分 `AtomicBool` 哨兵，见 `WindowsPlatform.fullscreen_warned` / `idle_warned`（`src-tauri/src/platform/windows.rs`）
 - 保守降级：宁可多提醒，不漏提醒。例：全屏检测失败 → 返回 `false`（让用户照常收到提示）
-- 设置 UI SHOULD 展示当前已降级的能力；AFK idle 不可用时 `get_detector_capabilities` MUST 返回 `afk_detection_supported = false`，Settings MUST 灰显 AFK 控件
+- 设置 UI SHOULD 展示当前已降级的能力；AFK idle 不可用时 `get_detector_capabilities` MUST 返回 `afk_detection_supported = false`，Settings MUST 灰显 AFK 控件；全屏检测不可用时（macOS / Linux Wayland）MUST 返回 `fullscreen_detection_supported = false`，Settings MUST 灰显"全屏跳过"开关
 - 平台错误 MUST 在 platform 层捕获，MUST NOT 跨层抛 `Result` 给 service 强制处理（service 拿到的是 `bool` / `Option`）
 
 ## 存储策略

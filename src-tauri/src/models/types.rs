@@ -37,6 +37,7 @@ pub struct PomodoroStatePayload {
 pub struct DetectorCapabilities {
     pub afk_detection_supported: bool,
     pub foreground_process_detection_supported: bool,
+    pub fullscreen_detection_supported: bool,
 }
 
 #[cfg(test)]
@@ -86,6 +87,7 @@ mod tests {
         let capabilities = DetectorCapabilities {
             afk_detection_supported: true,
             foreground_process_detection_supported: true,
+            fullscreen_detection_supported: true,
         };
 
         let json = serde_json::to_string(&capabilities).expect("capabilities should serialize");
