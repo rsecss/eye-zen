@@ -21,6 +21,7 @@
     "allow-get-config",
     "allow-get-hotkey-status",
     "allow-get-statistics-trends",
+    "allow-statistics-cycle-outcomes",
     "allow-export-statistics",
     "allow-get-detector-capabilities",
     "allow-update-timer-config",

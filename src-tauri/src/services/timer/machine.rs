@@ -3,7 +3,7 @@ use std::time::Instant;
 use chrono::Utc;
 
 use crate::models::config::TimerMode;
-use crate::models::statistics::RestSessionDraft;
+use crate::models::statistics::{CycleEventDraft, CycleOutcome, RestSessionDraft};
 use crate::models::types::{PomodoroStatePayload, StatePayload};
 
 use super::effect::{Effect, PomodoroProgress, SoundType, TrayTooltip, TrayUpdate};
@@ -140,10 +140,14 @@ pub(crate) fn apply_transition_and_collect_effects(
     now: Instant,
 ) -> Vec<Effect> {
     let rest_session = rest_session_from_transition(transition, inner, now);
+    let cycle_event = cycle_event_from_transition(transition, inner, now);
     inner.apply_transition_at(transition, now);
     let mut effects = collect_effects(transition, inner, now);
     if let Some(session) = rest_session {
         effects.push(Effect::RecordRestSession(session));
+    }
+    if let Some(event) = cycle_event {
+        effects.push(Effect::RecordCycleEvent(event));
     }
     effects
 }
@@ -238,11 +242,44 @@ fn rest_session_from_transition(
     })
 }
 
+/// Build a `taken` or `skipped` cycle event from a transition. Suppressed
+/// events (Working -> Working with skip flags) are emitted from the timer
+/// loop, not here, because the loop owns the flag-priority decision.
+///
+/// MUST be called before `inner.apply_transition_at` so the Pomodoro
+/// `is_long_break` snapshot reflects the rest cycle that just finished
+/// rather than the next one.
+fn cycle_event_from_transition(
+    transition: Transition,
+    inner: &Inner,
+    now: Instant,
+) -> Option<CycleEventDraft> {
+    let (outcome, duration_secs) = match (transition.from, transition.to) {
+        (TimerState::Resting, TimerState::Working) => (
+            CycleOutcome::Taken,
+            Some(duration_to_secs(Some(inner.elapsed(now)))),
+        ),
+        (TimerState::Alerting, TimerState::Working) => (CycleOutcome::Skipped, None),
+        _ => return None,
+    };
+
+    Some(CycleEventDraft {
+        occurred_at_utc: Utc::now(),
+        outcome,
+        reason: None,
+        process_hint: None,
+        duration_secs,
+        mode: inner.mode,
+        is_long_break: inner.mode == TimerMode::Pomodoro && inner.is_long_break,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use std::time::{Duration, Instant};
 
     use super::*;
+    use crate::models::statistics::CycleOutcome;
     use crate::services::timer::state::TimerState::{Alerting, Paused, PreAlert, Resting, Working};
 
     fn make_inner(state: TimerState) -> Inner {
@@ -668,6 +705,75 @@ mod tests {
                 ..
             })
         )));
+    }
+
+    #[test]
+    fn transition_resting_to_working_records_taken_cycle_event() {
+        let mut inner = make_inner(Resting);
+        let now = future_instant(21);
+        let effects = apply_transition_and_collect_effects(
+            &mut inner,
+            Transition {
+                from: Resting,
+                to: Working,
+            },
+            now,
+        );
+
+        let event = effects
+            .iter()
+            .find_map(|effect| match effect {
+                Effect::RecordCycleEvent(draft) => Some(draft.clone()),
+                _ => None,
+            })
+            .expect("cycle event should be emitted");
+        assert_eq!(event.outcome, CycleOutcome::Taken);
+        assert!(event.reason.is_none());
+        assert!(event.duration_secs.is_some());
+        assert!(!event.is_long_break);
+    }
+
+    #[test]
+    fn transition_alerting_to_working_records_skipped_cycle_event() {
+        let mut inner = make_inner(Alerting);
+        let effects = apply_transition_and_collect_effects(
+            &mut inner,
+            Transition {
+                from: Alerting,
+                to: Working,
+            },
+            Instant::now(),
+        );
+
+        let event = effects
+            .iter()
+            .find_map(|effect| match effect {
+                Effect::RecordCycleEvent(draft) => Some(draft.clone()),
+                _ => None,
+            })
+            .expect("skipped cycle event should be emitted");
+        assert_eq!(event.outcome, CycleOutcome::Skipped);
+        assert!(event.reason.is_none());
+        assert!(event.duration_secs.is_none());
+    }
+
+    #[test]
+    fn working_to_working_skip_does_not_record_cycle_event_from_machine() {
+        let mut inner = make_inner(Working);
+        let effects = apply_transition_and_collect_effects(
+            &mut inner,
+            Transition {
+                from: Working,
+                to: Working,
+            },
+            Instant::now(),
+        );
+
+        // Suppression events are emitted from the timer loop, not from the
+        // pure transition pipeline (the loop owns the flag-priority decision).
+        assert!(!effects
+            .iter()
+            .any(|effect| matches!(effect, Effect::RecordCycleEvent(_))));
     }
 
     #[test]

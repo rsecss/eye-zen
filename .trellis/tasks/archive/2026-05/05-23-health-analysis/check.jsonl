@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/architecture/testing-quality.md", "reason": "Test coverage and verification checklist before commit"}
+{"file": ".trellis/spec/architecture/change-management.md", "reason": "Cross-layer impact audit - migration, ts-rs, i18n keys"}
+{"file": ".trellis/spec/backend/coding-standards.md", "reason": "No panics, no lock contention, error propagation correct"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Component quality, no IPC race condition, store version guards"}

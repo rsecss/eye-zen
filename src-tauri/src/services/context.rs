@@ -11,7 +11,11 @@ use tracing::warn;
 #[cfg(not(test))]
 use crate::events;
 use crate::models::config::Config;
+#[cfg(not(test))]
+use crate::models::config::TimerMode;
 use crate::models::hotkeys::HotkeyStatus;
+#[cfg(not(test))]
+use crate::models::statistics::{CycleEventDraft, CycleOutcome, CycleReason};
 #[cfg(not(test))]
 use crate::services::schedule::is_schedule_active;
 
@@ -121,6 +125,15 @@ impl ServiceContext {
                     }
                 });
             }
+            Effect::RecordCycleEvent(draft) => {
+                let stat = services.stat.clone();
+                let draft = draft.clone();
+                tauri::async_runtime::spawn(async move {
+                    if let Err(err) = stat.record_cycle_event(draft).await {
+                        warn!("failed to record cycle event: {err}");
+                    }
+                });
+            }
         }
     }
 
@@ -151,15 +164,20 @@ impl ServiceContext {
                 }
 
                 let flags = current_skip_flags(&app);
-                let effects = {
+                let TimerLoopStep {
+                    mut effects,
+                    suppressed_skip,
+                    mode,
+                    is_long_break,
+                } = {
                     let mut guard = inner.lock().await;
                     let now = std::time::Instant::now();
 
                     match step_time(&guard, now, &flags) {
                         Some(transition) => {
-                            if transition.from == TimerState::Working
-                                && transition.to == TimerState::Working
-                            {
+                            let suppressed_skip = transition.from == TimerState::Working
+                                && transition.to == TimerState::Working;
+                            if suppressed_skip {
                                 if flags.afk_active {
                                     info!("skip: afk");
                                 }
@@ -167,11 +185,31 @@ impl ServiceContext {
                                     info!("skip: process whitelist");
                                 }
                             }
-                            apply_transition_and_collect_effects(&mut guard, transition, now)
+                            let mode = guard.mode;
+                            let is_long_break = guard.is_long_break;
+                            let collected =
+                                apply_transition_and_collect_effects(&mut guard, transition, now);
+                            TimerLoopStep {
+                                effects: collected,
+                                suppressed_skip,
+                                mode,
+                                is_long_break,
+                            }
                         }
-                        None => collect_tick_effects(&guard, now),
+                        None => TimerLoopStep {
+                            effects: collect_tick_effects(&guard, now),
+                            suppressed_skip: false,
+                            mode: guard.mode,
+                            is_long_break: guard.is_long_break,
+                        },
                     }
                 };
+
+                if suppressed_skip {
+                    if let Some(event) = suppression_event(&app, &flags, mode, is_long_break) {
+                        effects.push(Effect::RecordCycleEvent(event));
+                    }
+                }
 
                 let context = ServiceContext::from(app.clone());
                 for effect in &effects {
@@ -233,4 +271,55 @@ fn current_skip_flags(app: &AppHandle) -> SkipFlags {
         afk_active,
         process_whitelisted,
     }
+}
+
+/// Build a `Suppressed` cycle event from the priority-resolved skip flag.
+/// Priority order (fullscreen > schedule > afk > `process_whitelisted`) is
+/// fixed by PRD §2 so analytics treats the loudest signal as the cause.
+/// `process_hint` is populated only when the reason is
+/// `ProcessWhitelisted` AND the user is already opted in by virtue of
+/// having that entry in the whitelist.
+#[cfg(not(test))]
+fn suppression_event(
+    app: &AppHandle,
+    flags: &SkipFlags,
+    mode: TimerMode,
+    is_long_break: bool,
+) -> Option<CycleEventDraft> {
+    let services = app.try_state::<SharedAppServices>()?;
+
+    let (reason, process_hint) = if flags.fullscreen_active {
+        (CycleReason::Fullscreen, None)
+    } else if flags.schedule_inactive {
+        (CycleReason::Schedule, None)
+    } else if flags.afk_active {
+        (CycleReason::Afk, None)
+    } else if flags.process_whitelisted {
+        let hint = services
+            .detector
+            .foreground_whitelist_match(&services.config.current().behavior.process_whitelist);
+        (CycleReason::ProcessWhitelisted, hint)
+    } else {
+        return None;
+    };
+
+    Some(CycleEventDraft {
+        occurred_at_utc: chrono::Utc::now(),
+        outcome: CycleOutcome::Suppressed,
+        reason: Some(reason),
+        process_hint,
+        duration_secs: None,
+        mode,
+        is_long_break: mode == TimerMode::Pomodoro && is_long_break,
+    })
+}
+
+/// Output of one timer-loop tick step, threaded through the function so the
+/// suppression-event append happens outside the inner-state lock.
+#[cfg(not(test))]
+struct TimerLoopStep {
+    effects: Vec<Effect>,
+    suppressed_skip: bool,
+    mode: TimerMode,
+    is_long_break: bool,
 }

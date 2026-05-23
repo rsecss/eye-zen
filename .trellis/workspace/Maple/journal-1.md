@@ -349,3 +349,36 @@ Implemented data-export (StatService::export_to via VACUUM INTO + export_statist
 ### Next Steps
 
 - None - task complete
+
+
+## Session 11: Phase 3 health-analysis v0.6: research-driven design + hybrid PRD + 2-stage implementation
+
+**Date**: 2026-05-23
+**Task**: Phase 3 health-analysis v0.6: research-driven design + hybrid PRD + 2-stage implementation
+**Branch**: `feat/health-analysis`
+
+### Summary
+
+Researched 8 eye-care + 5 productivity competitors, identified SkipFlags 4-factor taxonomy as Eyezen's real differentiator. Codex review pushed back on score-theater risk; user picked hybrid route: P2-lite (rest_cycle_events + suppression breakdown) + honest Beta ECI (0.7 adherence + 0.3 longest, no skip_rate term) + P5 streak cards + one-shot trends migration. Two trellis-implement stages (backend / frontend) + trellis-check PASS, then live dev-server verification confirmed schema v1->v2 migration, backfill, and 6 schedule-suppressed emissions matched dev log timing. Branch ready for PR.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `b6f21cd` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

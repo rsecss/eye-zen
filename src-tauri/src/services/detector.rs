@@ -45,6 +45,20 @@ impl DetectorService {
         whitelist.iter().any(|entry| entry == &name)
     }
 
+    /// Return the whitelist entry the foreground process matched, normalised
+    /// to the lowercase basename. Used by the Health Analysis pipeline to
+    /// store the `process_hint` alongside a `process_whitelisted` suppress
+    /// reason. Returns `None` when the list is empty, no foreground process
+    /// is available, or no entry matches.
+    #[must_use]
+    pub(crate) fn foreground_whitelist_match(&self, whitelist: &[String]) -> Option<String> {
+        if whitelist.is_empty() {
+            return None;
+        }
+        let name = self.platform.get_foreground_process_name()?;
+        whitelist.iter().find(|entry| *entry == &name).cloned()
+    }
+
     #[must_use]
     pub(crate) fn capabilities(&self) -> DetectorCapabilities {
         DetectorCapabilities {

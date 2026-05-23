@@ -1,0 +1,11 @@
+{"file": ".trellis/spec/architecture/ipc-and-state.md", "reason": "Timer state-machine and IPC contracts - we add new Effect variant and emit at 5 transitions"}
+{"file": ".trellis/spec/architecture/change-management.md", "reason": "Schema migration v1->v2 and ts-rs binding regeneration are core breaking points"}
+{"file": ".trellis/spec/backend/service-pattern.md", "reason": "StatService extension follows 4-phase lifecycle and Arc patterns"}
+{"file": ".trellis/spec/backend/coding-standards.md", "reason": "Error propagation, lock/async, no panics in new record_cycle_event and cycle_outcomes paths"}
+{"file": ".trellis/spec/backend/platform-storage.md", "reason": "SQLite migration handling and PRAGMA user_version flow"}
+{"file": ".trellis/spec/frontend/store-and-ipc-patterns.md", "reason": "New cycle_outcomes IPC + store wrapping pattern"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "ts-rs auto-export to src/lib/bindings/ for new payload types"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "ECI hero + ribbon + rhythm cards follow Svelte 5 Runes patterns"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Cross-layer reasoning: data flows from Timer effect to SQLite to ECharts"}
+{"file": ".trellis/tasks/05-23-health-analysis/research/03-eyezen-current-state.md", "reason": "Ground truth of what Eyezen records today - code-verified inventory"}
+{"file": ".trellis/tasks/05-23-health-analysis/research/05-innovation-proposals.md", "reason": "Detailed P1/P2/P5 proposals chosen for v0.6 hybrid"}
