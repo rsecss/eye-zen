@@ -382,3 +382,37 @@ Researched 8 eye-care + 5 productivity competitors, identified SkipFlags 4-facto
 ### Next Steps
 
 - None - task complete
+
+
+## Session 12: v0.6.0 release ship + post-v0.6.0 cleanup (bump-version stub + hotkeys cfg gates)
+
+**Date**: 2026-05-23
+**Task**: v0.6.0 release ship + post-v0.6.0 cleanup (bump-version stub + hotkeys cfg gates)
+**Branch**: `main`
+
+### Summary
+
+本 session 接续 health-analysis 合入后流程：(1) 推送 fix/bump-stub-and-windows-sound-flake + feat/health-analysis 双 PR (#22 #23) 到 main；(2) 发版 v0.6.0：bump-version + CHANGELOG (emoji 格式手填) + PR #24 + tag → release.yml 4 平台全 success，10 artifact published as latest；(3) 后续 chore PR #25：bump-version.mjs stub 改用项目 emoji 约定（避免每次发版手填），hotkeys.rs / timer/service.rs 5 个 dead_code warning 通过 cfg gate 收紧 + cfg_attr allow(dead_code) 处理（sub-agent 在 implement 阶段发现 PRD 误判为 dead code，实际是 v0.3.0 全局快捷键 feature-gated production code，被 lib.rs:59/77 在 #[cfg(feature="plugin-shortcuts")] 调用，删除即 regression）。两套 feature 配置 clippy 全 clean，172 tests 全过。Windows sound test cfg(not windows) 修复在 release.yml Windows job 上得到验证（无 STATUS_ACCESS_VIOLATION）。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `f44ccb8` | (see git log) |
+| `10ea6be` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
