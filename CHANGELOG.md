@@ -19,6 +19,25 @@ Each version body uses the following categories (see
 Line format: `- imperative-lowercase description (#NN) (sha7)`. PR number is
 omitted when the change predates the pull-request workflow.
 
+## [0.7.0] - 2026-05-24
+
+### 🛠️ Fixes
+
+- clear 8 npm vulnerabilities including vite high-severity advisories (#28) (6b15031)
+- harden stat export path with transactional migration and bounded writer channel (#27) (2d99871)
+- degrade macOS fullscreen detection capability to false until real implementation lands (#29) (2e94465)
+
+### 🧪 Refactor
+
+- WindowPort and TrayPort traits expose tray/window services to the test build (#32) (a5e20c4)
+- extract pure helpers and EffectSink trait for timer effect dispatch (#31) (36cf175)
+- remove defensive/fallback code patterns across services and pages (#30) (e97b055)
+
+### 🔧 Maintenance
+
+- raise frontend and backend coverage gates to 90% lines / 85% functions (#33) (6d966f2)
+- add initial 80% lines / 70% functions coverage gate and cargo-llvm-cov pipeline (#26) (c66a499)
+
 ## [0.6.0] - 2026-05-23
 
 ### 🎉 Features
