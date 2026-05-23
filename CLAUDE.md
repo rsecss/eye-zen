@@ -10,25 +10,30 @@
 
 ## 项目状态
 
-**当前阶段：v0.2.0 已发布（2026-05-20），Phase 2 增强进行中。**
+**当前阶段：v0.7.0 已发布（2026-05-24），hardening 收尾完成；下一步评估 Phase 3 增功能 vs v1.0.0 API 冻结。**
 
-- Phase 1 MVP 代码已废弃，仅保留架构经验和设计决策
 - 脚手架已就绪：Tauri v2 + Svelte 5 + Vite 6 + TailwindCSS v4
-- 后端 MVP 已实现：7 个核心服务 + Commands + Events + Platform + Models
-- 前端原型已实现：ts-rs 类型桥接 + IPC stores + tray-panel + tip-window + tip-minimal
-- 手动测试通过：完整用户流程验证（Working → PreAlert → Alerting → Resting → Working）
-- Settings UI + About 页面已实现（Plan 010）
-- i18n 已实现：全栈 zh-CN/en 双语 + 热切换（Plan 011）
-- 主题切换已实现：Dark/Light CSS 变量 + 原生标题栏适配（Plan 012）
-- 开机自启动已实现：tauri-plugin-autostart 集成（Plan 013）
-- CI/CD 已就绪：三平台 CI 矩阵 + 四目标 Release 构建（Plan 014）+ cargo-deny 安全审计
-- v0.1.0 已发布（MIT）：2026-03-21，9 个 artifact，Draft published
-- 工作日调度已实现：周几粒度按 Working→PreAlert 跳转点抑制弹窗，复用 SkipFlags
-- License 切换：MIT → GPL-3.0-or-later，自 v0.2.0 起生效（v0.1.0 二进制永久保留 MIT）
-- v0.2.0 已发布（GPL-3.0-or-later）：2026-05-20，10 个 artifact（多了 .rpm），latest published；含 weekday scheduling + 主窗 880×560 调整 + bump-version.mjs Cargo.lock 同步修复
-- v0.4.0 主功能进程白名单已实现（feat/process-whitelist 分支）：跨平台 exe basename 匹配，三平台真实实现（Win Query API / macOS kCGWindowOwnerName / Linux X11 _NET_WM_PID）；SkipFlags 新增 process_whitelisted；Settings 新增 Whitelist Card + 14 个 i18n key + capability 降级；vitest coverage 基线 59.5%（仅 reference）
-- Phase 3 番茄模式已实现（feat/pomodoro-mode 分支，2026-05-23）：TimerMode 枚举 + PomodoroConfig + StatePayload 扩 mode/pomodoro 字段；Inner 加 cycle_index/cycles_per_long/short_break/long_break/is_long_break，长短休通过 rest_duration 动态切换（状态机不新增 state）；新增 update_pomodoro_config command + 校验范围 + Settings 加 Timer Mode 单选 + Pomodoro Card（4 个 Stepper）+ tip-window/tip-minimal/tray 文案适配；i18n zh-CN/en 新增 22 个 key；8 个新 Rust 单测覆盖 cycle 推进 / 长休切换 / mode 切换重置 / Pause-Resume 保留
-- 下一步：发版 v0.4.0（PR → main → tag → CI artifacts published）
+- 后端服务齐全：9 services（Config / Timer / Detector / Window / Sound / Tray / I18n / Stat / Hotkey），全部经 Port trait / EffectSink / 纯 helper 抽象（v0.7.0 PR #31/#32）
+- 前端 4 窗口齐全：tray-panel / tip-window / tip-minimal / main（Settings + About + Statistics），i18n zh-CN/en 双语 + Dark/Light 主题热切换
+- 平台抽象齐全：Windows / macOS / Linux 三平台真实现（fullscreen 检测 macOS 在 v0.7.0 PR #29 后通过 capability 反馈 false 降级，留给 v0.7.x 真实现）
+- CI/CD 齐全：三平台 ci.yml + 四目标 release.yml + `npm run ci` 8 步本地/云端 parity + cargo-deny 安全审计
+- License：v0.1.0 二进制永久保留 MIT；自 v0.2.0 起切换到 GPL-3.0-or-later
+- 覆盖率门禁已生效（v0.7.0）：前端 `vitest --coverage` 行 90% / 函数 85% / 分支 80% / 语句 90%；后端 `cargo llvm-cov --fail-under-lines 90 --fail-under-functions 85`
+
+### 发布历史
+
+- **v0.1.0**（MIT，2026-03-21，9 artifacts，Draft）：MVP scaffold + 7 services + 4 windows + Settings/About/i18n/Theme/Autostart + CI/CD 基线
+- **v0.2.0**（GPL-3.0-or-later，2026-05-20，10 artifacts）：工作日调度 + 主窗 880×560 + bump-version.mjs Cargo.lock 同步修复
+- **v0.3.0**（2026-05-22，10 artifacts）：AFK 离席检测 + SQLite 统计 + ECharts 趋势图 + 可配置全局快捷键
+- **v0.4.0**（2026-05-22，10 artifacts）：跨平台进程白名单（Win QueryFullProcessImageNameW / macOS kCGWindowOwnerName / Linux X11 \_NET_WM_PID）
+- **v0.5.0**（2026-05-23）：番茄模式（TimerMode + PomodoroConfig + 长短休动态切换）+ 统计数据库 VACUUM INTO 导出
+- **v0.6.0**（2026-05-23）：Health Analysis（Eye-Care Index + 遵守率 + 节律追踪）
+- **v0.7.0**（2026-05-24，hardening release）：9 PR 完成 P0/P1 14 项 audit findings —— npm 漏洞清零（#28）+ stat 持久化事务化加导出路径白名单加有界 channel（#27）+ macOS fullscreen capability 降级（#29）+ defensive code 集中清理（#30）+ 引入 WindowPort/TrayPort/EffectSink trait 与 `tray_tooltip.rs` / `window_layout.rs` 纯 helper（#31/#32），把先前覆盖率排除的 tray/window 服务推到 ~93%+；覆盖率门禁分两阶段建立：先 80%/70% 起步（#26）后推到 90%/85%（#33）
+
+### 下一步
+
+- 评估 Phase 3 增功能（数据导出 enhancement / 全局快捷键 polish / 月度报告）vs v1.0.0 SemVer 冻结 + 文档站点
+- v0.7.x candidates：macOS fullscreen 真实现、tip-window mini/角落通知模式、覆盖率推至 95%、大文件拆分（audit 报告 F17/F18）
 
 ---
 
@@ -37,7 +42,7 @@
 | 层 | 选型 | 版本约束 | 实际版本 | 说明 |
 |---|------|---------|---------|------|
 | 框架 | Tauri | v2 (`~2.x`) | `~2.10` | 跨平台，Rust 后端 |
-| 前端 | Svelte 5 (Runes) | `~5.x` | `~5.54.0` | 零运行时编译 |
+| 前端 | Svelte 5 (Runes) | `~5.x` | `~5.55.0` | 零运行时编译 |
 | 构建 | Vite | `~6.x` | `~6.4.1` | 快速 HMR |
 | CSS | TailwindCSS | v4 (`~4.x`) | `~4.2.1` | 工具类优先 |
 | 图表 | ECharts | tree-shaken | `~6.1.0` | Statistics 趋势图 |
@@ -63,13 +68,14 @@ Frontend (Svelte 5, per window)
                        │
                   AppServices (Arc, Tauri State)
                   ├── ConfigService    TOML 读写 + watch channel
-                  ├── TimerService     纯函数状态机 + tokio timer
-                  ├── DetectorService  全屏检测 (MVP)
-                  ├── WindowService    多显示器 tip-window
+                  ├── TimerService     纯函数状态机 + tokio timer + EffectSink
+                  ├── DetectorService  全屏检测 + AFK + 进程白名单
+                  ├── WindowService    多显示器 tip-window (WindowPort trait)
                   ├── SoundService     rodio 独立线程
-                  ├── TrayService      托盘菜单 + tooltip
+                  ├── TrayService      托盘菜单 + tooltip (TrayPort trait)
                   ├── I18nService      语言切换 + 热切换
-                  └── StatService      SQLite 统计
+                  ├── StatService      SQLite 统计 + ECI + 健康分析 + 导出
+                  └── HotkeyService    全局快捷键 (feature flag)
 ```
 
 详细架构约束见 → [`.trellis/spec/architecture/layering.md`](.trellis/spec/architecture/layering.md) 与 [`.trellis/spec/backend/service-pattern.md`](.trellis/spec/backend/service-pattern.md)
@@ -109,7 +115,7 @@ graph TD
 | StatService | `src-tauri/src/services/stat.rs` | 已实现 | SQLite 统计持久化与趋势聚合 |
 | I18nService | `src-tauri/src/services/i18n.rs` | 已实现 | zh-CN/en 双语 + 托盘翻译 |
 | PlatformApi | `src-tauri/src/platform/` | 已实现 | 跨平台抽象 (Windows/macOS/Linux) |
-| Commands | `src-tauri/src/commands/` | 已实现 | Tauri command 薄层 (10 个 commands) |
+| Commands | `src-tauri/src/commands/` | 已实现 | Tauri command 薄层 |
 | Models | `src-tauri/src/models/` | 已实现 | 共享类型 + IPC events + 配置模型 |
 | Error | `src-tauri/src/error.rs` | 已实现 | AppError + IPC 序列化 |
 | Logging | `src-tauri/src/logging.rs` | 已实现 | tracing + 日志轮转 |
@@ -129,11 +135,11 @@ Timer 状态机、多显示器 tip-window、系统托盘、全屏 DND、基础�
 
 ### Phase 2 -- 增强
 
-离席检测、进程白名单、SQLite 统计 + ECharts、工作日调度
+离席检测（v0.3.0）、进程白名单（v0.4.0）、SQLite 统计 + ECharts（v0.3.0）、工作日调度（v0.2.0）
 
 ### Phase 3 -- 高级
 
-健康分析、番茄模式、数据导出、全局快捷键
+健康分析（v0.6.0）、番茄模式（v0.5.0）、数据导出（v0.5.0）、全局快捷键（v0.3.0）；v0.7.x candidates 见项目状态末尾
 
 ---
 
