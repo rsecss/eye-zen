@@ -36,6 +36,11 @@ pub(crate) fn init_tracing(log_dir: &Path) {
         );
 
     if subscriber.try_init().is_ok() {
+        // OnceCell::set returns Err only if another thread already won the
+        // init race. We've already gated on try_init success above, so
+        // recording the marker is purely informational and a duplicate set
+        // (theoretically possible across processes sharing this static) is
+        // harmless.
         let _ = TRACING_INITIALIZED.set(());
         tracing::info!("tracing initialized at {}", log_dir.display());
     }

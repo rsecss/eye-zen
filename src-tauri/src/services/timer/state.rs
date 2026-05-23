@@ -179,11 +179,14 @@ impl Inner {
 
         if transition.from == TimerState::Paused {
             // Transitioning FROM Paused: restore saved state with remaining time
+            // Invariant: validate_timer_config rejects configs where
+            // work_duration <= pre_alert_duration, so this subtraction is
+            // always strictly positive.
             let target_duration = match transition.to {
                 TimerState::Working => self
                     .work_duration
                     .checked_sub(self.pre_alert_duration)
-                    .unwrap_or(self.work_duration),
+                    .expect("invariant: work_duration > pre_alert_duration"),
                 TimerState::PreAlert => self.pre_alert_duration,
                 TimerState::Alerting => self.alert_timeout,
                 TimerState::Resting => self.rest_duration,
@@ -251,10 +254,17 @@ impl Inner {
     }
 
     /// Return the remaining time for timed states.
+    ///
+    /// Invariant: `validate_timer_config` rejects configs where
+    /// `work_duration` <= `pre_alert_duration`, so the Working subtraction is
+    /// always strictly positive and never returns None.
     #[must_use]
     pub(crate) fn remaining(&self, now: Instant) -> Option<Duration> {
         let target = match self.state {
-            TimerState::Working => self.work_duration.checked_sub(self.pre_alert_duration)?,
+            TimerState::Working => self
+                .work_duration
+                .checked_sub(self.pre_alert_duration)
+                .expect("invariant: work_duration > pre_alert_duration"),
             TimerState::PreAlert => self.pre_alert_duration,
             TimerState::Alerting => self.alert_timeout,
             TimerState::Resting => self.rest_duration,

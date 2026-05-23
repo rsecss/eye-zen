@@ -141,6 +141,20 @@ fn validate_timer_config(config: &TimerConfig) -> CmdResult<()> {
             reason: format!("must be 10-300, got {}", config.alert_timeout_seconds),
         });
     }
+    // Cross-field invariant: Working = work_minutes - pre_alert_seconds; if
+    // they meet or invert, Working has zero/negative duration which the state
+    // machine cannot represent. Reject at the boundary so internal code can
+    // rely on a strict inequality.
+    let work_secs = u64::from(config.work_minutes) * 60;
+    if work_secs <= u64::from(config.pre_alert_seconds) {
+        return Err(AppError::ConfigInvalid {
+            field: "work_minutes".to_string(),
+            reason: format!(
+                "work duration ({work_secs}s) must exceed pre_alert_seconds ({}s)",
+                config.pre_alert_seconds
+            ),
+        });
+    }
     Ok(())
 }
 
@@ -389,5 +403,39 @@ mod tests {
             panic!("expected cycles validation error");
         };
         assert_eq!(field, "pomodoro.cycles_per_long");
+    }
+
+    #[test]
+    fn timer_config_accepts_defaults() {
+        assert!(validate_timer_config(&TimerConfig::default()).is_ok());
+    }
+
+    #[test]
+    fn timer_config_rejects_work_le_pre_alert() {
+        // 1 minute = 60s, pre_alert = 60s → not strictly greater, must reject
+        let config = TimerConfig {
+            work_minutes: 1,
+            pre_alert_seconds: 60,
+            ..TimerConfig::default()
+        };
+        let Err(AppError::ConfigInvalid { field, reason }) = validate_timer_config(&config) else {
+            panic!("expected work>pre_alert invariant violation");
+        };
+        assert_eq!(field, "work_minutes");
+        assert!(
+            reason.contains("must exceed pre_alert_seconds"),
+            "reason was: {reason}"
+        );
+    }
+
+    #[test]
+    fn timer_config_accepts_work_just_above_pre_alert() {
+        // 2 minutes = 120s > 60s pre_alert
+        let config = TimerConfig {
+            work_minutes: 2,
+            pre_alert_seconds: 60,
+            ..TimerConfig::default()
+        };
+        assert!(validate_timer_config(&config).is_ok());
     }
 }

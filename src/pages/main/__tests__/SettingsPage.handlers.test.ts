@@ -184,6 +184,21 @@ describe('SettingsPage behavior handlers', () => {
       expect.objectContaining({ auto_start: true }),
     );
   });
+
+  it('toggles auto-start ON: surfaces error banner when both save and revert fail', async () => {
+    vi.mocked(enable).mockResolvedValue(undefined);
+    vi.mocked(disable).mockRejectedValueOnce(new Error('revert failed'));
+    vi.mocked(updateBehaviorConfig).mockRejectedValueOnce(new Error('save failed'));
+
+    render(SettingsPage);
+
+    const toggle = await screen.findByLabelText('开机启动');
+    await fireEvent.click(toggle);
+
+    // OS toggle succeeded, save rejected, revert (disable) rejected → user-facing alert MUST appear.
+    const banner = await screen.findByRole('alert');
+    expect(banner.textContent).toContain('save failed');
+  });
 });
 
 describe('SettingsPage display handlers', () => {

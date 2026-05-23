@@ -54,6 +54,8 @@ const en: TranslationDict = {
     'Keyboard and mouse idle detection is unavailable in this session',
   'settings.behavior.autoStart': 'Auto Start',
   'settings.behavior.autoStart.desc': 'Launch at system startup',
+  'settings.behavior.autoStart.error.save':
+    'Auto-start was toggled but the config write failed: {reason}. System and config may drift on next launch; please retry.',
 
   'settings.display.title': 'Display',
   'settings.display.language': 'Language',

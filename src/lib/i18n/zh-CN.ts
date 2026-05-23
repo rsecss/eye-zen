@@ -49,6 +49,8 @@ const zhCN = {
   'settings.behavior.afkUnsupported': '当前会话不支持键鼠空闲检测，已禁用',
   'settings.behavior.autoStart': '开机启动',
   'settings.behavior.autoStart.desc': '系统启动时自动运行',
+  'settings.behavior.autoStart.error.save':
+    '已切换开机启动，但配置写入失败：{reason}。下次启动时系统与配置可能不一致，请重试。',
 
   'settings.display.title': '显示',
   'settings.display.language': '语言',

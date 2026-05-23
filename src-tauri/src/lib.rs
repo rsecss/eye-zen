@@ -210,7 +210,9 @@ pub fn run() -> Result<(), tauri::Error> {
             if let WindowEvent::CloseRequested { api, .. } = event {
                 if window.label() == "main-window" {
                     api.prevent_close();
-                    let _ = window.hide();
+                    if let Err(err) = window.hide() {
+                        warn!("failed to hide main window on close request: {err}");
+                    }
                 }
             }
         })

@@ -201,10 +201,17 @@ impl Service for SoundService {
 
 impl Drop for SoundService {
     fn drop(&mut self) {
+        // Drop must not panic and cannot return errors. try_send fails only
+        // if the worker thread has already exited (channel closed) or its
+        // queue is saturated; in both cases the thread will terminate on its
+        // own when the Sender is dropped below.
         let _ = self.tx.try_send(SoundCommand::Shutdown);
 
         if let Ok(mut handle) = self.thread_handle.lock() {
             if let Some(join_handle) = handle.take() {
+                // join returns Err only if the worker thread panicked. We
+                // are already in Drop so there is nothing actionable; the
+                // panic was logged at the source.
                 let _ = join_handle.join();
             }
         }

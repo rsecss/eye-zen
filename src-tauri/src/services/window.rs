@@ -16,20 +16,18 @@ impl WindowService {
     }
 
     /// Create fullscreen tip windows on every monitor.
+    #[allow(clippy::unused_self)]
     pub(crate) fn show_tip_windows(&self, app: &AppHandle) {
-        let _ = &self; // WindowService may hold state in future phases
         let monitors = match app.available_monitors() {
             Ok(monitors) => monitors,
             Err(err) => {
-                error!("failed to enumerate monitors: {err}");
-                Self::create_fallback_window(app);
+                error!("failed to enumerate monitors, no tip windows shown: {err}");
                 return;
             }
         };
 
         if monitors.is_empty() {
-            warn!("no monitors detected, creating fallback window");
-            Self::create_fallback_window(app);
+            error!("no monitors detected, no tip windows shown");
             return;
         }
 
@@ -75,16 +73,20 @@ impl WindowService {
             match result {
                 Ok(_) => info!("created {label} on monitor {:?}", monitor.name()),
                 Err(err) => {
-                    warn!("failed to create fullscreen window {label}: {err}");
-                    Self::create_degraded_window(app, &label, url, *position, *size, is_primary);
+                    // Fullscreen builder can fail on some Linux compositors and on
+                    // Windows when the target monitor was just disconnected; retry
+                    // without the fullscreen flag so the user still gets a maximized
+                    // tip window instead of silent skip.
+                    warn!("failed to create fullscreen window {label}, retrying maximized: {err}");
+                    Self::create_maximized_window(app, &label, url, *position, *size, is_primary);
                 }
             }
         }
     }
 
     /// Close every dynamically created tip window.
+    #[allow(clippy::unused_self)]
     pub(crate) fn hide_tip_windows(&self, app: &AppHandle) {
-        let _ = &self;
         let labels_to_close: Vec<String> = app
             .webview_windows()
             .keys()
@@ -108,7 +110,7 @@ impl WindowService {
         }
     }
 
-    fn create_degraded_window(
+    fn create_maximized_window(
         app: &AppHandle,
         label: &str,
         url: &str,
@@ -128,34 +130,10 @@ impl WindowService {
             .focused(focused)
             .build();
 
-        match result {
-            Ok(_) => info!("created degraded window {label}"),
-            Err(err) => {
-                error!("failed degraded window creation for {label}: {err}");
-                Self::create_fallback_window(app);
-            }
-        }
-    }
-
-    fn create_fallback_window(app: &AppHandle) {
-        let label = "tip-window-fallback";
-
-        if app.get_webview_window(label).is_some() {
-            warn!("fallback window already exists");
-            return;
-        }
-
-        let result = WebviewWindowBuilder::new(app, label, WebviewUrl::App("tip.html".into()))
-            .title("Eyezen - Break Time")
-            .inner_size(800.0, 600.0)
-            .center()
-            .visible_on_all_workspaces(true)
-            .always_on_top(true)
-            .build();
-
-        match result {
-            Ok(_) => warn!("created fallback tip window"),
-            Err(err) => error!("failed to create fallback tip window: {err}"),
+        if let Err(err) = result {
+            error!("failed to create maximized window {label}: {err}");
+        } else {
+            info!("created maximized window {label}");
         }
     }
 }
