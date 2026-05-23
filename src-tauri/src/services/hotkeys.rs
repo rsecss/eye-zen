@@ -5,7 +5,7 @@ use std::collections::BTreeSet;
 use std::os::raw::c_uchar;
 use std::sync::{Arc, Mutex};
 
-#[cfg(not(test))]
+#[cfg(all(not(test), feature = "plugin-shortcuts"))]
 use tauri::AppHandle;
 #[cfg(all(not(test), feature = "plugin-shortcuts"))]
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut};
@@ -41,6 +41,7 @@ struct ActiveBindings {
 
 impl ActiveBindings {
     #[must_use]
+    #[cfg_attr(not(feature = "plugin-shortcuts"), allow(dead_code))]
     fn action_for_id(&self, id: u32) -> Option<HotkeyAction> {
         self.entries
             .iter()
@@ -295,6 +296,7 @@ impl HotkeyInner {
         )
     }
 
+    #[cfg_attr(not(feature = "plugin-shortcuts"), allow(dead_code))]
     fn action_for_id(&self, id: u32) -> Option<HotkeyAction> {
         self.active
             .lock()
@@ -533,6 +535,7 @@ impl HotkeyService {
     }
 
     #[must_use]
+    #[cfg_attr(not(feature = "plugin-shortcuts"), allow(dead_code))]
     pub(crate) fn action_for_id(&self, id: u32) -> Option<HotkeyAction> {
         self.inner.action_for_id(id)
     }

@@ -83,7 +83,7 @@ function prependChangelogSection(relPath) {
     return;
   }
   const today = new Date().toISOString().slice(0, 10);
-  const stub = `## [${version}] - ${today}\n\n### Added\n\n- TODO\n\n### Changed\n\n- TODO\n\n### Fixed\n\n- TODO\n\n`;
+  const stub = `## [${version}] - ${today}\n\n### 🎉 Features\n\n- TODO\n\n### 🛠️ Fixes\n\n- TODO\n\n`;
 
   // Anchor on the first existing version heading so the stub lands after the
   // header's description block (categories table + line-format guidance).
