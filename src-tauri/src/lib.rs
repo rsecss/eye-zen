@@ -140,10 +140,15 @@ pub fn run() -> Result<(), tauri::Error> {
                 services::detector::DetectorService::new(platform::create_platform());
             let timer_service = services::timer::TimerService::new(config_service.subscribe());
             let stat_service = services::stat::StatService::new(data_path);
-            let window_service = services::window::WindowService::new();
+            let window_port: Arc<dyn services::window::WindowPort> =
+                Arc::new(services::window::TauriWindowPort::new(app.handle().clone()));
+            let window_service = services::window::WindowService::new(window_port);
             let initial_locale = config_service.current().display.language.clone();
             let i18n_service = Arc::new(services::i18n::I18nService::new(&initial_locale));
+            let tray_port: Arc<dyn services::tray::TrayPort> =
+                Arc::new(services::tray::TauriTrayPort::new(app.handle().clone()));
             let tray_service = services::tray::TrayService::new(
+                tray_port,
                 config_service.subscribe(),
                 Arc::clone(&i18n_service),
             );

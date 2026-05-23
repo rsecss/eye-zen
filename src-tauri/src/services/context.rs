@@ -195,7 +195,7 @@ impl EffectSink for ServiceContext {
             warn!("shared services unavailable while showing tip windows");
             return;
         };
-        services.window.show_tip_windows(app);
+        services.window.show_tip_windows();
     }
 
     fn hide_tip_windows(&self) {
@@ -206,7 +206,7 @@ impl EffectSink for ServiceContext {
             warn!("shared services unavailable while hiding tip windows");
             return;
         };
-        services.window.hide_tip_windows(app);
+        services.window.hide_tip_windows();
     }
 
     fn play_sound(&self, sound: SoundType) {
@@ -230,7 +230,7 @@ impl EffectSink for ServiceContext {
             warn!("shared services unavailable while updating tray tooltip");
             return;
         };
-        services.tray.update_tooltip(app, tooltip);
+        services.tray.update_tooltip_best_effort(tooltip);
     }
 
     fn update_tray_state_icon(&self, state: TimerState) {
@@ -241,7 +241,7 @@ impl EffectSink for ServiceContext {
             warn!("shared services unavailable while updating tray state icon");
             return;
         };
-        services.tray.update_pause_item(state);
+        services.tray.update_pause_item_best_effort(state);
     }
 
     fn reset_work_timer(&self, duration: std::time::Duration) {

@@ -7,10 +7,8 @@ pub(crate) mod schedule;
 pub(crate) mod sound;
 pub(crate) mod stat;
 pub(crate) mod timer;
-#[cfg(not(test))]
 pub(crate) mod tray;
 pub(crate) mod tray_tooltip;
-#[cfg(not(test))]
 pub(crate) mod window;
 pub(crate) mod window_layout;
 
