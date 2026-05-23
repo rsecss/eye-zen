@@ -47,7 +47,7 @@ export default defineConfig(async () => ({
     setupFiles: ['./src/test-setup.ts'],
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'html', 'json-summary'],
+      reporter: ['text', 'html', 'lcov', 'json-summary'],
       include: ['src/**/*.{ts,svelte}'],
       exclude: [
         'src/**/__tests__/**',
@@ -55,8 +55,15 @@ export default defineConfig(async () => ({
         'src/lib/bindings/**',
         'src/test-setup.ts',
         'src/vite-env.d.ts',
+        // Vite multi-entry bootstrap shims (mount root component, ~4 lines each).
         'src/entries/**',
       ],
+      thresholds: {
+        lines: 80,
+        functions: 70,
+        branches: 70,
+        statements: 80,
+      },
     },
   },
 }));

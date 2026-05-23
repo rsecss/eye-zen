@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 11
+- **Total Sessions**: 12
 - **Last Active**: 2026-05-23
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~384 | Active |
+| `journal-1.md` | ~418 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 12 | 2026-05-23 | v0.6.0 release ship + post-v0.6.0 cleanup (bump-version stub + hotkeys cfg gates) | `f44ccb8`, `10ea6be` | `main` |
 | 11 | 2026-05-23 | Phase 3 health-analysis v0.6: research-driven design + hybrid PRD + 2-stage implementation | `b6f21cd` | `feat/health-analysis` |
 | 10 | 2026-05-23 | Data export + Pomodoro mode finish-work | `dc7bca9`, `686ab6f` | `feat/data-export` |
 | 9 | 2026-05-22 | ECharts dynamic import + cleanup queue tidy | `f9f79fd` | `main` |

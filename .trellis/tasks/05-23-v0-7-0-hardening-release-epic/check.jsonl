@@ -1,0 +1,3 @@
+{"file": "docs/.local/v1.0.0-audit-report.md", "reason": "verify all P0+P1 findings addressed before release"}
+{"file": ".trellis/spec/architecture/testing-quality.md", "reason": "coverage gate / test plan compliance"}
+{"file": ".trellis/spec/architecture/change-management.md", "reason": "PR checklist for cross-layer refactors"}

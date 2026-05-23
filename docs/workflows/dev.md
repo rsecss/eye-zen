@@ -20,12 +20,52 @@
 1. Version sync check
 2. Rust format
 3. Rust clippy with `--all-targets`
-4. Rust tests
+4. Rust tests (`--no-default-features`)
 5. Svelte type check
-6. Vitest
+6. Vitest with `--coverage` (enforces threshold gate)
 7. Prettier check
 8. Rust check
 9. Frontend build
+
+GitHub Actions adds two extra jobs beyond `npm run ci`:
+
+- `cargo-test-default-features` — Linux Rust tests with the default feature set (covers the production `plugin-shortcuts` path that `npm run ci` skips).
+- `cargo-coverage` — Linux `cargo llvm-cov` with `--fail-under-lines 80`.
+
+## Coverage gate
+
+The frontend coverage threshold lives in `vitest.config.ts` under
+`test.coverage.thresholds` and is currently:
+
+- lines: 80%
+- functions: 70%
+- branches: 70%
+- statements: 80%
+
+`npm run test:ci` (step 6 of `npm run ci`) enforces this — any PR that drops
+overall coverage below the threshold fails locally and in CI.
+
+To debug a local failure:
+
+```bash
+npm run test:coverage    # writes ./coverage/ HTML report
+open coverage/index.html # browse uncovered lines per file
+```
+
+The threshold MUST NOT be lowered without an explicit ADR. New features that
+add untested code SHOULD be paired with the corresponding tests in the same
+PR. Files that genuinely cannot be unit-tested (e.g. thin Tauri-API bootstrap
+shims) belong in `vitest.config.ts`'s `coverage.exclude` array with a code
+comment justifying the exclusion.
+
+The backend coverage threshold is enforced in CI via
+`cargo llvm-cov --fail-under-lines 80`. Run it locally with:
+
+```bash
+cargo install cargo-llvm-cov --locked
+rustup component add llvm-tools-preview
+cargo llvm-cov --manifest-path src-tauri/Cargo.toml --summary-only
+```
 
 ## Flow
 

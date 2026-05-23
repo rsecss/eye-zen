@@ -70,3 +70,62 @@ jobs:
 
       - name: Local CI parity checks
         run: npm run ci
+
+  # `npm run ci` runs `cargo test --no-default-features` (matches local pre-push).
+  # This job exercises the DEFAULT feature path (`plugin-shortcuts` enabled) so
+  # the production code path stays green and feature-gated code doesn't drift.
+  cargo-test-default-features:
+    runs-on: ubuntu-22.04
+    name: Rust tests (default features)
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        run: rustup toolchain install
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+          key: default-features
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libasound2-dev
+
+      - name: cargo test (default features)
+        run: cargo test --manifest-path src-tauri/Cargo.toml
+
+  # Backend coverage gate. Linux-only because cargo-llvm-cov produces consistent
+  # numbers on a single platform; local baseline on 2026-05-23 was 83.79% lines.
+  # Threshold set at 80% — raise as coverage improves; do not lower without ADR.
+  cargo-coverage:
+    runs-on: ubuntu-22.04
+    name: Rust coverage (>=80% lines)
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain + llvm-tools
+        run: |
+          rustup toolchain install
+          rustup component add llvm-tools-preview
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+          key: coverage
+
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-llvm-cov
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libasound2-dev
+
+      - name: cargo llvm-cov
+        run: cargo llvm-cov --manifest-path src-tauri/Cargo.toml --fail-under-lines 80 --summary-only
