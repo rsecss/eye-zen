@@ -85,6 +85,7 @@ describe('command wrappers forward to invoke with the correct name + args', () =
     mockInvoke.mockResolvedValue({
       afk_detection_supported: true,
       foreground_process_detection_supported: true,
+      fullscreen_detection_supported: true,
     });
     await commands.getDetectorCapabilities();
     expect(mockInvoke).toHaveBeenCalledWith('get_detector_capabilities', undefined);

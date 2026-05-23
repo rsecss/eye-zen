@@ -40,6 +40,7 @@ const zhCN = {
   'settings.behavior.sound.desc': '休息提醒时播放音效',
   'settings.behavior.fullscreenSkip': '全屏跳过',
   'settings.behavior.fullscreenSkip.desc': '全屏应用时跳过提醒',
+  'settings.behavior.fullscreenUnsupported': '当前平台暂不支持全屏检测，将于 v0.7.x 版本提供',
   'settings.behavior.afkSkip': '离开跳过',
   'settings.behavior.afkSkip.desc': '键鼠无输入超过阈值时，跳过下一次提醒',
   'settings.behavior.afkThreshold': '离开阈值',

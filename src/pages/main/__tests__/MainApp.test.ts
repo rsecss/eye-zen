@@ -26,6 +26,7 @@ vi.mock('$lib/commands', () => ({
   getDetectorCapabilities: vi.fn().mockResolvedValue({
     afk_detection_supported: true,
     foreground_process_detection_supported: true,
+    fullscreen_detection_supported: true,
   }),
   getHotkeyStatus: vi.fn().mockResolvedValue({
     bindings: [],

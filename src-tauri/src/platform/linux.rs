@@ -101,6 +101,10 @@ impl PlatformApi for LinuxPlatform {
             })
     }
 
+    fn supports_fullscreen_detection(&self) -> bool {
+        self.is_x11 && self.x11_session.is_some()
+    }
+
     fn get_foreground_process_name(&self) -> Option<String> {
         if !self.is_x11 {
             return None;

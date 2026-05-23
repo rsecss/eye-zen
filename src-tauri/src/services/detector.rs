@@ -66,6 +66,7 @@ impl DetectorService {
             foreground_process_detection_supported: self
                 .platform
                 .supports_foreground_process_detection(),
+            fullscreen_detection_supported: self.platform.supports_fullscreen_detection(),
         }
     }
 }
@@ -100,12 +101,16 @@ mod tests {
     use super::*;
     use crate::platform::PlatformApi;
 
+    // Test-only fixture; bools mirror PlatformApi's boolean methods so the
+    // four-flag aggregate is intentional and not a state-machine candidate.
+    #[allow(clippy::struct_excessive_bools)]
     struct MockPlatform {
         fullscreen: bool,
         idle_duration: Option<Duration>,
         supports_idle_detection: bool,
         foreground_process: Option<String>,
         supports_foreground_process: bool,
+        supports_fullscreen: bool,
     }
 
     impl PlatformApi for MockPlatform {
@@ -119,6 +124,10 @@ mod tests {
 
         fn supports_idle_detection(&self) -> bool {
             self.supports_idle_detection
+        }
+
+        fn supports_fullscreen_detection(&self) -> bool {
+            self.supports_fullscreen
         }
 
         fn get_foreground_process_name(&self) -> Option<String> {
@@ -138,6 +147,7 @@ mod tests {
                 supports_idle_detection: false,
                 foreground_process: None,
                 supports_foreground_process: false,
+                supports_fullscreen: true,
             }
         }
     }
@@ -182,6 +192,7 @@ mod tests {
             supports_idle_detection: true,
             foreground_process: None,
             supports_foreground_process: false,
+            supports_fullscreen: true,
         }));
 
         assert!(detector.is_afk_for_threshold(5));
@@ -195,11 +206,35 @@ mod tests {
             supports_idle_detection: true,
             foreground_process: None,
             supports_foreground_process: true,
+            supports_fullscreen: true,
         }));
 
         let caps = detector.capabilities();
         assert!(caps.afk_detection_supported);
         assert!(caps.foreground_process_detection_supported);
+        assert!(caps.fullscreen_detection_supported);
+    }
+
+    #[test]
+    fn capability_reflects_unsupported_fullscreen_detection() {
+        // Simulates the macOS path: capability=false even though the platform
+        // would still answer `is_fullscreen_app_active()` with `false`.
+        // The capability is the source of truth for UI; behaviour stays safe
+        // because the stub never reports `true`.
+        let detector = DetectorService::new(Box::new(MockPlatform {
+            fullscreen: false,
+            idle_duration: None,
+            supports_idle_detection: true,
+            foreground_process: None,
+            supports_foreground_process: true,
+            supports_fullscreen: false,
+        }));
+
+        let caps = detector.capabilities();
+        assert!(!caps.fullscreen_detection_supported);
+        // Consistency: the stub MUST NOT lie about an active fullscreen app
+        // when the capability is gated off.
+        assert!(!detector.is_fullscreen());
     }
 
     #[test]
@@ -210,6 +245,7 @@ mod tests {
             supports_idle_detection: false,
             foreground_process: Some("code.exe".to_string()),
             supports_foreground_process: true,
+            supports_fullscreen: true,
         }));
 
         assert!(!detector.is_foreground_in_whitelist(&[]));
@@ -223,6 +259,7 @@ mod tests {
             supports_idle_detection: false,
             foreground_process: Some("code.exe".to_string()),
             supports_foreground_process: true,
+            supports_fullscreen: true,
         }));
 
         let list = vec!["chrome.exe".to_string(), "code.exe".to_string()];
@@ -237,6 +274,7 @@ mod tests {
             supports_idle_detection: false,
             foreground_process: Some("notepad.exe".to_string()),
             supports_foreground_process: true,
+            supports_fullscreen: true,
         }));
 
         let list = vec!["chrome.exe".to_string(), "code.exe".to_string()];
@@ -251,6 +289,7 @@ mod tests {
             supports_idle_detection: false,
             foreground_process: None,
             supports_foreground_process: false,
+            supports_fullscreen: true,
         }));
 
         let list = vec!["code.exe".to_string()];

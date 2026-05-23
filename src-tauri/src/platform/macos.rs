@@ -67,6 +67,14 @@ impl PlatformApi for MacosPlatform {
         true
     }
 
+    // macOS fullscreen detection is not yet implemented (see
+    // `detect_fullscreen_macos`); the platform returns `DegradedFalse` so any
+    // call is harmless, but capability-aware UI MUST gate the "Fullscreen
+    // Skip" toggle off until a real implementation lands in v0.7.x.
+    fn supports_fullscreen_detection(&self) -> bool {
+        false
+    }
+
     fn get_foreground_process_name(&self) -> Option<String> {
         match detect_foreground_process_name_macos() {
             Ok(Some(name)) => normalize_process_name(&name),
@@ -224,5 +232,29 @@ unsafe fn read_cfnumber_i64(
         Some(out)
     } else {
         None
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn supports_fullscreen_detection_returns_false_on_macos() {
+        // macOS lacks a working implementation today (see F03/F28). UI MUST
+        // disable the fullscreen toggle when capability is false, so the
+        // contract is: capability=false implies "do not surface the feature".
+        let platform = MacosPlatform::new();
+        assert!(!platform.supports_fullscreen_detection());
+    }
+
+    #[test]
+    fn fullscreen_active_stays_false_when_capability_off() {
+        // Even when callers ignore capability and probe directly, the macOS
+        // stub MUST never claim a fullscreen app is active. Consistency
+        // between capability and behavior is enforced here.
+        let platform = MacosPlatform::new();
+        assert!(!platform.supports_fullscreen_detection());
+        assert!(!platform.is_fullscreen_app_active());
     }
 }

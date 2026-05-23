@@ -13,6 +13,12 @@ pub(crate) trait PlatformApi: Send + Sync {
     fn idle_duration(&self) -> Option<Duration>;
     fn supports_idle_detection(&self) -> bool;
 
+    /// Whether this platform reliably detects fullscreen foreground apps.
+    /// macOS currently returns `false` while a real implementation is pending;
+    /// Settings disables the "Fullscreen Skip" toggle accordingly.
+    /// Windows / Linux X11 return `true`; Linux Wayland returns `false`.
+    fn supports_fullscreen_detection(&self) -> bool;
+
     /// Return the foreground (focused) window's process executable basename,
     /// normalised to lowercase and trimmed. Returns `None` when no foreground
     /// window exists, the platform cannot resolve it (Wayland), or a transient

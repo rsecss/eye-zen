@@ -43,6 +43,7 @@
   let detectorCapabilitiesLoaded = $state(false);
   let afkDetectionSupported = $state(false);
   let foregroundProcessSupported = $state(false);
+  let fullscreenDetectionSupported = $state(false);
   const afkControlsDisabled = $derived(!detectorCapabilitiesLoaded || !afkDetectionSupported);
   const afkThresholdDisabled = $derived(afkControlsDisabled || !cfg.behavior.afk_skip_enabled);
   const whitelistControlsDisabled = $derived(
@@ -50,6 +51,9 @@
   );
   const whitelistEditingDisabled = $derived(
     whitelistControlsDisabled || !cfg.behavior.process_whitelist_enabled,
+  );
+  const fullscreenSkipDisabled = $derived(
+    !detectorCapabilitiesLoaded || !fullscreenDetectionSupported,
   );
 
   let whitelistInput = $state('');
@@ -317,12 +321,14 @@
       .then((capabilities) => {
         afkDetectionSupported = capabilities.afk_detection_supported;
         foregroundProcessSupported = capabilities.foreground_process_detection_supported;
+        fullscreenDetectionSupported = capabilities.fullscreen_detection_supported;
         detectorCapabilitiesLoaded = true;
       })
       .catch((err) => {
         console.error('Failed to load detector capabilities:', err);
         afkDetectionSupported = false;
         foregroundProcessSupported = false;
+        fullscreenDetectionSupported = false;
         detectorCapabilitiesLoaded = true;
       });
   });
@@ -603,13 +609,18 @@
       />
     </div>
 
-    <div class="setting-row separator">
+    <div class="setting-row separator" class:disabled={fullscreenSkipDisabled}>
       <div class="setting-info">
         <span class="setting-label">{i18nStore.t('settings.behavior.fullscreenSkip')}</span>
-        <span class="setting-desc">{i18nStore.t('settings.behavior.fullscreenSkip.desc')}</span>
+        <span class="setting-desc">
+          {fullscreenSkipDisabled
+            ? i18nStore.t('settings.behavior.fullscreenUnsupported')
+            : i18nStore.t('settings.behavior.fullscreenSkip.desc')}
+        </span>
       </div>
       <Toggle
         checked={cfg.behavior.fullscreen_skip}
+        disabled={fullscreenSkipDisabled}
         label={i18nStore.t('settings.behavior.fullscreenSkip')}
         onchange={(v) => handleBehaviorChange('fullscreen_skip', v)}
       />

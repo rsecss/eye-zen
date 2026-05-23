@@ -42,6 +42,8 @@ const en: TranslationDict = {
   'settings.behavior.sound.desc': 'Play sound on rest reminder',
   'settings.behavior.fullscreenSkip': 'Fullscreen Skip',
   'settings.behavior.fullscreenSkip.desc': 'Skip reminders in fullscreen apps',
+  'settings.behavior.fullscreenUnsupported':
+    'Fullscreen detection is not yet supported on this platform; coming in v0.7.x',
   'settings.behavior.afkSkip': 'AFK Skip',
   'settings.behavior.afkSkip.desc':
     'Skip the next reminder after keyboard and mouse idle exceeds the threshold',
