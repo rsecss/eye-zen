@@ -12,7 +12,8 @@
         { "event": "config_changed" },
         { "event": "state_changed" },
         { "event": "navigate_tab" },
-        { "event": "hotkey_status_changed" }
+        { "event": "hotkey_status_changed" },
+        { "event": "stat_persistence_error" }
       ]
     },
     "allow-get-state-snapshot",

@@ -169,6 +169,40 @@ pub struct CycleOutcomesPayload {
     pub is_beta: bool,
 }
 
+/// Which kind of stat write failed, so the UI can phrase the error and
+/// the user can decide whether to retry or restart.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(test, derive(ts_rs::TS))]
+#[cfg_attr(test, ts(export, export_to = "../../src/lib/bindings/"))]
+#[serde(rename_all = "snake_case")]
+pub enum StatPersistenceKind {
+    /// A completed rest session failed to write to `activity_segments`.
+    RestSession,
+    /// A cycle event (taken/skipped/suppressed) failed to write to
+    /// `rest_cycle_events`.
+    CycleEvent,
+    /// The bounded writer channel rejected the enqueue because either the
+    /// queue is full or the writer task has stopped. Surfacing this lets
+    /// the UI offer a restart rather than silently drop the rest.
+    QueueOverflow,
+}
+
+/// Emitted as `stat_persistence_error` when the stat writer task cannot
+/// persist a draft. Replaces the pre-v0.7 `warn!`-only behavior so users
+/// notice missing rest history instead of finding it later.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[cfg_attr(test, derive(ts_rs::TS))]
+#[cfg_attr(test, ts(export, export_to = "../../src/lib/bindings/"))]
+pub struct StatPersistenceErrorPayload {
+    pub kind: StatPersistenceKind,
+    /// RFC3339 UTC timestamp of the failure (not the draft's own
+    /// `occurred_at`, which may differ).
+    pub occurred_at: String,
+    /// Diagnostic string lifted from the underlying `AppError`. Safe to
+    /// surface in the UI: the format is the same as `AppError`'s `Display`.
+    pub message: String,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

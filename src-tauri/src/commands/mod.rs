@@ -91,16 +91,14 @@ pub(crate) async fn export_statistics(
     services: Services<'_>,
     target_path: String,
 ) -> CmdResult<()> {
-    let target_path = target_path.trim();
-    if target_path.is_empty() {
-        return Err(AppError::ConfigInvalid {
-            field: "target_path".to_string(),
-            reason: "must not be empty".to_string(),
-        });
-    }
+    // `target_path` flows from the OS save dialog. Strict path validation
+    // (absolute / no `..` / .db|.sqlite extension / not the live source DB)
+    // happens inside `StatService::export_to`; here we only normalize
+    // trailing whitespace before forming the PathBuf.
+    let trimmed = target_path.trim();
     services
         .stat
-        .export_to(std::path::PathBuf::from(target_path))
+        .export_to(std::path::PathBuf::from(trimmed))
         .await
 }
 

@@ -87,6 +87,26 @@ describe('typed event listeners forward to listen with the documented event name
     innerHandler({ event: 'navigate_tab', id: 4, payload: 'Settings' });
     expect(cb).toHaveBeenCalledWith('Settings');
   });
+
+  it('onStatPersistenceError subscribes to "stat_persistence_error" and unwraps payload', async () => {
+    const unlisten = vi.fn();
+    mockListen.mockImplementation((_name, _handler) => Promise.resolve(unlisten));
+
+    const cb = vi.fn();
+    const returned = await events.onStatPersistenceError(cb);
+
+    expect(mockListen.mock.calls[0][0]).toBe('stat_persistence_error');
+    expect(returned).toBe(unlisten);
+
+    const innerHandler = mockListen.mock.calls[0][1];
+    const payload = {
+      kind: 'queue_overflow' as const,
+      occurred_at: '2026-05-23T10:00:00Z',
+      message: 'stat writer queue full (256 pending drafts)',
+    };
+    innerHandler({ event: 'stat_persistence_error', id: 5, payload });
+    expect(cb).toHaveBeenCalledWith(payload);
+  });
 });
 
 describe('emit helpers', () => {
