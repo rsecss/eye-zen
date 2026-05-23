@@ -12,6 +12,7 @@
     "ci": "node scripts/ci.mjs",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
+    "test:ci": "vitest run --coverage",
     "tauri": "tauri",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

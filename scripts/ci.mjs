@@ -18,7 +18,7 @@ const steps = [
     ['test', '--manifest-path', 'src-tauri/Cargo.toml', '--no-default-features'],
   ],
   ['Frontend type check', 'npx', ['svelte-check', '--tsconfig', './tsconfig.json']],
-  ['Frontend tests', 'npm', ['test', '--', '--run']],
+  ['Frontend tests', 'npm', ['run', 'test:ci']],
   ['Frontend format check', 'npm', ['run', 'format:check']],
   ['Build frontend', 'npm', ['run', 'build']],
 ];

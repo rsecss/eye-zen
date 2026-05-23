@@ -105,7 +105,7 @@ verbatim in the GitHub release body.
 
 ## Verify
 
-- `npm run ci` passed locally (includes version sync gate).
+- `npm run ci` passed locally (includes version sync gate and coverage threshold).
 - PR CI passed.
 - Release CI produced all expected assets. See `docs/workflows/release-naming.md`.
 - Draft release notes are accurate (auto-extracted from `CHANGELOG.md`).
