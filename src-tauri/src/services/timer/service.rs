@@ -91,6 +91,7 @@ impl TimerService {
         Ok(())
     }
 
+    #[cfg_attr(not(feature = "plugin-shortcuts"), allow(dead_code))]
     pub(crate) async fn toggle_pause(&self) -> Result<()> {
         let event = {
             let inner = self.inner.lock().await;
