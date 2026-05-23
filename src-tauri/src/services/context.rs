@@ -117,22 +117,17 @@ impl ServiceContext {
                 info!("work timer reset to {}s", duration.as_secs());
             }
             Effect::RecordRestSession(session) => {
-                let stat = services.stat.clone();
-                let session = session.clone();
-                tauri::async_runtime::spawn(async move {
-                    if let Err(err) = stat.record_rest_session(session).await {
-                        warn!("failed to record rest session: {err}");
-                    }
-                });
+                if let Err(err) = services.stat.enqueue_rest_session(session.clone()) {
+                    // Queue full / writer task gone: surface as a status
+                    // event so the UI can react instead of silently
+                    // dropping the rest history.
+                    emit_stat_queue_overflow(app, &err);
+                }
             }
             Effect::RecordCycleEvent(draft) => {
-                let stat = services.stat.clone();
-                let draft = draft.clone();
-                tauri::async_runtime::spawn(async move {
-                    if let Err(err) = stat.record_cycle_event(draft).await {
-                        warn!("failed to record cycle event: {err}");
-                    }
-                });
+                if let Err(err) = services.stat.enqueue_cycle_event(draft.clone()) {
+                    emit_stat_queue_overflow(app, &err);
+                }
             }
         }
     }
@@ -243,6 +238,23 @@ impl std::fmt::Debug for ServiceContext {
 impl From<AppHandle> for ServiceContext {
     fn from(app: AppHandle) -> Self {
         Self::new(Some(app))
+    }
+}
+
+/// Emit a `stat_persistence_error` event for the `QueueOverflow` kind so
+/// the UI can warn the user that a rest record could not be enqueued.
+/// Underlying `SQLite` errors (foreign key, IO, etc.) are emitted by the
+/// stat writer task itself with the appropriate `kind`.
+#[cfg(not(test))]
+fn emit_stat_queue_overflow(app: &AppHandle, err: &crate::error::AppError) {
+    let payload = crate::models::statistics::StatPersistenceErrorPayload {
+        kind: crate::models::statistics::StatPersistenceKind::QueueOverflow,
+        occurred_at: chrono::Utc::now().to_rfc3339(),
+        message: err.to_string(),
+    };
+    tracing::error!("stat write enqueue failed: {err}");
+    if let Err(emit_err) = app.emit(events::STAT_PERSISTENCE_ERROR, &payload) {
+        warn!("failed to emit stat_persistence_error: {emit_err}");
     }
 }
 

@@ -9,25 +9,62 @@ use chrono::{DateTime, Datelike, Duration as ChronoDuration, NaiveDate, TimeZone
 use chrono_tz::Tz;
 use sqlx::sqlite::{SqliteConnectOptions, SqliteJournalMode, SqlitePoolOptions};
 use sqlx::{Row, SqlitePool};
-use tokio::sync::Mutex;
-use tracing::info;
+use tokio::sync::{mpsc, Mutex};
+use tokio::task::JoinHandle;
+use tracing::{error, info};
 
 use crate::error::{AppError, Result};
 use crate::models::config::{Config, TimerMode};
 use crate::models::statistics::{
     CycleEventDraft, CycleOutcome, CycleOutcomesPayload, CycleReason, EyeCareComponents,
     EyeCareIndex, ReasonBreakdown, RestSessionDraft, RhythmPayload, RibbonEntry, StatBucket,
-    StatisticsTrendPayload,
+    StatPersistenceErrorPayload, StatPersistenceKind, StatisticsTrendPayload,
 };
 use crate::services::{Service, ServiceContext};
 
 #[allow(dead_code)]
 const SCHEMA_VERSION: i64 = 2;
 
+/// Bounded queue size for the stat-writer channel. The hot path posts
+/// at most one item per timer tick (1 Hz), so 256 buffers ~4 minutes of
+/// drafts even if the `SQLite` WAL flush stalls.
+const STAT_WRITE_QUEUE_CAPACITY: usize = 256;
+
+/// Commands consumed by the dedicated stat-writer task. The variants
+/// mirror the public `record_*` methods so the writer can route to the
+/// existing persistence code without forking it. `Shutdown` is appended
+/// at the channel tail during `Service::shutdown` so the writer drains
+/// every queued draft before exiting.
+#[derive(Debug)]
+pub(crate) enum StatWriteCmd {
+    RestSession(RestSessionDraft),
+    CycleEvent(CycleEventDraft),
+    Shutdown,
+}
+
+impl StatWriteCmd {
+    const fn kind(&self) -> Option<StatPersistenceKind> {
+        match self {
+            Self::RestSession(_) => Some(StatPersistenceKind::RestSession),
+            Self::CycleEvent(_) => Some(StatPersistenceKind::CycleEvent),
+            Self::Shutdown => None,
+        }
+    }
+}
+
 #[derive(Clone)]
 pub(crate) struct StatService {
     db_path: PathBuf,
     pool: Arc<Mutex<Option<SqlitePool>>>,
+    /// Writer-task ingress. Cloning is cheap (Arc internally) and lets
+    /// `enqueue_*` work through any clone of the service.
+    writer_tx: mpsc::Sender<StatWriteCmd>,
+    /// Receiver side; taken out of the `Option` exactly once when
+    /// `start()` spawns the writer task.
+    writer_rx: Arc<Mutex<Option<mpsc::Receiver<StatWriteCmd>>>>,
+    /// Writer-task handle, used by `shutdown()` to join the loop after
+    /// draining the channel.
+    writer_handle: Arc<Mutex<Option<JoinHandle<()>>>>,
 }
 
 #[derive(Debug, Clone)]
@@ -52,59 +89,52 @@ struct BucketAccumulator {
 impl StatService {
     #[must_use]
     pub(crate) fn new(db_path: PathBuf) -> Self {
+        let (writer_tx, writer_rx) = mpsc::channel(STAT_WRITE_QUEUE_CAPACITY);
         Self {
             db_path,
             pool: Arc::new(Mutex::new(None)),
+            writer_tx,
+            writer_rx: Arc::new(Mutex::new(Some(writer_rx))),
+            writer_handle: Arc::new(Mutex::new(None)),
         }
     }
 
-    pub(crate) async fn record_rest_session(&self, session: RestSessionDraft) -> Result<()> {
-        let pool = self.pool().await?;
-        let utc_date = session.started_at_utc.format("%Y-%m-%d").to_string();
-
-        sqlx::query(
-            r"
-            INSERT INTO activity_segments (state, started_at, ended_at, duration_secs, date)
-            VALUES (?1, ?2, ?3, ?4, ?5)
-            ",
-        )
-        .bind("resting")
-        .bind(session.started_at_utc.to_rfc3339())
-        .bind(session.ended_at_utc.to_rfc3339())
-        .bind(i64::from(session.duration_secs))
-        .bind(utc_date)
-        .execute(&pool)
-        .await?;
-
-        Ok(())
+    /// Queue a completed rest session for asynchronous persistence.
+    ///
+    /// # Errors
+    ///
+    /// Returns `AppError::IoError` when the bounded writer queue is full
+    /// or the writer task has already shut down. The caller decides
+    /// whether to surface the loss to the user; `execute_timer_effect`
+    /// emits a `stat_persistence_error` event with
+    /// `StatPersistenceKind::QueueOverflow` so the UI can react.
+    pub(crate) fn enqueue_rest_session(&self, session: RestSessionDraft) -> Result<()> {
+        self.writer_tx
+            .try_send(StatWriteCmd::RestSession(session))
+            .map_err(|err| map_send_error(&err))
     }
 
-    /// Persist a rest-cycle event (taken / skipped / suppressed) into
-    /// `rest_cycle_events`. The dual-write for `taken` outcomes into
-    /// `activity_segments` is handled by the existing
-    /// `record_rest_session` path so legacy export consumers stay correct
-    /// without this method having to know about that table.
+    /// Queue a cycle event for asynchronous persistence. See
+    /// `enqueue_rest_session` for failure semantics.
+    pub(crate) fn enqueue_cycle_event(&self, draft: CycleEventDraft) -> Result<()> {
+        self.writer_tx
+            .try_send(StatWriteCmd::CycleEvent(draft))
+            .map_err(|err| map_send_error(&err))
+    }
+
+    /// Synchronous persistence path retained for test scenarios that need
+    /// to confirm a write landed in the DB before reading it back. The
+    /// production hot path goes through `enqueue_rest_session` instead.
+    #[cfg(test)]
+    pub(crate) async fn record_rest_session(&self, session: RestSessionDraft) -> Result<()> {
+        persist_rest_session(&self.pool, session).await
+    }
+
+    /// Synchronous companion to `record_rest_session`. Same testing-only
+    /// contract.
+    #[cfg(test)]
     pub(crate) async fn record_cycle_event(&self, draft: CycleEventDraft) -> Result<()> {
-        let pool = self.pool().await?;
-
-        sqlx::query(
-            r"
-            INSERT INTO rest_cycle_events
-                (occurred_at, outcome, reason, process_hint, duration_secs, mode, is_long_break)
-            VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
-            ",
-        )
-        .bind(draft.occurred_at_utc.to_rfc3339())
-        .bind(draft.outcome.as_str())
-        .bind(draft.reason.map(CycleReason::as_str))
-        .bind(draft.process_hint.as_deref())
-        .bind(draft.duration_secs.map(i64::from))
-        .bind(timer_mode_label(draft.mode))
-        .bind(i64::from(draft.is_long_break))
-        .execute(&pool)
-        .await?;
-
-        Ok(())
+        persist_cycle_event(&self.pool, draft).await
     }
 
     pub(crate) async fn statistics_trends(
@@ -224,10 +254,12 @@ impl StatService {
     /// `SQLite`'s `VACUUM INTO` is a directive whose filename is a string
     /// literal in the SQL grammar and does NOT accept a bind parameter, so
     /// the path is interpolated and any embedded single quote is doubled
-    /// per the SQL escape rule. `target_path` is sourced from the OS save
-    /// dialog (no untrusted network input), so this stays within the
-    /// trusted boundary.
+    /// per the SQL escape rule. `target_path` flows from the OS save
+    /// dialog into this command, but `validate_export_path` enforces the
+    /// trust boundary explicitly so a malicious or buggy frontend cannot
+    /// overwrite the live source DB or escape via `..`.
     pub(crate) async fn export_to(&self, target_path: PathBuf) -> Result<()> {
+        validate_export_path(&target_path, &self.db_path)?;
         let pool = self.pool().await?;
 
         if let Some(parent) = target_path.parent() {
@@ -324,9 +356,13 @@ impl StatService {
             .connect("sqlite::memory:")
             .await?;
         migrate(&pool).await?;
+        let (writer_tx, writer_rx) = mpsc::channel(STAT_WRITE_QUEUE_CAPACITY);
         Ok(Self {
             db_path: PathBuf::from(":memory:"),
             pool: Arc::new(Mutex::new(Some(pool))),
+            writer_tx,
+            writer_rx: Arc::new(Mutex::new(Some(writer_rx))),
+            writer_handle: Arc::new(Mutex::new(None)),
         })
     }
 }
@@ -342,16 +378,167 @@ impl Service for StatService {
         Ok(())
     }
 
-    async fn start(&self, _app: &ServiceContext) -> Result<()> {
+    async fn start(&self, app: &ServiceContext) -> Result<()> {
+        let Some(receiver) = self.writer_rx.lock().await.take() else {
+            return Err(AppError::InvalidOperation {
+                operation: "stat writer".to_string(),
+                reason: "writer task already started".to_string(),
+            });
+        };
+
+        // The writer task receives the pool handle and the AppHandle only.
+        // Holding a full `StatService` clone would keep a duplicate Sender
+        // alive and block channel shutdown.
+        let pool = Arc::clone(&self.pool);
+        let app = app.clone();
+        let handle = tokio::spawn(async move {
+            run_writer_loop(pool, receiver, app).await;
+        });
+        *self.writer_handle.lock().await = Some(handle);
+        info!("statistics writer task started");
         Ok(())
     }
 
     async fn shutdown(&self) -> Result<()> {
+        // Send the shutdown sentinel through the same channel so the
+        // writer drains every queued draft before exiting. `try_send`
+        // may fail if the queue is already saturated; in that case the
+        // queue itself drains first and the writer falls out of `recv()`
+        // on its own once the queue empties, but as belt-and-suspenders
+        // we still abort the join handle below.
+        if let Err(err) = self.writer_tx.try_send(StatWriteCmd::Shutdown) {
+            tracing::warn!("stat writer shutdown sentinel rejected: {err}");
+        }
+        if let Some(handle) = self.writer_handle.lock().await.take() {
+            match handle.await {
+                Ok(()) => info!("statistics writer task drained"),
+                Err(err) if err.is_cancelled() => info!("statistics writer task cancelled"),
+                Err(err) => error!("statistics writer task panicked: {err}"),
+            }
+        }
         if let Some(pool) = self.pool.lock().await.take() {
             pool.close().await;
             info!("statistics database closed");
         }
         Ok(())
+    }
+}
+
+/// Drain the writer channel into `SQLite`. Persistence failures surface as
+/// a `stat_persistence_error` event so the UI can warn the user; the loop
+/// keeps running so a transient failure does not silently disable all
+/// future writes. The loop exits when it receives a `Shutdown` sentinel
+/// (graceful drain) or when every Sender has been dropped (defensive
+/// fallback).
+async fn run_writer_loop(
+    pool: Arc<Mutex<Option<SqlitePool>>>,
+    mut rx: mpsc::Receiver<StatWriteCmd>,
+    app: ServiceContext,
+) {
+    while let Some(cmd) = rx.recv().await {
+        let kind = cmd.kind();
+        let outcome = match cmd {
+            StatWriteCmd::RestSession(session) => persist_rest_session(&pool, session).await,
+            StatWriteCmd::CycleEvent(draft) => persist_cycle_event(&pool, draft).await,
+            StatWriteCmd::Shutdown => break,
+        };
+        if let Err(err) = outcome {
+            if let Some(kind) = kind {
+                emit_persistence_error(&app, kind, &err);
+            }
+        }
+    }
+    info!("statistics writer task exit");
+}
+
+async fn locked_pool(pool: &Arc<Mutex<Option<SqlitePool>>>) -> Result<SqlitePool> {
+    pool.lock()
+        .await
+        .clone()
+        .ok_or_else(|| AppError::InvalidOperation {
+            operation: "statistics database".to_string(),
+            reason: "not initialized".to_string(),
+        })
+}
+
+async fn persist_rest_session(
+    pool: &Arc<Mutex<Option<SqlitePool>>>,
+    session: RestSessionDraft,
+) -> Result<()> {
+    let pool = locked_pool(pool).await?;
+    let utc_date = session.started_at_utc.format("%Y-%m-%d").to_string();
+    sqlx::query(
+        r"
+        INSERT INTO activity_segments (state, started_at, ended_at, duration_secs, date)
+        VALUES (?1, ?2, ?3, ?4, ?5)
+        ",
+    )
+    .bind("resting")
+    .bind(session.started_at_utc.to_rfc3339())
+    .bind(session.ended_at_utc.to_rfc3339())
+    .bind(i64::from(session.duration_secs))
+    .bind(utc_date)
+    .execute(&pool)
+    .await?;
+    Ok(())
+}
+
+async fn persist_cycle_event(
+    pool: &Arc<Mutex<Option<SqlitePool>>>,
+    draft: CycleEventDraft,
+) -> Result<()> {
+    let pool = locked_pool(pool).await?;
+    sqlx::query(
+        r"
+        INSERT INTO rest_cycle_events
+            (occurred_at, outcome, reason, process_hint, duration_secs, mode, is_long_break)
+        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)
+        ",
+    )
+    .bind(draft.occurred_at_utc.to_rfc3339())
+    .bind(draft.outcome.as_str())
+    .bind(draft.reason.map(CycleReason::as_str))
+    .bind(draft.process_hint.as_deref())
+    .bind(draft.duration_secs.map(i64::from))
+    .bind(timer_mode_label(draft.mode))
+    .bind(i64::from(draft.is_long_break))
+    .execute(&pool)
+    .await?;
+    Ok(())
+}
+
+#[cfg(not(test))]
+fn emit_persistence_error(app: &ServiceContext, kind: StatPersistenceKind, err: &AppError) {
+    let payload = StatPersistenceErrorPayload {
+        kind,
+        occurred_at: Utc::now().to_rfc3339(),
+        message: err.to_string(),
+    };
+    tracing::error!("stat persistence failed [{:?}]: {err}", kind);
+    if let Some(handle) = app.app_handle() {
+        use tauri::Emitter;
+        if let Err(emit_err) = handle.emit(crate::events::STAT_PERSISTENCE_ERROR, &payload) {
+            tracing::error!("failed to emit stat_persistence_error: {emit_err}");
+        }
+    }
+}
+
+#[cfg(test)]
+fn emit_persistence_error(_app: &ServiceContext, kind: StatPersistenceKind, err: &AppError) {
+    // Tests inspect StatService state directly; no AppHandle in cfg(test).
+    tracing::error!("stat persistence failed [{:?}]: {err}", kind);
+}
+
+/// Translate a `try_send` failure into the unified `AppError` so callers
+/// can branch on `IoError` without caring about tokio internals.
+fn map_send_error(err: &mpsc::error::TrySendError<StatWriteCmd>) -> AppError {
+    match err {
+        mpsc::error::TrySendError::Full(_) => AppError::IoError {
+            message: "stat writer queue full (256 pending drafts)".to_string(),
+        },
+        mpsc::error::TrySendError::Closed(_) => AppError::IoError {
+            message: "stat writer task has shut down".to_string(),
+        },
     }
 }
 
@@ -399,18 +586,23 @@ async fn migrate(pool: &SqlitePool) -> Result<()> {
     Ok(())
 }
 
-/// One-shot, idempotent v1 -> v2 migration for the Health Analysis feature.
+/// One-shot v1 -> v2 migration for the Health Analysis feature.
 ///
-/// - Creates `rest_cycle_events` and its two indexes.
-/// - Backfills all existing `state = 'resting'` rows from `activity_segments`
-///   as `outcome = 'taken'` cycles (mode = NULL because legacy rows predate
-///   the per-cycle mode snapshot).
-/// - Bumps `PRAGMA user_version` to 2.
+/// All steps run inside a single `SQLite` transaction so a partial failure
+/// (process crash, disk error mid-step) rolls back atomically and leaves
+/// `PRAGMA user_version = 1`. The next launch retries from a clean slate.
 ///
-/// Re-running this migration on an already-v2 database is a no-op because
-/// the caller gates on `version < 2`; the SQL itself is also defensive
-/// (`CREATE TABLE IF NOT EXISTS` + `INSERT ... SELECT`).
+/// Steps:
+/// - Create `rest_cycle_events` and its two indexes.
+/// - Backfill `state = 'resting'` rows from `activity_segments` as
+///   `outcome = 'taken'` cycles (mode = NULL because legacy rows predate
+///   the per-cycle mode snapshot). Guarded by a `WHERE NOT EXISTS` clause
+///   so a partial re-application (e.g. user manually restored a snapshot
+///   that already contains some backfilled rows) does not duplicate.
+/// - Bump `PRAGMA user_version` to 2 inside the same transaction.
 async fn migrate_v1_to_v2(pool: &SqlitePool) -> Result<()> {
+    let mut tx = pool.begin().await?;
+
     sqlx::query(
         r"
         CREATE TABLE IF NOT EXISTS rest_cycle_events (
@@ -425,7 +617,7 @@ async fn migrate_v1_to_v2(pool: &SqlitePool) -> Result<()> {
         )
         ",
     )
-    .execute(pool)
+    .execute(&mut *tx)
     .await?;
     sqlx::query(
         r"
@@ -433,7 +625,7 @@ async fn migrate_v1_to_v2(pool: &SqlitePool) -> Result<()> {
         ON rest_cycle_events(occurred_at)
         ",
     )
-    .execute(pool)
+    .execute(&mut *tx)
     .await?;
     sqlx::query(
         r"
@@ -441,25 +633,120 @@ async fn migrate_v1_to_v2(pool: &SqlitePool) -> Result<()> {
         ON rest_cycle_events(outcome)
         ",
     )
-    .execute(pool)
+    .execute(&mut *tx)
     .await?;
 
     // Backfill: every legacy resting segment becomes a `taken` cycle. mode
     // stays NULL because we cannot reconstruct the timer mode that was
-    // active when the row was written.
+    // active when the row was written. The `WHERE NOT EXISTS` predicate
+    // makes the INSERT idempotent against any rest_cycle_events row that
+    // already carries the same occurred_at / duration_secs signature, so a
+    // recovered snapshot with partial backfill cannot produce duplicates.
     sqlx::query(
         r"
         INSERT INTO rest_cycle_events
                (occurred_at, outcome, reason, process_hint, duration_secs, mode, is_long_break)
-        SELECT started_at, 'taken', NULL,   NULL,         duration_secs, NULL, 0
-        FROM   activity_segments
-        WHERE  state = 'resting'
+        SELECT a.started_at, 'taken', NULL, NULL, a.duration_secs, NULL, 0
+        FROM   activity_segments AS a
+        WHERE  a.state = 'resting'
+          AND  NOT EXISTS (
+                  SELECT 1 FROM rest_cycle_events AS r
+                  WHERE r.outcome = 'taken'
+                    AND r.occurred_at = a.started_at
+                    AND (r.duration_secs IS a.duration_secs)
+              )
         ",
     )
-    .execute(pool)
+    .execute(&mut *tx)
     .await?;
 
-    sqlx::query("PRAGMA user_version = 2").execute(pool).await?;
+    sqlx::query("PRAGMA user_version = 2")
+        .execute(&mut *tx)
+        .await?;
+
+    tx.commit().await?;
+    Ok(())
+}
+
+/// Boundary validation for `export_statistics`. Reject anything that is not
+/// a normal sqlite-shaped path the user could plausibly select via the OS
+/// save dialog:
+///
+/// - MUST be absolute. Relative paths would resolve against the working
+///   directory of the helper process and could escape into the app data
+///   directory.
+/// - MUST NOT contain a `..` component. `SQLite`'s `VACUUM INTO` will follow
+///   it, and the save dialog has no business producing one.
+/// - MUST have a `.db` or `.sqlite` extension (case-insensitive). Anything
+///   else (`.log`, `.toml`, no extension) is a sign of misuse and would
+///   confuse the file as a "valid sqlite backup".
+/// - MUST NOT point at the live source database. Without this check
+///   `VACUUM INTO` would refuse with an opaque `SQLite` error after
+///   `remove_file` already destroyed it; far worse, when the source path
+///   has been canonicalized differently the destructive `remove_file`
+///   could still hit a symlink to the live DB.
+/// - The parent directory MUST exist. `tokio::fs::create_dir_all` is
+///   allowed to create the final leaf, but we do not silently create
+///   arbitrary deep ancestors on behalf of the user.
+fn validate_export_path(target: &std::path::Path, source_db: &std::path::Path) -> Result<()> {
+    if !target.is_absolute() {
+        return Err(AppError::ConfigInvalid {
+            field: "target_path".to_string(),
+            reason: format!("must be an absolute path, got {}", target.display()),
+        });
+    }
+
+    if target
+        .components()
+        .any(|c| matches!(c, std::path::Component::ParentDir))
+    {
+        return Err(AppError::ConfigInvalid {
+            field: "target_path".to_string(),
+            reason: format!("must not contain `..` segments, got {}", target.display()),
+        });
+    }
+
+    let extension_ok = target
+        .extension()
+        .and_then(|ext| ext.to_str())
+        .is_some_and(|ext| {
+            let lower = ext.to_ascii_lowercase();
+            lower == "db" || lower == "sqlite"
+        });
+    if !extension_ok {
+        return Err(AppError::ConfigInvalid {
+            field: "target_path".to_string(),
+            reason: format!("extension must be .db or .sqlite, got {}", target.display()),
+        });
+    }
+
+    let Some(parent) = target.parent() else {
+        return Err(AppError::ConfigInvalid {
+            field: "target_path".to_string(),
+            reason: format!("must have a parent directory, got {}", target.display()),
+        });
+    };
+    if !parent.as_os_str().is_empty() && !parent.is_dir() {
+        return Err(AppError::ConfigInvalid {
+            field: "target_path".to_string(),
+            reason: format!("parent directory does not exist: {}", parent.display()),
+        });
+    }
+
+    // Same-file check: prefer canonicalize (resolves symlinks, normalizes
+    // case on Windows) but fall back to a lexical compare so a non-yet-
+    // existing target still gets the basic equality guard.
+    let same_file = match (target.canonicalize(), source_db.canonicalize()) {
+        (Ok(t), Ok(s)) => t == s,
+        _ => target == source_db,
+    };
+    if same_file {
+        return Err(AppError::ConfigInvalid {
+            field: "target_path".to_string(),
+            reason: "must not overwrite the live statistics database".to_string(),
+        });
+    }
+
     Ok(())
 }
 
@@ -1147,14 +1434,99 @@ mod tests {
             .await
             .expect("stat service should init");
 
-        // Use the source database file itself as a fake "parent directory".
-        // `create_dir_all` will fail because that path is a file, not a dir.
+        // The parent of this target is the source DB file itself, which is
+        // not a directory; validate_export_path rejects it before touching
+        // the filesystem.
         let bogus_target = service.db_path.join("nested").join("backup.db");
         let err = service
             .export_to(bogus_target)
             .await
             .expect_err("export to invalid path should fail");
-        assert!(matches!(err, AppError::IoError { .. }));
+        assert!(matches!(err, AppError::ConfigInvalid { .. }));
+    }
+
+    #[tokio::test]
+    async fn export_path_rejects_relative_path() {
+        let target = std::path::PathBuf::from("relative/backup.db");
+        let source = std::path::PathBuf::from("/tmp/data.db");
+        let Err(AppError::ConfigInvalid { field, reason }) = validate_export_path(&target, &source)
+        else {
+            panic!("relative path should be rejected");
+        };
+        assert_eq!(field, "target_path");
+        assert!(reason.contains("absolute"), "reason was {reason}");
+    }
+
+    #[tokio::test]
+    async fn export_path_rejects_traversal() {
+        let dir = tempdir().expect("tempdir should be created");
+        let target = dir.path().join("..").join("backup.db");
+        let source = dir.path().join("data.db");
+        let Err(AppError::ConfigInvalid { field, reason }) = validate_export_path(&target, &source)
+        else {
+            panic!("`..` traversal should be rejected");
+        };
+        assert_eq!(field, "target_path");
+        assert!(reason.contains(".."), "reason was {reason}");
+    }
+
+    #[tokio::test]
+    async fn export_path_rejects_non_db_extension() {
+        let dir = tempdir().expect("tempdir should be created");
+        let target = dir.path().join("backup.log");
+        let source = dir.path().join("data.db");
+        let Err(AppError::ConfigInvalid { field, reason }) = validate_export_path(&target, &source)
+        else {
+            panic!("non-.db extension should be rejected");
+        };
+        assert_eq!(field, "target_path");
+        assert!(reason.contains(".db"), "reason was {reason}");
+    }
+
+    #[tokio::test]
+    async fn export_path_rejects_missing_parent_directory() {
+        let dir = tempdir().expect("tempdir should be created");
+        let target = dir.path().join("missing").join("backup.db");
+        let source = dir.path().join("data.db");
+        let Err(AppError::ConfigInvalid { field, reason }) = validate_export_path(&target, &source)
+        else {
+            panic!("missing parent should be rejected");
+        };
+        assert_eq!(field, "target_path");
+        assert!(reason.contains("parent directory"), "reason was {reason}");
+    }
+
+    #[tokio::test]
+    async fn export_path_rejects_source_db_self() {
+        let dir = tempdir().expect("tempdir should be created");
+        let source = dir.path().join("data.db");
+        // Create the source file so canonicalize sees it.
+        std::fs::write(&source, b"sqlite3").expect("seed source db");
+        let Err(AppError::ConfigInvalid { field, reason }) = validate_export_path(&source, &source)
+        else {
+            panic!("source-db-self should be rejected");
+        };
+        assert_eq!(field, "target_path");
+        assert!(
+            reason.contains("live statistics database"),
+            "reason was {reason}"
+        );
+    }
+
+    #[tokio::test]
+    async fn export_path_accepts_valid_absolute_db() {
+        let dir = tempdir().expect("tempdir should be created");
+        let target = dir.path().join("backup.db");
+        let source = dir.path().join("data.db");
+        validate_export_path(&target, &source).expect("absolute .db in tempdir should pass");
+    }
+
+    #[tokio::test]
+    async fn export_path_accepts_sqlite_extension_case_insensitive() {
+        let dir = tempdir().expect("tempdir should be created");
+        let target = dir.path().join("backup.SQLITE");
+        let source = dir.path().join("data.db");
+        validate_export_path(&target, &source).expect(".SQLITE should pass");
     }
 
     #[tokio::test]
@@ -1259,6 +1631,202 @@ mod tests {
                 .await
                 .expect("backfill count should query");
         assert_eq!(cycle_rows_after, 3);
+    }
+
+    /// Simulates a crash mid-migration where `rest_cycle_events` and partial
+    /// backfill survived but `PRAGMA user_version` never reached 2. The next
+    /// run MUST complete cleanly without duplicating the rows that already
+    /// landed in the table, and MUST bump the version to 2.
+    #[tokio::test]
+    async fn migration_v1_to_v2_is_idempotent_on_partial_failure() {
+        let pool = SqlitePoolOptions::new()
+            .max_connections(1)
+            .connect("sqlite::memory:")
+            .await
+            .expect("sqlite memory pool should open");
+
+        // Hand-craft a v1 database with 3 legacy resting rows.
+        sqlx::query(
+            r"
+            CREATE TABLE activity_segments (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                state TEXT NOT NULL,
+                started_at TEXT NOT NULL,
+                ended_at TEXT NOT NULL,
+                duration_secs INTEGER NOT NULL,
+                date TEXT NOT NULL
+            )
+            ",
+        )
+        .execute(&pool)
+        .await
+        .expect("v1 schema should create");
+        sqlx::query("PRAGMA user_version = 1")
+            .execute(&pool)
+            .await
+            .expect("v1 version should set");
+
+        let base = Utc
+            .with_ymd_and_hms(2026, 5, 20, 10, 0, 0)
+            .single()
+            .expect("valid UTC datetime");
+        for offset in 0..3 {
+            sqlx::query(
+                "INSERT INTO activity_segments (state, started_at, ended_at, duration_secs, date)
+                 VALUES ('resting', ?1, ?2, ?3, ?4)",
+            )
+            .bind((base + chrono::Duration::minutes(i64::from(offset) * 20)).to_rfc3339())
+            .bind((base + chrono::Duration::minutes(i64::from(offset) * 20 + 1)).to_rfc3339())
+            .bind(20_i64)
+            .bind("2026-05-20")
+            .execute(&pool)
+            .await
+            .expect("v1 row should insert");
+        }
+
+        // Simulate the post-crash state by hand: rest_cycle_events exists
+        // and holds one of the three backfill rows, but user_version is
+        // still 1.
+        sqlx::query(
+            r"
+            CREATE TABLE rest_cycle_events (
+                id            INTEGER PRIMARY KEY AUTOINCREMENT,
+                occurred_at   TEXT NOT NULL,
+                outcome       TEXT NOT NULL,
+                reason        TEXT,
+                process_hint  TEXT,
+                duration_secs INTEGER,
+                mode          TEXT,
+                is_long_break INTEGER NOT NULL DEFAULT 0
+            )
+            ",
+        )
+        .execute(&pool)
+        .await
+        .expect("rest_cycle_events table should pre-exist");
+        sqlx::query(
+            "INSERT INTO rest_cycle_events
+                 (occurred_at, outcome, reason, process_hint, duration_secs, mode, is_long_break)
+             VALUES (?1, 'taken', NULL, NULL, 20, NULL, 0)",
+        )
+        .bind(base.to_rfc3339())
+        .execute(&pool)
+        .await
+        .expect("partial backfill row should insert");
+
+        // Sanity: pre-state.
+        let pre_version: i64 = sqlx::query_scalar("PRAGMA user_version")
+            .fetch_one(&pool)
+            .await
+            .expect("user_version should query");
+        assert_eq!(pre_version, 1);
+        let pre_rows: i64 =
+            sqlx::query_scalar("SELECT COUNT(*) FROM rest_cycle_events WHERE outcome = 'taken'")
+                .fetch_one(&pool)
+                .await
+                .expect("count should query");
+        assert_eq!(pre_rows, 1);
+
+        // Resume the migration.
+        migrate(&pool)
+            .await
+            .expect("recovery migrate should succeed");
+
+        let post_version: i64 = sqlx::query_scalar("PRAGMA user_version")
+            .fetch_one(&pool)
+            .await
+            .expect("user_version should query");
+        assert_eq!(post_version, 2);
+        let post_rows: i64 =
+            sqlx::query_scalar("SELECT COUNT(*) FROM rest_cycle_events WHERE outcome = 'taken'")
+                .fetch_one(&pool)
+                .await
+                .expect("count should query");
+        // Expect 3: the pre-existing row plus the two missing ones, no
+        // duplicates for the pre-existing one.
+        assert_eq!(post_rows, 3);
+    }
+
+    /// When a transaction step inside `migrate_v1_to_v2` fails, the version
+    /// MUST stay at 1 (atomic rollback). We provoke a failure by
+    /// pre-creating `rest_cycle_events` with a CHECK constraint that the
+    /// `INSERT ... SELECT` backfill cannot satisfy, then assert the version
+    /// has NOT advanced past 1 and that the wider `migrate()` entry point
+    /// surfaces the error.
+    #[tokio::test]
+    async fn migration_v1_to_v2_rolls_back_on_failure() {
+        let pool = SqlitePoolOptions::new()
+            .max_connections(1)
+            .connect("sqlite::memory:")
+            .await
+            .expect("sqlite memory pool should open");
+
+        sqlx::query(
+            r"
+            CREATE TABLE activity_segments (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                state TEXT NOT NULL,
+                started_at TEXT NOT NULL,
+                ended_at TEXT NOT NULL,
+                duration_secs INTEGER NOT NULL,
+                date TEXT NOT NULL
+            )
+            ",
+        )
+        .execute(&pool)
+        .await
+        .expect("v1 schema should create");
+        sqlx::query("PRAGMA user_version = 1")
+            .execute(&pool)
+            .await
+            .expect("v1 version should set");
+        sqlx::query(
+            "INSERT INTO activity_segments (state, started_at, ended_at, duration_secs, date)
+             VALUES ('resting', '2026-05-20T10:00:00Z', '2026-05-20T10:00:20Z', 20, '2026-05-20')",
+        )
+        .execute(&pool)
+        .await
+        .expect("seed row should insert");
+
+        // Pre-create rest_cycle_events with a CHECK constraint that the
+        // backfill row violates (the backfill writes mode = NULL but the
+        // CHECK forbids NULL mode). `CREATE TABLE IF NOT EXISTS` inside
+        // the migration is then a no-op, but the INSERT ... SELECT
+        // afterwards fails inside the transaction.
+        sqlx::query(
+            r"
+            CREATE TABLE rest_cycle_events (
+                id            INTEGER PRIMARY KEY AUTOINCREMENT,
+                occurred_at   TEXT NOT NULL,
+                outcome       TEXT NOT NULL,
+                reason        TEXT,
+                process_hint  TEXT,
+                duration_secs INTEGER,
+                mode          TEXT NOT NULL CHECK (mode IN ('forced')),
+                is_long_break INTEGER NOT NULL DEFAULT 0
+            )
+            ",
+        )
+        .execute(&pool)
+        .await
+        .expect("pre-existing constrained table should create");
+
+        let result = migrate(&pool).await;
+        assert!(result.is_err(), "constraint violation should fail migrate");
+
+        let version: i64 = sqlx::query_scalar("PRAGMA user_version")
+            .fetch_one(&pool)
+            .await
+            .expect("user_version should query");
+        assert_eq!(
+            version, 1,
+            "rolled back transaction must leave version at 1"
+        );
+        let rows: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM rest_cycle_events")
+            .fetch_one(&pool)
+            .await
+            .expect("count should query");
+        assert_eq!(rows, 0, "no backfill rows must survive the rollback");
     }
 
     #[tokio::test]
@@ -1435,5 +2003,196 @@ mod tests {
         let result = longest_work_secs_today(&refs, now_utc, chrono_tz::UTC, day);
         // Day start 00:00 -> first rest 10:00 = 10h = 36000s; tail 13:00->18:00 = 5h.
         assert_eq!(result, 10 * 3600);
+    }
+
+    /// Wait until the queued draft has been persisted by polling the row
+    /// count. Test-side polling is acceptable here: the writer task is
+    /// async and may not have flushed by the time the enqueue returns.
+    async fn wait_for_row_count(pool: &SqlitePool, table: &str, expected: i64) {
+        for _ in 0..50 {
+            let count: i64 = sqlx::query_scalar(&format!("SELECT COUNT(*) FROM {table}"))
+                .fetch_one(pool)
+                .await
+                .expect("count query should succeed");
+            if count == expected {
+                return;
+            }
+            tokio::time::sleep(std::time::Duration::from_millis(20)).await;
+        }
+        let actual: i64 = sqlx::query_scalar(&format!("SELECT COUNT(*) FROM {table}"))
+            .fetch_one(pool)
+            .await
+            .expect("count query should succeed");
+        panic!("writer task did not persist {expected} {table} rows within 1s, observed {actual}");
+    }
+
+    #[tokio::test]
+    async fn writer_task_persists_enqueued_rest_session() {
+        let service = StatService::new_in_memory()
+            .await
+            .expect("in-memory stat service should init");
+        service
+            .start(&ServiceContext::default())
+            .await
+            .expect("writer task should start");
+
+        let session = session_at(
+            Utc.with_ymd_and_hms(2026, 5, 20, 10, 0, 0)
+                .single()
+                .expect("valid UTC datetime"),
+            20,
+        );
+        service
+            .enqueue_rest_session(session)
+            .expect("enqueue should succeed");
+
+        let pool = service.pool().await.expect("pool should exist");
+        wait_for_row_count(&pool, "activity_segments", 1).await;
+
+        service.shutdown().await.expect("shutdown should succeed");
+    }
+
+    #[tokio::test]
+    async fn writer_task_persists_enqueued_cycle_event() {
+        let service = StatService::new_in_memory()
+            .await
+            .expect("in-memory stat service should init");
+        service
+            .start(&ServiceContext::default())
+            .await
+            .expect("writer task should start");
+
+        let draft = CycleEventDraft {
+            occurred_at_utc: Utc
+                .with_ymd_and_hms(2026, 5, 20, 10, 0, 0)
+                .single()
+                .expect("valid UTC datetime"),
+            outcome: CycleOutcome::Skipped,
+            reason: None,
+            process_hint: None,
+            duration_secs: None,
+            mode: TimerMode::TwentyTwentyTwenty,
+            is_long_break: false,
+        };
+        service
+            .enqueue_cycle_event(draft)
+            .expect("enqueue should succeed");
+
+        let pool = service.pool().await.expect("pool should exist");
+        wait_for_row_count(&pool, "rest_cycle_events", 1).await;
+
+        service.shutdown().await.expect("shutdown should succeed");
+    }
+
+    #[tokio::test]
+    async fn shutdown_drains_queued_drafts_before_exit() {
+        // Use a file-backed db so we can re-open after shutdown and inspect
+        // exactly what landed; an in-memory pool would be torn down by
+        // shutdown.
+        let dir = tempdir().expect("tempdir should be created");
+        let db_path = dir.path().join("data.db");
+        let service = StatService::new(db_path.clone());
+        service
+            .init(&ServiceContext::default())
+            .await
+            .expect("stat service should init");
+        service
+            .start(&ServiceContext::default())
+            .await
+            .expect("writer task should start");
+
+        // Burst-queue 10 sessions, then immediately request shutdown. The
+        // shutdown sentinel sits at the tail so all 10 MUST persist before
+        // the writer exits.
+        for offset in 0..10 {
+            service
+                .enqueue_rest_session(session_at(
+                    Utc.with_ymd_and_hms(2026, 5, 20, 10, 0, 0)
+                        .single()
+                        .expect("valid UTC datetime")
+                        + chrono::Duration::seconds(offset),
+                    20,
+                ))
+                .expect("enqueue should succeed");
+        }
+        service.shutdown().await.expect("shutdown should drain");
+
+        // Re-open the DB and count rows.
+        let verify_pool = SqlitePoolOptions::new()
+            .max_connections(1)
+            .connect_with(SqliteConnectOptions::new().filename(&db_path))
+            .await
+            .expect("verify pool should open");
+        let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM activity_segments")
+            .fetch_one(&verify_pool)
+            .await
+            .expect("count query should succeed");
+        assert_eq!(count, 10, "shutdown must drain every queued draft");
+        verify_pool.close().await;
+    }
+
+    #[tokio::test]
+    async fn enqueue_after_shutdown_returns_io_error() {
+        let service = StatService::new_in_memory()
+            .await
+            .expect("in-memory stat service should init");
+        service
+            .start(&ServiceContext::default())
+            .await
+            .expect("writer task should start");
+        service.shutdown().await.expect("shutdown should succeed");
+
+        // Wait briefly so the writer task fully drops its receiver before
+        // we probe the closed-channel behavior. The shutdown future
+        // already awaits the JoinHandle so the receiver has been dropped,
+        // but `try_send` reflects channel state immediately.
+        let result = service.enqueue_rest_session(session_at(
+            Utc.with_ymd_and_hms(2026, 5, 20, 10, 0, 0)
+                .single()
+                .expect("valid UTC datetime"),
+            20,
+        ));
+        match result {
+            Err(AppError::IoError { message }) => {
+                assert!(
+                    message.contains("shut down") || message.contains("queue full"),
+                    "expected closed-channel error, got {message}"
+                );
+            }
+            other => panic!("expected IoError after shutdown, got {other:?}"),
+        }
+    }
+
+    #[tokio::test]
+    async fn enqueue_when_queue_full_returns_io_error() {
+        let service = StatService::new_in_memory()
+            .await
+            .expect("in-memory stat service should init");
+        // Don't `start()`; with no writer task, the receiver sits idle
+        // and the channel fills up. Push STAT_WRITE_QUEUE_CAPACITY items;
+        // the next one MUST fail.
+        for offset in 0..STAT_WRITE_QUEUE_CAPACITY {
+            service
+                .enqueue_rest_session(session_at(
+                    Utc.with_ymd_and_hms(2026, 5, 20, 10, 0, 0)
+                        .single()
+                        .expect("valid UTC datetime")
+                        + chrono::Duration::seconds(i64::try_from(offset).unwrap_or(i64::MAX)),
+                    20,
+                ))
+                .expect("fill should succeed under capacity");
+        }
+        let result = service.enqueue_rest_session(session_at(
+            Utc.with_ymd_and_hms(2026, 5, 20, 11, 0, 0)
+                .single()
+                .expect("valid UTC datetime"),
+            20,
+        ));
+        match result {
+            Err(AppError::IoError { message }) => {
+                assert!(message.contains("queue full"), "got {message}");
+            }
+            other => panic!("expected IoError when queue saturated, got {other:?}"),
+        }
     }
 }
