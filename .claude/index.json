@@ -4,7 +4,7 @@
     "name": "Eyezen",
     "description": "Cross-platform desktop eye health tool based on 20-20-20 rule",
     "license": "GPL-3.0-or-later",
-    "status": "v0.7.0-released; v0.7.x-hardening epic in progress",
+    "status": "v0.7.0-released; v0.7.x-hardening epic complete (single PR pending review)",
     "branch": "main",
     "techStack": {
       "framework": { "name": "Tauri", "version": "~2.10", "installed": true },
@@ -433,16 +433,6 @@
   ],
   "gaps": [
     {
-      "type": "macos-fullscreen",
-      "description": "macOS fullscreen detection is currently a capability-flagged false-return; v0.7.x epic Commit 9 implements via CGWindowListCopyWindowInfo + CGDisplayBounds.",
-      "priority": "P2"
-    },
-    {
-      "type": "tray-panel-blur",
-      "description": "Tray-panel does not auto-hide on focus loss (UX bug found during v0.7.0 manual testing); v0.7.x epic Commit 10 adds Focused(false) -> hide().",
-      "priority": "P2"
-    },
-    {
       "type": "coverage-95",
       "description": "Frontend + backend coverage gates currently 90%/85%; raising to 95% deferred (diminishing returns vs effort).",
       "priority": "P3"
@@ -451,11 +441,16 @@
       "type": "stat-fetch-optimization",
       "description": "F15 audit finding — stat fetch is full-table scan, ms-level on 30k rows so deferred until real-world latency complaint.",
       "priority": "P3"
+    },
+    {
+      "type": "wayland-fullscreen-and-process",
+      "description": "Linux Wayland fullscreen detection + foreground process resolution remain degraded (no portable API); capabilities report false and Settings gates accordingly.",
+      "priority": "P3"
     }
   ],
   "nextSteps": [
-    "v0.7.x hardening epic (in-progress): 10 commits closing F03/F16-F22/F25/F28/F29 + tray-panel UX bug",
-    "v0.7.1 release after epic merges",
+    "v0.7.x hardening epic complete — 10 commits closing F03/F16-F22/F25/F28/F29 + tray-panel focus-loss UX bug; single PR ready for review",
+    "v0.7.1 release after epic PR merges",
     "Decision pending: Phase 3 sequel (export enhancement / hotkey polish / monthly report) vs v1.0.0 SemVer freeze + docs site"
   ]
 }
