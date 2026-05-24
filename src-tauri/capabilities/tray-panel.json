@@ -13,7 +13,10 @@
     "core:window:allow-set-focus",
     "core:window:allow-unminimize",
     "core:window:allow-get-all-windows",
-    "core:event:allow-emit",
+    {
+      "identifier": "core:event:allow-emit",
+      "allow": [{ "event": "navigate_tab" }]
+    },
     "allow-get-config",
     "allow-get-state-snapshot",
     "allow-start-rest",
