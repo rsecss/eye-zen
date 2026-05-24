@@ -1,0 +1,15 @@
+{"file": ".trellis/spec/architecture/layering.md", "reason": "Cross-layer dependency rules; F17 stat split must keep service layer pure"}
+{"file": ".trellis/spec/architecture/ipc-and-state.md", "reason": "IPC contract for F16 (timeout grading), F19 (locale tag canonical), F20 (event-name constants)"}
+{"file": ".trellis/spec/architecture/testing-quality.md", "reason": "Coverage gate 90/85 must not drop after F17/F18 refactors; defines vitest + cargo-llvm-cov thresholds"}
+{"file": ".trellis/spec/architecture/change-management.md", "reason": "Change checklist + parity expectations; ensures every commit updates spec / bindings / docs as needed"}
+{"file": ".trellis/spec/backend/service-pattern.md", "reason": "F17 stat.rs 6-mod split must follow Service trait + lifecycle + DAG conventions"}
+{"file": ".trellis/spec/backend/coding-standards.md", "reason": "Rust anti-fallback + anti-unwrap_or rules; F03+F28 fullscreen impl must avoid hidden fallbacks"}
+{"file": ".trellis/spec/backend/error-and-logging.md", "reason": "Error propagation pattern for writer/migration/export modules in F17 split"}
+{"file": ".trellis/spec/backend/platform-storage.md", "reason": "Platform abstraction rules for F03+F28 (macOS fullscreen) + F29 (path handling known-limits doc)"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "F18 SettingsPage/StatisticsPage sub-component decomposition rules (props/events/CSS)"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "F18 sub-component test coverage + Svelte 5 Runes quality bar"}
+{"file": ".trellis/spec/frontend/store-and-ipc-patterns.md", "reason": "F19 locale store + F20 IPC event constants integration"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "F20 IPC event-name const sharing across Rust/TS via ts-rs"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "F18 component extraction must not be premature abstraction; <3 duplications rule"}
+{"file": ".trellis/tasks/05-24-v0-7-x-hardening-epic/research/macos-fullscreen-apis.md", "reason": "Concrete API choice + algorithm for F03+F28 macOS fullscreen real implementation"}
+{"file": "docs/.local/v1.0.0-audit-report.md", "reason": "Full F03-F29 finding descriptions with exact code locations and rationale"}

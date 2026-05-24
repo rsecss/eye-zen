@@ -1,0 +1,12 @@
+{"file": ".trellis/spec/architecture/testing-quality.md", "reason": "Coverage gate verification + test-quality rules to check against post-refactor state"}
+{"file": ".trellis/spec/architecture/change-management.md", "reason": "Change-completeness checklist (spec / bindings / docs / capability all updated)"}
+{"file": ".trellis/spec/architecture/ipc-and-state.md", "reason": "Verify F19 canonical (`en`) + F20 const + F16 timeout grading match IPC contract"}
+{"file": ".trellis/spec/backend/service-pattern.md", "reason": "Verify F17 6-mod split respects Service trait + lifecycle conventions"}
+{"file": ".trellis/spec/backend/coding-standards.md", "reason": "Verify no new unwrap_or / catch-all / silent fallbacks introduced (especially F03+F28 macos)"}
+{"file": ".trellis/spec/backend/error-and-logging.md", "reason": "Verify writer/migration/export error propagation pattern preserved after F17 split"}
+{"file": ".trellis/spec/backend/platform-storage.md", "reason": "Verify F03+F28 macOS impl + F29 known-limits doc both written"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Verify F18 sub-components follow props/events/CSS scoping rules"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Verify F18 test coverage didn't drop; sub-components have own tests"}
+{"file": ".trellis/spec/frontend/store-and-ipc-patterns.md", "reason": "Verify F19/F20 store + IPC integration unchanged for callers"}
+{"file": ".trellis/tasks/05-24-v0-7-x-hardening-epic/research/macos-fullscreen-apis.md", "reason": "Verify F03+F28 impl matches research recommendation (CGWindowList + CGDisplayBounds + pure helper for cross-platform unit tests)"}
+{"file": "docs/.local/v1.0.0-audit-report.md", "reason": "Verify each closed finding's exact AC matches audit description"}
