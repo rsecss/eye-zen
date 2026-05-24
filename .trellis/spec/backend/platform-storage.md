@@ -192,3 +192,18 @@ CREATE INDEX idx_activity_segments_state_started_at
 - StatService 在 `shutdown` 中 MUST flush 待写记录并关闭连接池
 - 持久化时间戳 MUST 使用 UTC RFC3339；日/周/月 bucket MUST 在查询时按请求 IANA timezone 聚合，不能把单个 `date` 字段当作跨时区事实来源
 - 当前记录语义：只在完成休息的 `Resting -> Working` transition 记录一条 `state = 'resting'` segment；跳过提醒不计入休息统计
+
+## Known limitations（跨平台路径/字符串）
+
+进程白名单与前台进程查询的 basename 提取在三个平台都有真实但低发生率的退化点。设计上 MUST 把这些当作"已知限制"，MUST NOT 在调用方加额外兜底逻辑去掩盖。
+
+| 平台 | 退化场景 | 当前处理 | 用户可见行为 |
+|------|---------|---------|-------------|
+| Windows | 进程实际路径长度 > `MAX_PATH` (260 字符) | `QueryFullProcessImageNameW` 传入 `PROCESS_NAME_WIN32` 标志强制返回短路径；若仍超长，函数返回错误，`get_foreground_process_name` 返回 `Ok(None)`，回退到"非白名单" | 极少数超长安装路径的进程无法被白名单匹配；用户解决方案：移动到短路径目录。源：`src-tauri/src/platform/windows.rs:175-194` |
+| Linux | `/proc/{pid}/exe` 目标路径包含非 UTF-8 字节 | `OsStr::to_str()` 对非 UTF-8 返回 `None`，整体 `and_then` 链短路返回 `None` | 非 UTF-8 文件名的进程被视为"非白名单"；用户解决方案：白名单条目须为 UTF-8（中文/Emoji 文件名均 OK，仅 latin-1/GBK 等非 UTF-8 编码会失败）。源：`src-tauri/src/platform/linux.rs:330-338` |
+| macOS | `kCGWindowOwnerName` 返回的 `CFString` 含无效 UTF-16 代理对 | `CFString::to_string()` 把无效代理替换为 U+FFFD 替换字符（lossy） | 含 U+FFFD 的名字几乎不会与 ASCII/UTF-8 白名单条目相等，相当于"非白名单"；实际遇到 invalid surrogate 的概率接近零（系统应用名都是规范 UTF-16）。源：`src-tauri/src/platform/macos.rs:195-202` |
+
+补充约束：
+
+- 白名单条目在配置层 MUST 经过 `sanitize_process_whitelist`（`src-tauri/src/models/config.rs`）小写化与去重；用户输入 MUST NOT 包含路径，只 basename
+- 上述退化均 MUST 表现为 `Ok(None)` 而非 panic / `Err`，因为前台进程查询失败 NEVER 应该阻断 timer 调度
