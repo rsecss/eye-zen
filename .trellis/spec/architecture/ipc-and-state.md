@@ -354,7 +354,11 @@ services.config.update_hotkeys(config)?;
 
 ### 超时策略
 
-- Command 执行 SHOULD 在 5 秒内完成；前端 `invokeWithTimeout` 已硬编码 5000ms（见 `src/lib/commands.ts`）。
+- 前端 `invokeWithTimeout` 支持三档超时（见 `src/lib/commands.ts`）：
+  - `INVOKE_TIMEOUT_DEFAULT_MS = 5000` — 快速内存读写 + 状态翻转（默认值）
+  - `INVOKE_TIMEOUT_IO_MS = 10000` — 触达 SQLite / 系统能力探测（如 `get_statistics_trends` / `statistics_cycle_outcomes` / `get_detector_capabilities` / `update_hotkeys_config`）
+  - `INVOKE_TIMEOUT_EXPORT_MS = 60000` — 长耗时序列化（如 `export_statistics` 的 VACUUM INTO + 文件写入）
+- 新 command MUST 选择匹配自身工作量的档位；调用 `invokeWithTimeout(cmd, args)` 表示默认 5s 档。
 - 涉及磁盘 I/O 的 command（`update_*_config`）MUST 使用 `tokio::task::spawn_blocking` 包裹，避免阻塞 Tauri runtime（实际见 `commands/mod.rs:107`）。
 - 前端超时后 MUST 给用户可见反馈（toast / 表单 inline 错误），MUST NOT 静默丢弃。
 
