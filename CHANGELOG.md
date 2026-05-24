@@ -21,6 +21,10 @@ omitted when the change predates the pull-request workflow.
 
 ## [Unreleased]
 
+### 🛠️ Fixes
+
+- macOS fullscreen detection now uses `CGGetActiveDisplayList` + `CGWindowListCopyWindowInfo` to compare window bounds against display bounds; capability flips from `false` to `true`, the Settings "Fullscreen Skip" toggle is no longer gated off on macOS (F03+F28)
+
 ### 📃 Documentation
 
 - document cross-platform path/basename caveats for the process whitelist in `.trellis/spec/backend/platform-storage.md` "Known limitations" (F29)

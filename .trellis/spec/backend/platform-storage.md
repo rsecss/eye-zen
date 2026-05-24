@@ -34,7 +34,7 @@ pub(crate) trait PlatformApi: Send + Sync {
 
 | 能力 | Windows | macOS | Linux X11 | Linux Wayland |
 |------|---------|-------|-----------|---------------|
-| 全屏检测 | `GetForegroundWindow` + `MonitorFromWindow` | 待实现（v0.7.x），capability=false，Settings 灰显 | `_NET_WM_STATE_FULLSCREEN` | 降级: `false`，Settings 灰显 |
+| 全屏检测 | `GetForegroundWindow` + `MonitorFromWindow` | `CGGetActiveDisplayList` + `CGWindowListCopyWindowInfo`（layer==0 + bounds 与 display rect ±1px 比较） | `_NET_WM_STATE_FULLSCREEN` | 降级: `false`，Settings 灰显 |
 | AFK idle 时长 | `GetLastInputInfo` + `GetTickCount` | `CGEventSourceSecondsSinceLastEventType` | XScreenSaver `query_info.ms_since_user_input` | 降级: `None` + Settings 灰显 |
 | 系统音频峰值 (P2) | `IAudioMeterInformation` COM | 降级: 无公共 API | PulseAudio peak | PulseAudio peak |
 | 前台进程 (P2) | `GetWindowThreadProcessId` | `NSWorkspace` | `_NET_ACTIVE_WINDOW` + `/proc` | 降级: `None` |

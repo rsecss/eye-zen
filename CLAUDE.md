@@ -15,7 +15,7 @@
 - 脚手架已就绪：Tauri v2 + Svelte 5 + Vite 6 + TailwindCSS v4
 - 后端服务齐全：9 services（Config / Timer / Detector / Window / Sound / Tray / I18n / Stat / Hotkey），全部经 Port trait / EffectSink / 纯 helper 抽象（v0.7.0 PR #31/#32）
 - 前端 4 窗口齐全：tray-panel / tip-window / tip-minimal / main（Settings + About + Statistics），i18n zh-CN/en 双语 + Dark/Light 主题热切换
-- 平台抽象齐全：Windows / macOS / Linux 三平台真实现（fullscreen 检测 macOS 在 v0.7.0 PR #29 后通过 capability 反馈 false 降级，留给 v0.7.x 真实现）
+- 平台抽象齐全：Windows / macOS / Linux 三平台真实现（fullscreen 检测 macOS 在 v0.7.x epic 引入 CGWindowListCopyWindowInfo + CGGetActiveDisplayList 真实现并将 capability 切回 true）
 - CI/CD 齐全：三平台 ci.yml + 四目标 release.yml + `npm run ci` 8 步本地/云端 parity + cargo-deny 安全审计
 - License：v0.1.0 二进制永久保留 MIT；自 v0.2.0 起切换到 GPL-3.0-or-later
 - 覆盖率门禁已生效（v0.7.0）：前端 `vitest --coverage` 行 90% / 函数 85% / 分支 80% / 语句 90%；后端 `cargo llvm-cov --fail-under-lines 90 --fail-under-functions 85`
@@ -32,7 +32,7 @@
 
 ### 下一步
 
-- 进行中：**v0.7.x hardening epic**（`chore/v0-7-x-hardening` 分支，10 commit 单 PR）—— 关闭 v0.7.0 epic 划到 v0.7.x 的全部 P2/P3 audit findings：F17 (stat.rs 拆分) ✅ F18 (Settings/Statistics 拆分) ✅ F19 (locale canonical en) ✅ F20 (IPC event 常量化) ✅ F16 (IPC timeout 三档) ✅ F22 (capability emit 收紧) ✅ F25 (docs 漂移) ✅ F29 (跨平台路径已知限制) ⏳ F03+F28 (macOS fullscreen 真实现) ⏳ tray-panel 失焦自动隐藏 ⏳
+- 进行中：**v0.7.x hardening epic**（`chore/v0-7-x-hardening` 分支，10 commit 单 PR）—— 关闭 v0.7.0 epic 划到 v0.7.x 的全部 P2/P3 audit findings：F17 (stat.rs 拆分) ✅ F18 (Settings/Statistics 拆分) ✅ F19 (locale canonical en) ✅ F20 (IPC event 常量化) ✅ F16 (IPC timeout 三档) ✅ F22 (capability emit 收紧) ✅ F25 (docs 漂移) ✅ F29 (跨平台路径已知限制) ✅ F03+F28 (macOS fullscreen 真实现) ✅ tray-panel 失焦自动隐藏 ⏳
 - 之后：v0.7.1 release + 评估 Phase 3 续集（数据导出 enhancement / 全局快捷键 polish / 月度报告）vs v1.0.0 SemVer 冻结 + 文档站点
 - 已挪到 v1.0.0 / 未排期：覆盖率推至 95%、tip-window mini/角落通知模式、F15 stat fetch 全表扫描优化、F06/F07 API 重命名 + Beta 移除
 

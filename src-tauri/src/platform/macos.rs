@@ -5,7 +5,7 @@ use std::time::Duration;
 
 use tracing::warn;
 
-use super::{normalize_process_name, PlatformApi};
+use super::{covers_any_display, normalize_process_name, DisplayRect, PlatformApi};
 
 #[allow(clippy::struct_field_names)]
 pub(crate) struct MacosPlatform {
@@ -67,12 +67,13 @@ impl PlatformApi for MacosPlatform {
         true
     }
 
-    // macOS fullscreen detection is not yet implemented (see
-    // `detect_fullscreen_macos`); the platform returns `DegradedFalse` so any
-    // call is harmless, but capability-aware UI MUST gate the "Fullscreen
-    // Skip" toggle off until a real implementation lands in v0.7.x.
+    // macOS fullscreen detection is implemented via `CGWindowListCopyWindowInfo`
+    // + `CGGetActiveDisplayList`; see `detect_fullscreen_macos` below. The
+    // detection returns `DegradedFalse` only when display enumeration fails
+    // (zero displays / FFI error), so the capability is `true` in the normal
+    // case and the Settings "Fullscreen Skip" toggle is available.
     fn supports_fullscreen_detection(&self) -> bool {
-        false
+        true
     }
 
     fn get_foreground_process_name(&self) -> Option<String> {
@@ -99,20 +100,186 @@ enum FullscreenStatus {
     DegradedFalse,
 }
 
+/// Detect whether any on-screen application window covers an entire display.
+///
+/// Algorithm (per `research/macos-fullscreen-apis.md`, Option 1):
+/// 1. Enumerate active displays via `CGGetActiveDisplayList` + `CGDisplayBounds`.
+/// 2. Enumerate on-screen, non-desktop-element windows via
+///    `CGWindowListCopyWindowInfo`.
+/// 3. For each window with `kCGWindowLayer == 0`, parse `kCGWindowBounds`
+///    into a `DisplayRect` and check it covers any display rect within 1px.
+/// 4. If display enumeration fails or returns zero displays, return
+///    `DegradedFalse` so the caller logs once and reports false.
 fn detect_fullscreen_macos() -> Result<FullscreenStatus, String> {
+    use core_foundation::array::CFArrayGetValueAtIndex;
+    use core_foundation::base::TCFType;
+    use core_foundation::dictionary::CFDictionaryRef;
     use core_graphics::window::{
-        copy_window_info, kCGNullWindowID, kCGWindowListOptionOnScreenOnly,
+        copy_window_info, kCGNullWindowID, kCGWindowBounds, kCGWindowLayer,
+        kCGWindowListExcludeDesktopElements, kCGWindowListOptionOnScreenOnly,
     };
 
-    let windows = copy_window_info(kCGWindowListOptionOnScreenOnly, kCGNullWindowID)
+    let displays = active_display_bounds()?;
+    if displays.is_empty() {
+        return Ok(FullscreenStatus::DegradedFalse);
+    }
+
+    const OPTIONS: u32 = kCGWindowListOptionOnScreenOnly | kCGWindowListExcludeDesktopElements;
+    let arr = copy_window_info(OPTIONS, kCGNullWindowID)
         .ok_or_else(|| "CGWindowListCopyWindowInfo returned null".to_string())?;
 
-    let _window_count = windows.len();
+    // SAFETY: The CFArray owns CFDictionary references. Keys are interned
+    // static CFStringRefs from CoreGraphics. Values are borrowed read-only.
+    unsafe {
+        let arr_ref = arr.as_concrete_TypeRef();
+        let count = arr.len();
+        for i in 0..count {
+            let dict_ptr = CFArrayGetValueAtIndex(arr_ref, i) as CFDictionaryRef;
+            if dict_ptr.is_null() {
+                continue;
+            }
 
-    // CoreGraphics access is verified above. Detailed bounds comparison needs
-    // real macOS hardware to validate across Spaces/displays, so MVP degrades
-    // conservatively here.
-    Ok(FullscreenStatus::DegradedFalse)
+            // Only foreground app windows live at layer 0; menu bars, Dock,
+            // status-item windows and other system chrome use higher layers.
+            if read_cfnumber_i64(dict_ptr, kCGWindowLayer) != Some(0) {
+                continue;
+            }
+
+            let Some(bounds_dict) = read_cfdict_ref(dict_ptr, kCGWindowBounds) else {
+                continue;
+            };
+            let Some(window_rect) = rect_from_dict(bounds_dict) else {
+                continue;
+            };
+
+            if covers_any_display(window_rect, &displays, 1.0) {
+                return Ok(FullscreenStatus::Detected(true));
+            }
+        }
+    }
+
+    Ok(FullscreenStatus::Detected(false))
+}
+
+#[link(name = "CoreGraphics", kind = "framework")]
+extern "C" {
+    fn CGGetActiveDisplayList(
+        max_displays: u32,
+        active_displays: *mut u32,
+        display_count: *mut u32,
+    ) -> i32;
+    fn CGDisplayBounds(display: u32) -> CoreGraphicsCGRect;
+    fn CGRectMakeWithDictionaryRepresentation(
+        dict: core_foundation::dictionary::CFDictionaryRef,
+        rect: *mut CoreGraphicsCGRect,
+    ) -> u8;
+}
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+struct CoreGraphicsCGPoint {
+    x: f64,
+    y: f64,
+}
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+struct CoreGraphicsCGSize {
+    width: f64,
+    height: f64,
+}
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+struct CoreGraphicsCGRect {
+    origin: CoreGraphicsCGPoint,
+    size: CoreGraphicsCGSize,
+}
+
+impl CoreGraphicsCGRect {
+    const fn zero() -> Self {
+        Self {
+            origin: CoreGraphicsCGPoint { x: 0.0, y: 0.0 },
+            size: CoreGraphicsCGSize {
+                width: 0.0,
+                height: 0.0,
+            },
+        }
+    }
+
+    const fn into_display_rect(self) -> DisplayRect {
+        DisplayRect {
+            x: self.origin.x,
+            y: self.origin.y,
+            w: self.size.width,
+            h: self.size.height,
+        }
+    }
+}
+
+fn active_display_bounds() -> Result<Vec<DisplayRect>, String> {
+    // Cap at 16 displays — far above any real-world rig (Mac Pro 6-display max
+    // for Apple silicon, Studio Display chains top out around 8).
+    const MAX_DISPLAYS: u32 = 16;
+    let mut ids = [0u32; MAX_DISPLAYS as usize];
+    let mut count: u32 = 0;
+
+    // SAFETY: CGGetActiveDisplayList writes up to MAX_DISPLAYS u32s into `ids`
+    // and stores the actual count in `count`. Both pointers refer to stack
+    // locals with sufficient capacity. The call is process-global and
+    // re-entrant according to Apple docs.
+    let err = unsafe { CGGetActiveDisplayList(MAX_DISPLAYS, ids.as_mut_ptr(), &raw mut count) };
+    if err != 0 {
+        return Err(format!("CGGetActiveDisplayList: CGError {err}"));
+    }
+
+    let mut rects = Vec::with_capacity(count as usize);
+    for &id in ids.iter().take(count as usize) {
+        // SAFETY: id was returned by CGGetActiveDisplayList in the same call;
+        // CGDisplayBounds is safe to invoke on any active display ID and
+        // returns CGRectZero for an inactive ID rather than crashing.
+        let r = unsafe { CGDisplayBounds(id) };
+        rects.push(r.into_display_rect());
+    }
+    Ok(rects)
+}
+
+/// Extract a `DisplayRect` from a `kCGWindowBounds` CFDictionary using the
+/// dedicated Core Graphics helper (handles both integer and float-keyed
+/// representations across macOS versions).
+fn rect_from_dict(dict: core_foundation::dictionary::CFDictionaryRef) -> Option<DisplayRect> {
+    let mut rect = CoreGraphicsCGRect::zero();
+    // SAFETY: `dict` is a borrowed CFDictionaryRef from the window-info array.
+    // CGRectMakeWithDictionaryRepresentation reads the dict and writes to the
+    // stack-local rect; returns 0 (false) on malformed input, 1 (true) on
+    // success. We treat any non-zero as success per the C ABI for Boolean.
+    let ok = unsafe { CGRectMakeWithDictionaryRepresentation(dict, &raw mut rect) };
+    if ok == 0 {
+        None
+    } else {
+        Some(rect.into_display_rect())
+    }
+}
+
+/// # Safety
+/// Caller must ensure `dict` is a valid non-null `CFDictionaryRef` and `key` is
+/// a valid static `CFStringRef` from CoreGraphics. The returned `CFDictionaryRef`
+/// is borrowed (no retain) and must not outlive `dict`.
+unsafe fn read_cfdict_ref(
+    dict: core_foundation::dictionary::CFDictionaryRef,
+    key: core_foundation::string::CFStringRef,
+) -> Option<core_foundation::dictionary::CFDictionaryRef> {
+    use core_foundation::base::CFGetTypeID;
+    use core_foundation::dictionary::{CFDictionaryGetTypeID, CFDictionaryGetValueIfPresent};
+
+    let mut value: *const core::ffi::c_void = std::ptr::null();
+    if CFDictionaryGetValueIfPresent(dict, key.cast::<core::ffi::c_void>(), &raw mut value) == 0 {
+        return None;
+    }
+    if value.is_null() || CFGetTypeID(value) != CFDictionaryGetTypeID() {
+        return None;
+    }
+    Some(value as core_foundation::dictionary::CFDictionaryRef)
 }
 
 fn detect_idle_duration_macos() -> Result<Duration, String> {
@@ -240,21 +407,24 @@ mod tests {
     use super::*;
 
     #[test]
-    fn supports_fullscreen_detection_returns_false_on_macos() {
-        // macOS lacks a working implementation today (see F03/F28). UI MUST
-        // disable the fullscreen toggle when capability is false, so the
-        // contract is: capability=false implies "do not surface the feature".
+    fn supports_fullscreen_detection_is_true_after_real_impl() {
+        // The CGWindowListCopyWindowInfo + CGGetActiveDisplayList real impl
+        // landed; capability MUST now report `true` so the Settings toggle
+        // becomes available. CI cannot exercise an actual fullscreen window —
+        // see is_fullscreen_app_active_runs_without_panic below for the
+        // weaker but achievable contract.
         let platform = MacosPlatform::new();
-        assert!(!platform.supports_fullscreen_detection());
+        assert!(platform.supports_fullscreen_detection());
     }
 
     #[test]
-    fn fullscreen_active_stays_false_when_capability_off() {
-        // Even when callers ignore capability and probe directly, the macOS
-        // stub MUST never claim a fullscreen app is active. Consistency
-        // between capability and behavior is enforced here.
+    fn is_fullscreen_app_active_runs_without_panic() {
+        // The CI mac runner has no fullscreen window, so the expected result
+        // is `false`. The point of the test is that the FFI bindings, display
+        // enumeration and bounds-dict parsing all complete without panic —
+        // any future regression in those will surface here even though we
+        // can't exercise the positive-match path in CI.
         let platform = MacosPlatform::new();
-        assert!(!platform.supports_fullscreen_detection());
-        assert!(!platform.is_fullscreen_app_active());
+        let _ = platform.is_fullscreen_app_active();
     }
 }
