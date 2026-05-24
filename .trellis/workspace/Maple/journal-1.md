@@ -416,3 +416,36 @@ Researched 8 eye-care + 5 productivity competitors, identified SkipFlags 4-facto
 ### Next Steps
 
 - None - task complete
+
+
+## Session 13: Post-v0.7.0 docs housekeeping and stale branch cleanup
+
+**Date**: 2026-05-24
+**Task**: Post-v0.7.0 docs housekeeping and stale branch cleanup
+**Branch**: `main`
+
+### Summary
+
+Relocated community files (README.zh-CN, CONTRIBUTING, CODE_OF_CONDUCT) to .github/ for GitHub recognition; updated all internal links and bump-version.mjs/update-docs/release/index.json references. Added Allow auto-merge row to branch-protection.md. Pruned old rsecs workspace (single-s, pre-Maple) and reassigned legacy task creator/assignee fields. Single PR #36 auto-merged via gh pr merge --auto. Cleaned up stale local branches: deleted worktree-agent-* and abandoned chore/archive-v0-7-0-epic (its 2 commits redone here).
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `ccc470b` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
