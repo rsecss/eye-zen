@@ -10,7 +10,7 @@
 
 ## 项目状态
 
-**当前阶段：v0.7.0 已发布（2026-05-24），hardening 收尾完成；下一步评估 Phase 3 增功能 vs v1.0.0 API 冻结。**
+**当前阶段：v0.7.0 已发布（2026-05-24）；v0.7.x hardening epic 进行中（`chore/v0-7-x-hardening`，10 commit 单 PR），下一步 v0.7.1 release 后再评估 Phase 3 增功能 vs v1.0.0 API 冻结。**
 
 - 脚手架已就绪：Tauri v2 + Svelte 5 + Vite 6 + TailwindCSS v4
 - 后端服务齐全：9 services（Config / Timer / Detector / Window / Sound / Tray / I18n / Stat / Hotkey），全部经 Port trait / EffectSink / 纯 helper 抽象（v0.7.0 PR #31/#32）
@@ -32,8 +32,9 @@
 
 ### 下一步
 
-- 评估 Phase 3 增功能（数据导出 enhancement / 全局快捷键 polish / 月度报告）vs v1.0.0 SemVer 冻结 + 文档站点
-- v0.7.x candidates：macOS fullscreen 真实现、tip-window mini/角落通知模式、覆盖率推至 95%、大文件拆分（audit 报告 F17/F18）
+- 进行中：**v0.7.x hardening epic**（`chore/v0-7-x-hardening` 分支，10 commit 单 PR）—— 关闭 v0.7.0 epic 划到 v0.7.x 的全部 P2/P3 audit findings：F17 (stat.rs 拆分) ✅ F18 (Settings/Statistics 拆分) ✅ F19 (locale canonical en) ✅ F20 (IPC event 常量化) ✅ F16 (IPC timeout 三档) ✅ F22 (capability emit 收紧) ✅ F25 (docs 漂移) ✅ F29 (跨平台路径已知限制) ⏳ F03+F28 (macOS fullscreen 真实现) ⏳ tray-panel 失焦自动隐藏 ⏳
+- 之后：v0.7.1 release + 评估 Phase 3 续集（数据导出 enhancement / 全局快捷键 polish / 月度报告）vs v1.0.0 SemVer 冻结 + 文档站点
+- 已挪到 v1.0.0 / 未排期：覆盖率推至 95%、tip-window mini/角落通知模式、F15 stat fetch 全表扫描优化、F06/F07 API 重命名 + Beta 移除
 
 ---
 
