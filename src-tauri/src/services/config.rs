@@ -9,8 +9,8 @@ use tracing::{info, warn};
 
 use crate::error::{AppError, Result};
 use crate::models::config::{
-    sanitize_process_whitelist, BehaviorConfig, Config, DisplayConfig, PomodoroConfig,
-    ScheduleConfig, TimerConfig,
+    canonicalize_language, sanitize_process_whitelist, BehaviorConfig, Config, DisplayConfig,
+    PomodoroConfig, ScheduleConfig, TimerConfig,
 };
 use crate::models::hotkeys::HotkeysConfig;
 use crate::services::{Service, ServiceContext};
@@ -120,6 +120,7 @@ impl ConfigService {
             Ok(mut config) => {
                 config.behavior.process_whitelist =
                     sanitize_process_whitelist(config.behavior.process_whitelist);
+                canonicalize_language(&mut config.display.language);
                 info!("config loaded from {}", path.display());
                 Ok(config)
             }
@@ -282,6 +283,25 @@ rest_seconds = 30
         assert_eq!(service.current().timer.work_minutes, 25);
         assert_eq!(service.current().timer.rest_seconds, 30);
         assert_eq!(service.current().timer.pre_alert_seconds, 15);
+    }
+
+    #[test]
+    fn load_canonicalizes_legacy_en_us_language() {
+        let dir = TempDir::new().expect("temp dir should exist");
+        let path = test_path(&dir);
+        std::fs::write(
+            &path,
+            r#"
+[display]
+language = "en-US"
+theme = "dark"
+"#,
+        )
+        .expect("legacy config file should be written");
+
+        let service = ConfigService::new(path).expect("service should load legacy config");
+        assert_eq!(service.current().display.language, "en");
+        assert_eq!(service.current().display.theme, "dark");
     }
 
     #[test]

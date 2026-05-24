@@ -169,7 +169,7 @@ fn validate_behavior_config(config: &BehaviorConfig) -> CmdResult<()> {
 }
 
 fn validate_display_config(config: &DisplayConfig) -> CmdResult<()> {
-    let valid_languages = ["zh-CN", "en", "en-US"];
+    let valid_languages = ["zh-CN", "en"];
     if !valid_languages.contains(&config.language.as_str()) {
         return Err(AppError::ConfigInvalid {
             field: "language".to_string(),

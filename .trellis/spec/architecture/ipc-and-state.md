@@ -343,7 +343,7 @@ services.config.update_hotkeys(config)?;
 | `pre_alert_seconds` | 5 – 60 |
 | `alert_timeout_seconds` | 10 – 300 |
 | `afk_threshold_minutes` | 1 – 120 |
-| `language` | `zh-CN` / `en` / `en-US` |
+| `language` | `zh-CN` / `en` |
 | `theme` | `light` / `dark` |
 | `pomodoro.focus_minutes` | 1 – 180 |
 | `pomodoro.short_break_minutes` | 1 – 60 |

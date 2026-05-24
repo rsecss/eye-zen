@@ -13,9 +13,7 @@
     { value: 'en', label: 'English' },
   ];
 
-  const displayLanguage = $derived(
-    cfg.display.language === 'en' || cfg.display.language === 'en-US' ? 'en' : 'zh-CN',
-  );
+  const displayLanguage = $derived(cfg.display.language === 'en' ? 'en' : 'zh-CN');
 
   const themeOptions = $derived([
     { value: 'light', label: i18nStore.t('settings.display.theme.light') },
