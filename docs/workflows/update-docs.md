@@ -12,7 +12,7 @@
 
 | File | Role |
 |------|------|
-| `README.md`, `README.zh-CN.md` | Public user-facing docs. |
+| `README.md`, `.github/README.zh-CN.md` | Public user-facing docs. |
 | `CHANGELOG.md` | Release history. |
 | `CLAUDE.md` | Claude-facing project index. |
 | `AGENTS.md` | Trellis-managed agent entrypoint. |
@@ -43,5 +43,5 @@
 
 ```bash
 git diff --check
-npx prettier --check README.md README.zh-CN.md CLAUDE.md docs/**/*.md
+npx prettier --check README.md .github/README.zh-CN.md CLAUDE.md docs/**/*.md
 ```

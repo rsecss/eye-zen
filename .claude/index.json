@@ -82,10 +82,7 @@
       "tip-minimal.html",
       "tray.html",
       "LICENSE",
-      "CONTRIBUTING.md",
-      "CODE_OF_CONDUCT.md",
       "README.md",
-      "README.zh-CN.md",
       "CHANGELOG.md",
       "CLAUDE.md"
     ],
@@ -223,6 +220,9 @@
       "docs/workflows/branch-protection.md"
     ],
     "github": [
+      ".github/README.zh-CN.md",
+      ".github/CONTRIBUTING.md",
+      ".github/CODE_OF_CONDUCT.md",
       ".github/workflows/ci.yml",
       ".github/workflows/release.yml",
       ".github/release.yml",

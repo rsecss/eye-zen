@@ -118,6 +118,6 @@ patchJson('src-tauri/tauri.conf.json', (data) => {
 prependChangelogSection('CHANGELOG.md');
 
 console.log('\nRemaining manual updates:');
-console.log('  - README.md / README.zh-CN.md badge if it shows the version explicitly');
+console.log('  - README.md / .github/README.zh-CN.md badge if it shows the version explicitly');
 console.log('  - CHANGELOG.md: fill in the TODO bullets');
 console.log('\nVerify with: node scripts/check-version-sync.mjs');

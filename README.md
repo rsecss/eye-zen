@@ -16,7 +16,7 @@
 </p>
 
 <p align="center">
-  English | <a href="README.zh-CN.md">简体中文</a>
+  English | <a href=".github/README.zh-CN.md">简体中文</a>
 </p>
 
 > **Status**: v0.3.0 released. Download pre-built installers from [GitHub Releases](https://github.com/rsecss/eye-zen/releases/latest).
@@ -153,7 +153,7 @@ Eyezen is inspired by **[ProjectEye](https://github.com/Jeremyyang920/ProjectEye
 
 ## Contributing
 
-Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+Contributions are welcome! Please read [CONTRIBUTING.md](.github/CONTRIBUTING.md) for guidelines.
 
 ## License
 
