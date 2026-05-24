@@ -210,15 +210,22 @@ pub fn run() -> Result<(), tauri::Error> {
             info!("all services initialized");
             Ok(())
         })
-        .on_window_event(|window, event| {
-            if let WindowEvent::CloseRequested { api, .. } = event {
-                if window.label() == "main-window" {
-                    api.prevent_close();
-                    if let Err(err) = window.hide() {
-                        warn!("failed to hide main window on close request: {err}");
-                    }
+        .on_window_event(|window, event| match event {
+            WindowEvent::CloseRequested { api, .. } if window.label() == "main-window" => {
+                api.prevent_close();
+                if let Err(err) = window.hide() {
+                    warn!("failed to hide main window on close request: {err}");
                 }
             }
+            // Auto-hide the tray panel when it loses focus so clicking
+            // elsewhere on the desktop dismisses it like a native menu.
+            // Re-clicking the tray icon re-opens it via `toggle_tray_panel`.
+            WindowEvent::Focused(false) if window.label() == "tray-panel" => {
+                if let Err(err) = window.hide() {
+                    warn!("failed to hide tray panel on focus loss: {err}");
+                }
+            }
+            _ => {}
         })
         .build(tauri::generate_context!())?;
 

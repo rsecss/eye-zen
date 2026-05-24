@@ -24,6 +24,7 @@ omitted when the change predates the pull-request workflow.
 ### 🛠️ Fixes
 
 - macOS fullscreen detection now uses `CGGetActiveDisplayList` + `CGWindowListCopyWindowInfo` to compare window bounds against display bounds; capability flips from `false` to `true`, the Settings "Fullscreen Skip" toggle is no longer gated off on macOS (F03+F28)
+- tray panel now auto-hides when it loses focus (clicking the desktop or another window dismisses it like a native menu); re-clicking the tray icon re-opens it
 
 ### 📃 Documentation
 
