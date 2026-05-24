@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/public/logo.svg" alt="Eyezen" width="128" />
+  <img src="../docs/public/logo.svg" alt="Eyezen" width="128" />
 </p>
 
 <h1 align="center">Eyezen</h1>
@@ -9,14 +9,14 @@
 </p>
 
 <p align="center">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0--or--later-blue.svg" alt="License" /></a>
+  <a href="../LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0--or--later-blue.svg" alt="License" /></a>
   <img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-brightgreen" alt="Platform" />
   <img src="https://img.shields.io/badge/version-0.3.0-orange" alt="Version" />
   <img src="https://img.shields.io/badge/tauri-v2-blue" alt="Tauri v2" />
 </p>
 
 <p align="center">
-  <a href="README.md">English</a> | 简体中文
+  <a href="../README.md">English</a> | 简体中文
 </p>
 
 > **项目状态**: v0.3.0 已发布。从 [GitHub Releases](https://github.com/rsecss/eye-zen/releases/latest) 下载预编译安装包。
@@ -59,7 +59,7 @@ Eyezen 的灵感来自 [ProjectEye](https://github.com/Jeremyyang920/ProjectEye)
 
 | 休息中 | 设置 | 关于 | 提醒窗口 |
 |:---:|:---:|:---:|:---:|
-| ![休息中](docs/public/screenshots/resting.png) | ![设置](docs/public/screenshots/settings.png) | ![关于](docs/public/screenshots/about.png) | ![提醒窗口](docs/public/screenshots/tip_window.png) |
+| ![休息中](../docs/public/screenshots/resting.png) | ![设置](../docs/public/screenshots/settings.png) | ![关于](../docs/public/screenshots/about.png) | ![提醒窗口](../docs/public/screenshots/tip_window.png) |
 
 ## 下载
 
@@ -170,4 +170,4 @@ Eyezen 的灵感来自 **[ProjectEye](https://github.com/Jeremyyang920/ProjectEy
 
 ## 许可证
 
-[GNU General Public License v3.0 or later](LICENSE)
+[GNU General Public License v3.0 or later](../LICENSE)

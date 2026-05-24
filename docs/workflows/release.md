@@ -43,7 +43,7 @@ $EDITOR CHANGELOG.md
 
 # 4. Commit and PR
 git add CHANGELOG.md package.json src-tauri/Cargo.toml src-tauri/Cargo.lock src-tauri/tauri.conf.json
-git add README.md README.zh-CN.md  # only if you actually changed a version-bearing badge
+git add README.md .github/README.zh-CN.md  # only if you actually changed a version-bearing badge
 git commit -m "chore: release v$NEW_VERSION"
 git push -u origin "$RELEASE_BRANCH"
 gh pr create --base main --head "$RELEASE_BRANCH" --title "release: v$NEW_VERSION"

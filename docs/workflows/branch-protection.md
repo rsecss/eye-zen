@@ -23,6 +23,7 @@ Settings → Branches → Add rule, pattern `main`:
 | Allow squash merging | ✅ | `pr.md`: "Squash merge is preferred." |
 | Allow merge commits | ❌ | Discourage merge-commit clutter. |
 | Allow rebase merging | Optional | Useful for hotfix PRs. |
+| Allow auto-merge | ✅ | Enables `gh pr merge --auto --squash --delete-branch`: PR auto-merges once required checks pass, eliminating manual wait. |
 | Automatically delete head branches | ✅ | Removes the manual `git push origin --delete` step after PR merge. |
 
 ## Verifying
