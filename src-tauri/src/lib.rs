@@ -4,7 +4,6 @@
 
 pub(crate) mod commands;
 pub(crate) mod error;
-#[cfg(not(test))]
 pub(crate) mod events;
 pub(crate) mod logging;
 pub(crate) mod models;
