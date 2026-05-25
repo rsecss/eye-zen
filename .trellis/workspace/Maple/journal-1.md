@@ -495,3 +495,36 @@ Closed every P2/P3 finding from the v0.7.0 audit that was deferred into v0.7.x (
 ### Next Steps
 
 - None - task complete
+
+
+## Session 15: release v0.7.1
+
+**Date**: 2026-05-25
+**Task**: release v0.7.1
+**Branch**: `main`
+
+### Summary
+
+Patch release shipping v0.7.x hardening epic (PR #37). Fixed PR #37 macOS clippy errors (items-after-statements + doc-markdown in src-tauri/src/platform/macos.rs), merged epic, then cut release/v0.7.1 via trellis-implement sub-agent (Phase A: bump-version 0.7.0->0.7.1 across 4 version files + Cargo.lock + 2 README badges, promote [Unreleased] 10 finding bullets into [0.7.1] with shared (#37)(f62e2a1) tag, PR #38). Main session drove Phase B: monitor PR CI 6/6 green, squash merge with clean fast-forward, tag v0.7.1, push tag through GitHub 443 turbulence (3 retries, no --no-verify), release.yml built 10 artifacts (Win 3 / macOS 4 / Linux 3) in 6m21s, draft notes auto-extracted correctly, user verified Windows installer, published. Memory note release-v071-experience.md captures single-PR-epic CHANGELOG convention + tag push retry policy + Phase A/B split.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `bf4c900` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
