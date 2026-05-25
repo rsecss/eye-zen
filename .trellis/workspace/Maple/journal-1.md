@@ -416,3 +416,82 @@ Researched 8 eye-care + 5 productivity competitors, identified SkipFlags 4-facto
 ### Next Steps
 
 - None - task complete
+
+
+## Session 13: Post-v0.7.0 docs housekeeping and stale branch cleanup
+
+**Date**: 2026-05-24
+**Task**: Post-v0.7.0 docs housekeeping and stale branch cleanup
+**Branch**: `main`
+
+### Summary
+
+Relocated community files (README.zh-CN, CONTRIBUTING, CODE_OF_CONDUCT) to .github/ for GitHub recognition; updated all internal links and bump-version.mjs/update-docs/release/index.json references. Added Allow auto-merge row to branch-protection.md. Pruned old rsecs workspace (single-s, pre-Maple) and reassigned legacy task creator/assignee fields. Single PR #36 auto-merged via gh pr merge --auto. Cleaned up stale local branches: deleted worktree-agent-* and abandoned chore/archive-v0-7-0-epic (its 2 commits redone here).
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `ccc470b` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
+
+
+## Session 14: v0.7.x hardening epic: 10-commit single-PR closing P2/P3 audit findings + tray-panel UX bug
+
+**Date**: 2026-05-25
+**Task**: v0.7.x hardening epic: 10-commit single-PR closing P2/P3 audit findings + tray-panel UX bug
+**Branch**: `chore/v0-7-x-hardening`
+
+### Summary
+
+Closed every P2/P3 finding from the v0.7.0 audit that was deferred into v0.7.x (F17 stat.rs split, F18 SettingsPage/StatisticsPage split, F19 locale canonical, F20 IPC event constants, F16 graded timeouts, F22 capability scope, F25 docs drift, F29 path caveats, F03+F28 macOS fullscreen real impl) plus the tray-panel focus-loss UX bug surfaced during v0.7.0 testing. F21 was dropped — re-audit showed shell:default is live for AboutPage external links. Followed up with a four-step README overhaul: v0.3->v0.7 catch-up, new screenshot taxonomy (3 manually-captured shots), reader-focused restructure (drop ProjectEye comparison/Download/Roadmap/Credits, add Quick Start + Architecture), slim Highlights to 7 emoji-anchored bullets. Working tree clean, npm run ci 8 steps green, 266 backend tests pass, frontend+backend coverage gates hold at 90%/85%.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `58f1eb4` | (see git log) |
+| `b42269c` | (see git log) |
+| `01c6af8` | (see git log) |
+| `ba336b2` | (see git log) |
+| `a72fce6` | (see git log) |
+| `c8a1719` | (see git log) |
+| `5723431` | (see git log) |
+| `530ee6c` | (see git log) |
+| `7709305` | (see git log) |
+| `feffdda` | (see git log) |
+| `ff55c7e` | (see git log) |
+| `73ad575` | (see git log) |
+| `c848fa0` | (see git log) |
+| `2a0249a` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

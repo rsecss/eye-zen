@@ -103,7 +103,10 @@ describe('StatisticsPage', () => {
     expect(screen.getByText('休息次数')).toBeInTheDocument();
     expect(screen.getByText('UTC')).toBeInTheDocument();
     expect(screen.getByText('最新数据：2026-05-20')).toBeInTheDocument();
-    expect(echartsMock.chart.setOption).toHaveBeenCalled();
+    // The chart is rendered from a $effect that fires once stats AND the
+    // async ECharts import both resolve; chart init lives in a separate
+    // microtask from stats arrival, so we wait for setOption explicitly.
+    await waitFor(() => expect(echartsMock.chart.setOption).toHaveBeenCalled());
   });
 
   it('switches chart data between day week and month ranges', async () => {

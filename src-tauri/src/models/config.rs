@@ -161,6 +161,17 @@ pub fn sanitize_process_whitelist(raw: Vec<String>) -> Vec<String> {
     out
 }
 
+/// Rewrites legacy locale tags (e.g. `en-US`) to the canonical short form (`en`).
+///
+/// Older configs (v0.7.0 and earlier) wrote `en-US`; the canonical form is `en`.
+/// Keeps the in-memory config aligned with [`crate::commands::validate_display_config`]
+/// so the validator's allow-list can stay tight without rejecting legacy files.
+pub fn canonicalize_language(language: &mut String) {
+    if language == "en-US" {
+        *language = "en".to_string();
+    }
+}
+
 /// Weekly schedule controlling when rest reminders are allowed to surface.
 ///
 /// `active_days` is indexed by `chrono::Weekday::num_days_from_monday`:
@@ -382,5 +393,21 @@ cycles_per_long = 3
             .collect();
         let out = sanitize_process_whitelist(raw);
         assert_eq!(out.len(), PROCESS_WHITELIST_MAX_LEN);
+    }
+
+    #[test]
+    fn canonicalize_language_rewrites_en_us_alias() {
+        let mut lang = "en-US".to_string();
+        canonicalize_language(&mut lang);
+        assert_eq!(lang, "en");
+    }
+
+    #[test]
+    fn canonicalize_language_leaves_canonical_values_untouched() {
+        for original in ["zh-CN", "en"] {
+            let mut lang = original.to_string();
+            canonicalize_language(&mut lang);
+            assert_eq!(lang, original);
+        }
     }
 }

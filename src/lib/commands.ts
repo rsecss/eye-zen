@@ -12,17 +12,26 @@ import type { HotkeyStatus } from './bindings/HotkeyStatus';
 import type { HotkeysConfig } from './bindings/HotkeysConfig';
 import type { PomodoroConfig } from './bindings/PomodoroConfig';
 
-const INVOKE_TIMEOUT_MS = 5000;
+// Three timeout buckets, picked at each call site:
+//   DEFAULT: fast in-memory reads + state mutations
+//   IO:      commands that hit SQLite or system capability probes
+//   EXPORT:  long-running serialization (VACUUM INTO + filesystem write)
+// Keep these aligned with the SHOULD/MUST wording in
+// .trellis/spec/architecture/ipc-and-state.md "超时策略".
+export const INVOKE_TIMEOUT_DEFAULT_MS = 5_000;
+export const INVOKE_TIMEOUT_IO_MS = 10_000;
+export const INVOKE_TIMEOUT_EXPORT_MS = 60_000;
 
-function invokeWithTimeout<T>(cmd: string, args?: Record<string, unknown>): Promise<T> {
+function invokeWithTimeout<T>(
+  cmd: string,
+  args?: Record<string, unknown>,
+  timeoutMs: number = INVOKE_TIMEOUT_DEFAULT_MS,
+): Promise<T> {
   let timeoutId: ReturnType<typeof setTimeout>;
   return Promise.race([
     invoke<T>(cmd, args),
     new Promise<never>((_, reject) => {
-      timeoutId = setTimeout(
-        () => reject(new Error(`Command "${cmd}" timed out`)),
-        INVOKE_TIMEOUT_MS,
-      );
+      timeoutId = setTimeout(() => reject(new Error(`Command "${cmd}" timed out`)), timeoutMs);
     }),
   ]).finally(() => clearTimeout(timeoutId));
 }
@@ -56,19 +65,19 @@ export function getHotkeyStatus(): Promise<HotkeyStatus> {
 }
 
 export function getStatisticsTrends(timezone: string): Promise<StatisticsTrendPayload> {
-  return invokeWithTimeout('get_statistics_trends', { timezone });
+  return invokeWithTimeout('get_statistics_trends', { timezone }, INVOKE_TIMEOUT_IO_MS);
 }
 
 export function getStatisticsCycleOutcomes(timezone: string): Promise<CycleOutcomesPayload> {
-  return invokeWithTimeout('statistics_cycle_outcomes', { timezone });
+  return invokeWithTimeout('statistics_cycle_outcomes', { timezone }, INVOKE_TIMEOUT_IO_MS);
 }
 
 export function exportStatistics(targetPath: string): Promise<void> {
-  return invokeWithTimeout('export_statistics', { targetPath });
+  return invokeWithTimeout('export_statistics', { targetPath }, INVOKE_TIMEOUT_EXPORT_MS);
 }
 
 export function getDetectorCapabilities(): Promise<DetectorCapabilities> {
-  return invokeWithTimeout('get_detector_capabilities');
+  return invokeWithTimeout('get_detector_capabilities', undefined, INVOKE_TIMEOUT_IO_MS);
 }
 
 export function updateTimerConfig(config: TimerConfig): Promise<void> {
@@ -88,7 +97,7 @@ export function updateScheduleConfig(config: ScheduleConfig): Promise<void> {
 }
 
 export function updateHotkeysConfig(config: HotkeysConfig): Promise<void> {
-  return invokeWithTimeout('update_hotkeys_config', { config });
+  return invokeWithTimeout('update_hotkeys_config', { config }, INVOKE_TIMEOUT_IO_MS);
 }
 
 export function updatePomodoroConfig(config: PomodoroConfig): Promise<void> {

@@ -19,6 +19,30 @@ Each version body uses the following categories (see
 Line format: `- imperative-lowercase description (#NN) (sha7)`. PR number is
 omitted when the change predates the pull-request workflow.
 
+## [Unreleased]
+
+### 🛠️ Fixes
+
+- macOS fullscreen detection now uses `CGGetActiveDisplayList` + `CGWindowListCopyWindowInfo` to compare window bounds against display bounds; capability flips from `false` to `true`, the Settings "Fullscreen Skip" toggle is no longer gated off on macOS (F03+F28)
+- tray panel now auto-hides when it loses focus (clicking the desktop or another window dismisses it like a native menu); re-clicking the tray icon re-opens it
+
+### 📃 Documentation
+
+- document cross-platform path/basename caveats for the process whitelist in `.trellis/spec/backend/platform-storage.md` "Known limitations" (F29)
+
+### 🧪 Refactor
+
+- split `stat.rs` (1439 lines) into 6 cohesive modules: `mod` / `writer` / `migration` / `export` / `trends` / `health` (F17)
+- decompose `SettingsPage.svelte` (1147 lines) into 7 sub-sections and `StatisticsPage.svelte` (1121 lines) into 7 sub-components, each ≤300 lines (F18)
+- canonicalize locale to `en` in config; legacy `en-US` is rewritten on load, the validator allow-list is tightened to `["zh-CN", "en"]` (F19)
+- hoist 5 IPC event identifiers to shared constants in `src-tauri/src/events/mod.rs` and `src/lib/events.ts` (F20)
+
+### 🔧 Maintenance
+
+- scope `core:event:allow-emit` on the tray-panel capability to only `navigate_tab` instead of unscoped emit access (F22)
+- sync `.claude/index.json` + `CLAUDE.md` to reflect the v0.7.x hardening epic in progress (F25)
+- introduce three graded IPC timeouts (5s default / 10s IO / 60s export) so `export_statistics` no longer times out on large databases (F16)
+
 ## [0.7.0] - 2026-05-24
 
 ### 🛠️ Fixes

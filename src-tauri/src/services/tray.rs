@@ -18,6 +18,7 @@ use tokio::task::JoinHandle;
 use tracing::{info, warn};
 
 use crate::error::Result;
+use crate::events;
 use crate::models::config::Config;
 use crate::services::i18n::I18nService;
 use crate::services::timer::{TimerState, TrayTooltip};
@@ -260,7 +261,10 @@ impl TrayService {
         // the tab and surface every step's failure. `unminimize` is allowed
         // to fail when the window is already restored — that path returns
         // Ok and is handled below; only true OS errors are logged.
-        if let Err(err) = self.port.emit_to_window("main-window", "navigate_tab", tab) {
+        if let Err(err) = self
+            .port
+            .emit_to_window("main-window", events::NAVIGATE_TAB, tab)
+        {
             warn!("failed to emit navigate_tab for '{tab}': {err}");
             return Err(err);
         }
@@ -1283,7 +1287,7 @@ mod tests {
             vec![
                 Call::EmitToWindow(
                     "main-window".to_string(),
-                    "navigate_tab".to_string(),
+                    events::NAVIGATE_TAB.to_string(),
                     "Settings".to_string()
                 ),
                 Call::UnminimizeWindow("main-window".to_string()),

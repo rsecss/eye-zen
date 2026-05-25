@@ -206,4 +206,39 @@ describe('invokeWithTimeout race semantics', () => {
     expect(clearSpy).toHaveBeenCalled();
     clearSpy.mockRestore();
   });
+
+  it('IO-tier commands tolerate up to 10s before timing out', async () => {
+    mockInvoke.mockReturnValueOnce(new Promise(() => {}));
+    const settled = commands.getStatisticsTrends('UTC').catch((err) => err);
+
+    // Default 5s budget has elapsed; IO-tier call must still be pending.
+    await vi.advanceTimersByTimeAsync(commands.INVOKE_TIMEOUT_DEFAULT_MS + 100);
+    let snapshot = await Promise.race([settled, Promise.resolve('still-pending')]);
+    expect(snapshot).toBe('still-pending');
+
+    // Run out the IO budget to confirm the timeout still fires eventually.
+    await vi.advanceTimersByTimeAsync(
+      commands.INVOKE_TIMEOUT_IO_MS - commands.INVOKE_TIMEOUT_DEFAULT_MS,
+    );
+    snapshot = await settled;
+    expect(snapshot).toBeInstanceOf(Error);
+    expect((snapshot as Error).message).toMatch(/timed out/i);
+  });
+
+  it('exportStatistics tolerates up to 60s before timing out', async () => {
+    mockInvoke.mockReturnValueOnce(new Promise(() => {}));
+    const settled = commands.exportStatistics('C:/tmp/backup.db').catch((err) => err);
+
+    // IO budget would have fired by now; export must still be pending.
+    await vi.advanceTimersByTimeAsync(commands.INVOKE_TIMEOUT_IO_MS + 100);
+    let snapshot = await Promise.race([settled, Promise.resolve('still-pending')]);
+    expect(snapshot).toBe('still-pending');
+
+    await vi.advanceTimersByTimeAsync(
+      commands.INVOKE_TIMEOUT_EXPORT_MS - commands.INVOKE_TIMEOUT_IO_MS,
+    );
+    snapshot = await settled;
+    expect(snapshot).toBeInstanceOf(Error);
+    expect((snapshot as Error).message).toMatch(/timed out/i);
+  });
 });
