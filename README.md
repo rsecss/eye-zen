@@ -20,7 +20,7 @@
   English | <a href=".github/README.zh-CN.md">简体中文</a>
 </p>
 
-> **Status**: v0.7.0 released (2026-05-24). Download pre-built installers from [GitHub Releases](https://github.com/rsecss/eye-zen/releases/latest).
+> **Status**: v0.7.0 released (2026-05-24). Pre-built installers available on [GitHub Releases](https://github.com/rsecss/eye-zen/releases/latest).
 
 ---
 
@@ -50,7 +50,7 @@ Eyezen automates this process — it quietly runs in the background and gently r
 - **Data Export** — Export the SQLite statistics database to a user-chosen location for backup or external analysis
 
 ### Interface & Integration
-- **System Tray Panel** — Persistent tray icon with glassmorphic quick-action panel that follows the tray position; auto-hides on focus loss like a native popover
+- **System Tray Panel** — Persistent tray icon with a glassmorphic quick-action panel that follows the tray position; auto-hides on focus loss like a native popover
 - **Dark / Light Theme** — Follows your preference including native title-bar adaptation on Windows
 - **Internationalization** — Simplified Chinese / English with hot switching, no restart needed
 - **Global Hotkeys** — Configurable shortcuts for start-rest / skip-rest / toggle-pause
@@ -60,22 +60,6 @@ Eyezen automates this process — it quietly runs in the background and gently r
 - **Lightweight** — Rust backend + native WebView via Tauri, minimal resource usage (~15 MB)
 - **Tested** — 90%+ line coverage on both frontend (Vitest) and backend (cargo-llvm-cov), enforced in CI
 - **Audited** — `cargo deny` security gate + zero npm advisories at every release
-
-### Why Eyezen over ProjectEye?
-
-Eyezen is inspired by [ProjectEye](https://github.com/Jeremyyang920/ProjectEye), but built from scratch with a modern stack:
-
-| | Eyezen | ProjectEye |
-|---|--------|------------|
-| Platform | Windows / macOS / Linux | Windows only |
-| Tech Stack | Rust + Tauri v2 + Svelte 5 | C# + WPF |
-| Memory Usage | ~15 MB | ~170 MB |
-| Theme | Dark / Light + native title bar | Light only |
-| i18n | Chinese / English hot switch | Chinese only |
-| Multi-monitor | All displays show reminder | Primary display only |
-| Statistics | ECharts trends + Health Index | None |
-| Pomodoro Mode | Yes | No |
-| Maintenance | Active | Unmaintained |
 
 ## Screenshots
 
@@ -89,13 +73,13 @@ Eyezen is inspired by [ProjectEye](https://github.com/Jeremyyang920/ProjectEye),
 |:---:|:---:|
 | ![Settings](docs/public/screenshots/settings.png) | ![About](docs/public/screenshots/about.png) |
 
-### Statistics & Health Analysis (added in v0.6.0)
+### Statistics & Health Analysis
 
 | Overview · Eye-Care Index · 24h Ribbon | Daily / Weekly / Monthly Trend |
 |:---:|:---:|
 | ![Statistics Overview](docs/public/screenshots/statistics-overview.png) | ![Trend Chart](docs/public/screenshots/statistics-trend.png) |
 
-### Pomodoro Mode (added in v0.5.0)
+### Pomodoro Mode
 
 <p align="center">
   <img src="docs/public/screenshots/settings-pomodoro.png" alt="Pomodoro Settings" width="720" />
@@ -103,65 +87,22 @@ Eyezen is inspired by [ProjectEye](https://github.com/Jeremyyang920/ProjectEye),
   <em>Configurable focus / short break / long break cycle alongside 20-20-20</em>
 </p>
 
-## Download
+## Quick Start
 
-### From Release (Recommended)
-
-Go to [Releases](https://github.com/rsecss/eye-zen/releases/latest) to download the installer for your platform:
-
-| Platform | Installer |
-|----------|-----------|
-| Windows | `.exe` (NSIS) or `.msi` |
-| macOS | `.dmg` (Intel & Apple Silicon) |
-| Linux | `.deb` / `.AppImage` |
-
-<details>
-<summary>macOS Security Notice</summary>
-
-macOS may block unsigned apps. After downloading, open Terminal and run:
-
-```bash
-xattr -cr /Applications/Eyezen.app
-```
-
-</details>
-
-## Build from Source
-
-### Prerequisites
-
-- [Node.js](https://nodejs.org/) v18+
-- [Rust](https://www.rust-lang.org/tools/install) (stable)
-- Platform-specific dependencies: see [Tauri v2 Prerequisites](https://v2.tauri.app/start/prerequisites/)
-
-### Steps
+**Requirements**: [Node.js](https://nodejs.org/) v18+, [Rust](https://www.rust-lang.org/) (stable), platform-specific dependencies per [Tauri v2 Prerequisites](https://v2.tauri.app/start/prerequisites/).
 
 ```bash
 git clone https://github.com/rsecss/eye-zen.git
 cd eye-zen
-
 npm install
 npm run tauri dev    # Development mode (hot reload)
-npm run tauri build  # Production build
+npm run tauri build  # Production build → src-tauri/target/release/bundle/
 ```
 
-Build output: `src-tauri/target/release/bundle/`.
-
-### Development checks
+Run all 8 local CI checks (fmt, clippy, cargo test, svelte-check, vitest, prettier, build, version sync) in one shot:
 
 ```bash
-npm run ci  # All 8 local checks (fmt, lint, test, type-check, build)
-```
-
-Or individually:
-
-```bash
-npx svelte-check --tsconfig ./tsconfig.json                    # Type check
-npm test                                                       # Frontend tests (Vitest)
-cargo test --manifest-path src-tauri/Cargo.toml                # Backend tests
-cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
-npm run format:check                                           # Prettier
-cargo fmt --all --manifest-path src-tauri/Cargo.toml --check
+npm run ci
 ```
 
 ## Tech Stack
@@ -170,7 +111,7 @@ cargo fmt --all --manifest-path src-tauri/Cargo.toml --check
 |-------|--------|-------------|
 | Framework | [Tauri v2](https://v2.tauri.app/) | Rust backend + native WebView |
 | Frontend | [Svelte 5](https://svelte.dev/) | Runes reactivity, zero runtime |
-| Build | [Vite 6](https://vite.dev/) | Fast HMR |
+| Build | [Vite 6](https://vite.dev/) | Fast HMR, multi-entry windows |
 | Styling | [TailwindCSS v4](https://tailwindcss.com/) | Utility-first |
 | Charts | [ECharts](https://echarts.apache.org/) | Tree-shaken, lazy-loaded |
 | Database | SQLite via [sqlx](https://github.com/launchbadge/sqlx) | Statistics persistence |
@@ -178,32 +119,46 @@ cargo fmt --all --manifest-path src-tauri/Cargo.toml --check
 | Audio | rodio | Rust-native, dedicated thread |
 | Type Bridge | ts-rs | Rust → TypeScript auto-generation |
 
-## Roadmap
+## Architecture
 
-- [x] **v0.1** — Core MVP (timer, tray, multi-monitor, fullscreen detection, settings, theme, auto-start, i18n)
-- [x] **v0.2** — Workday scheduling
-- [x] **v0.3** — Usage statistics + charts, AFK detection, configurable global hotkeys
-- [x] **v0.4** — Cross-platform process whitelist
-- [x] **v0.5** — Pomodoro mode + statistics database export
-- [x] **v0.6** — Health analysis (Eye-Care Index, adherence rate, rhythm tracking)
-- [x] **v0.7** — Hardening release (90%+ coverage gate, security gate, port-trait architecture)
-- [ ] **v1.0** — API freeze + stable release
+```
+┌────────────────────────────────────────────────────────────┐
+│  Frontend (Svelte 5)                                       │
+│  Windows: main · tray-panel · tip-window · tip-minimal     │
+│    invoke()  ─→ Tauri Commands (thin layer)                │
+│    listen()  ←─ Typed Events (ts-rs bindings)              │
+└────────────────────────────────────────────────────────────┘
+                              │
+┌────────────────────────────────────────────────────────────┐
+│  Backend Services (Tauri State · 9 Arc-shared services)    │
+│    Config · Timer · Detector · Window · Sound              │
+│    Tray   · I18n  · Stat     · Hotkey                      │
+│  Communication: watch channels + EffectSink trait          │
+└────────────────────────────────────────────────────────────┘
+                              │
+┌────────────────────────────────────────────────────────────┐
+│  Platform Layer — PlatformApi trait                        │
+│  Windows · macOS · Linux X11/Wayland                       │
+│  Capabilities: fullscreen detect · idle · foreground proc  │
+└────────────────────────────────────────────────────────────┘
+```
+
+- **Services** are constructed once at startup and shared via `Arc<AppServices>` Tauri state; they communicate through typed `tokio::sync::watch` channels and an `EffectSink` trait so the timer state machine stays pure.
+- **Platform abstraction** isolates OS-specific FFI behind the `PlatformApi` trait with per-capability degrade flags — the Settings UI greys out toggles whose capability is unavailable (e.g. AFK on Wayland).
+- **IPC contracts** are auto-generated by `ts-rs` and centralized in `src/lib/bindings/`, eliminating a class of Rust↔TS drift bugs.
+- **Coding rules** under `.trellis/spec/` are the canonical source for layering, IPC, and platform conventions — read them before contributing.
 
 ## Configuration
 
-Config is stored as `config.toml` in the system app data directory:
+Config is stored as `config.toml` in the system app data directory; the statistics database `data.db` lives alongside it.
 
 | Platform | Path |
 |----------|------|
-| Windows | `%APPDATA%\com.eyezen.app\config.toml` |
-| macOS | `~/Library/Application Support/com.eyezen.app/config.toml` |
-| Linux | `~/.config/com.eyezen.app/config.toml` |
+| Windows | `%APPDATA%\com.eyezen.app\` |
+| macOS | `~/Library/Application Support/com.eyezen.app/` |
+| Linux | `~/.config/com.eyezen.app/` |
 
-Statistics database (`data.db`) lives alongside `config.toml`. All settings can be modified through the in-app Settings UI; you should never have to edit the TOML by hand.
-
-## Credits
-
-Eyezen is inspired by **[ProjectEye](https://github.com/Jeremyyang920/ProjectEye)** — a smart eye protection tool for Windows that inspired Eyezen's core timer and break reminder design.
+All settings can be modified through the in-app Settings UI — you should never have to edit the TOML by hand.
 
 ## Contributing
 

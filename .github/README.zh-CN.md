@@ -20,7 +20,7 @@
   <a href="../README.md">English</a> | 简体中文
 </p>
 
-> **项目状态**: v0.7.0 已发布（2026-05-24）。从 [GitHub Releases](https://github.com/rsecss/eye-zen/releases/latest) 下载预编译安装包。
+> **项目状态**: v0.7.0 已发布（2026-05-24）。从 [GitHub Releases](https://github.com/rsecss/eye-zen/releases/latest) 获取预编译安装包。
 
 ---
 
@@ -61,22 +61,6 @@ Eyezen 帮你自动化这个过程——安静地在后台计时，时间到了�
 - **高覆盖** — 前端（Vitest）/ 后端（cargo-llvm-cov）均锁定 90%+ 行覆盖率，CI 强制
 - **安全审计** — `cargo deny` 安全门禁 + 每次发版 npm 漏洞零
 
-### 为什么选择 Eyezen 而不是 ProjectEye？
-
-Eyezen 的灵感来自 [ProjectEye](https://github.com/Jeremyyang920/ProjectEye)，但使用现代技术栈从零构建：
-
-| | Eyezen | ProjectEye |
-|---|--------|------------|
-| 平台 | Windows / macOS / Linux | 仅 Windows |
-| 技术栈 | Rust + Tauri v2 + Svelte 5 | C# + WPF |
-| 内存占用 | ~15 MB | ~170 MB |
-| 主题 | Dark / Light + 原生标题栏适配 | 仅浅色 |
-| 国际化 | 中文 / English 热切换 | 仅中文 |
-| 多显示器 | 所有显示器同时提醒 | 仅主显示器 |
-| 统计分析 | ECharts 趋势 + 健康指数 | 无 |
-| 番茄模式 | 有 | 无 |
-| 维护状态 | 活跃开发中 | 长期未维护 |
-
 ## 截图
 
 ### 核心交互
@@ -89,13 +73,13 @@ Eyezen 的灵感来自 [ProjectEye](https://github.com/Jeremyyang920/ProjectEye)
 |:---:|:---:|
 | ![设置](../docs/public/screenshots/settings.png) | ![关于](../docs/public/screenshots/about.png) |
 
-### 统计与健康分析（v0.6.0 新增）
+### 统计与健康分析
 
 | 总览 · 护眼指数 · 24 小时色带 | 日 / 周 / 月趋势 |
 |:---:|:---:|
 | ![统计总览](../docs/public/screenshots/statistics-overview.png) | ![趋势图](../docs/public/screenshots/statistics-trend.png) |
 
-### 番茄模式（v0.5.0 新增）
+### 番茄模式
 
 <p align="center">
   <img src="../docs/public/screenshots/settings-pomodoro.png" alt="番茄模式设置" width="720" />
@@ -103,65 +87,22 @@ Eyezen 的灵感来自 [ProjectEye](https://github.com/Jeremyyang920/ProjectEye)
   <em>与 20-20-20 并列的专注 / 短休 / 长休循环配置</em>
 </p>
 
-## 下载
+## Quick Start
 
-### 从 Release 下载（推荐）
-
-前往 [Releases](https://github.com/rsecss/eye-zen/releases/latest) 下载对应平台安装包：
-
-| 平台 | 安装包 |
-|------|--------|
-| Windows | `.exe` (NSIS) 或 `.msi` |
-| macOS | `.dmg`（Intel 与 Apple Silicon） |
-| Linux | `.deb` / `.AppImage` |
-
-<details>
-<summary>macOS 安全提示</summary>
-
-macOS 可能会阻止未签名的应用。下载后打开终端执行：
-
-```bash
-xattr -cr /Applications/Eyezen.app
-```
-
-</details>
-
-## 从源码构建
-
-### 环境要求
-
-- [Node.js](https://nodejs.org/) v18+
-- [Rust](https://www.rust-lang.org/tools/install) (stable)
-- 各平台系统依赖请参考 [Tauri v2 Prerequisites](https://v2.tauri.app/start/prerequisites/)
-
-### 构建步骤
+**环境要求**：[Node.js](https://nodejs.org/) v18+，[Rust](https://www.rust-lang.org/)（stable），各平台系统依赖请参考 [Tauri v2 Prerequisites](https://v2.tauri.app/start/prerequisites/)。
 
 ```bash
 git clone https://github.com/rsecss/eye-zen.git
 cd eye-zen
-
 npm install
 npm run tauri dev    # 开发模式（热重载）
-npm run tauri build  # 生产构建
+npm run tauri build  # 生产构建 → src-tauri/target/release/bundle/
 ```
 
-构建产物位于 `src-tauri/target/release/bundle/`。
-
-### 开发验证
+一键跑齐 8 步本地 CI 检查（fmt + clippy + cargo test + svelte-check + vitest + prettier + build + version sync）：
 
 ```bash
-npm run ci  # 跑齐 8 步本地检查（fmt + lint + test + type-check + build）
-```
-
-或单独运行：
-
-```bash
-npx svelte-check --tsconfig ./tsconfig.json                    # 前端类型检查
-npm test                                                       # 前端测试 (Vitest)
-cargo test --manifest-path src-tauri/Cargo.toml                # 后端测试
-cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
-npm run format:check                                           # Prettier 检查
-cargo fmt --all --manifest-path src-tauri/Cargo.toml --check
+npm run ci
 ```
 
 ## 技术栈
@@ -170,7 +111,7 @@ cargo fmt --all --manifest-path src-tauri/Cargo.toml --check
 |---|------|------|
 | 框架 | [Tauri v2](https://v2.tauri.app/) | Rust 后端 + 原生 WebView |
 | 前端 | [Svelte 5](https://svelte.dev/) | Runes 响应式，零运行时 |
-| 构建 | [Vite 6](https://vite.dev/) | 极速 HMR |
+| 构建 | [Vite 6](https://vite.dev/) | 极速 HMR，多入口窗口 |
 | 样式 | [TailwindCSS v4](https://tailwindcss.com/) | 工具类优先 |
 | 图表 | [ECharts](https://echarts.apache.org/) | Tree-shaken，按需加载 |
 | 数据库 | SQLite via [sqlx](https://github.com/launchbadge/sqlx) | 统计数据持久化 |
@@ -178,32 +119,46 @@ cargo fmt --all --manifest-path src-tauri/Cargo.toml --check
 | 音频 | rodio | Rust 原生，独立线程 |
 | 类型桥接 | ts-rs | Rust → TypeScript 自动生成 |
 
-## 路线图
+## 项目架构
 
-- [x] **v0.1** — 核心 MVP（定时器、托盘、多显示器、全屏检测、设置、主题、自启动、i18n）
-- [x] **v0.2** — 工作日调度
-- [x] **v0.3** — 使用统计 + 图表、离席检测、可配置全局快捷键
-- [x] **v0.4** — 跨平台进程白名单
-- [x] **v0.5** — 番茄模式 + 统计数据库导出
-- [x] **v0.6** — 健康分析（Eye-Care Index、遵守率、节律追踪）
-- [x] **v0.7** — Hardening release（90%+ 覆盖率门禁、安全门禁、Port trait 架构）
-- [ ] **v1.0** — API 冻结 + 稳定版
+```
+┌────────────────────────────────────────────────────────────┐
+│  前端 (Svelte 5)                                           │
+│  窗口: main · tray-panel · tip-window · tip-minimal        │
+│    invoke()  ─→ Tauri Commands（薄层）                     │
+│    listen()  ←─ Typed Events（ts-rs 桥接）                 │
+└────────────────────────────────────────────────────────────┘
+                              │
+┌────────────────────────────────────────────────────────────┐
+│  后端 Services（Tauri State · 9 个 Arc 共享服务）          │
+│    Config · Timer · Detector · Window · Sound              │
+│    Tray   · I18n  · Stat     · Hotkey                      │
+│  通信: watch 通道 + EffectSink trait                       │
+└────────────────────────────────────────────────────────────┘
+                              │
+┌────────────────────────────────────────────────────────────┐
+│  平台抽象层 — PlatformApi trait                            │
+│  Windows · macOS · Linux X11/Wayland                       │
+│  能力: 全屏检测 · 空闲时长 · 前台进程                       │
+└────────────────────────────────────────────────────────────┘
+```
+
+- **Services** 在启动时一次构造，通过 `Arc<AppServices>` 注入 Tauri State 共享；服务间用 `tokio::sync::watch` 通道与 `EffectSink` trait 通信，让 Timer 状态机保持纯函数。
+- **平台抽象** 把 OS 相关 FFI 隔离在 `PlatformApi` trait 内，按能力维度暴露 degrade flag——Settings UI 会自动灰显当前不可用的能力（例如 Wayland 上的 AFK）。
+- **IPC 契约** 由 `ts-rs` 自动生成并集中在 `src/lib/bindings/`，消除 Rust↔TS 漂移问题。
+- **编码规范** 沉淀在 `.trellis/spec/`——分层、IPC、平台等约束的唯一来源，贡献前请先读。
 
 ## 配置文件
 
-配置存储于系统应用数据目录下的 `config.toml`：
+配置存储于系统应用数据目录下的 `config.toml`；统计数据库 `data.db` 同目录。
 
 | 平台 | 路径 |
 |------|------|
-| Windows | `%APPDATA%\com.eyezen.app\config.toml` |
-| macOS | `~/Library/Application Support/com.eyezen.app/config.toml` |
-| Linux | `~/.config/com.eyezen.app/config.toml` |
+| Windows | `%APPDATA%\com.eyezen.app\` |
+| macOS | `~/Library/Application Support/com.eyezen.app/` |
+| Linux | `~/.config/com.eyezen.app/` |
 
-统计数据库 `data.db` 与 `config.toml` 同目录。所有设置均可通过应用内 Settings UI 修改，无需手动编辑 TOML。
-
-## 致谢
-
-Eyezen 的灵感来自 **[ProjectEye](https://github.com/Jeremyyang920/ProjectEye)** — Windows 智能护眼工具，Eyezen 的核心计时与休息提醒设计深受其启发。
+所有设置均可通过应用内 Settings UI 修改，无需手动编辑 TOML。
 
 ## 贡献
 
