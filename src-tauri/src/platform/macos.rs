@@ -119,12 +119,13 @@ fn detect_fullscreen_macos() -> Result<FullscreenStatus, String> {
         kCGWindowListExcludeDesktopElements, kCGWindowListOptionOnScreenOnly,
     };
 
+    const OPTIONS: u32 = kCGWindowListOptionOnScreenOnly | kCGWindowListExcludeDesktopElements;
+
     let displays = active_display_bounds()?;
     if displays.is_empty() {
         return Ok(FullscreenStatus::DegradedFalse);
     }
 
-    const OPTIONS: u32 = kCGWindowListOptionOnScreenOnly | kCGWindowListExcludeDesktopElements;
     let arr = copy_window_info(OPTIONS, kCGNullWindowID)
         .ok_or_else(|| "CGWindowListCopyWindowInfo returned null".to_string())?;
 
@@ -244,7 +245,7 @@ fn active_display_bounds() -> Result<Vec<DisplayRect>, String> {
     Ok(rects)
 }
 
-/// Extract a `DisplayRect` from a `kCGWindowBounds` CFDictionary using the
+/// Extract a `DisplayRect` from a `kCGWindowBounds` `CFDictionary` using the
 /// dedicated Core Graphics helper (handles both integer and float-keyed
 /// representations across macOS versions).
 fn rect_from_dict(dict: core_foundation::dictionary::CFDictionaryRef) -> Option<DisplayRect> {
