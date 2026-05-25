@@ -11,7 +11,7 @@
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0--or--later-blue.svg" alt="License" /></a>
   <img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-brightgreen" alt="Platform" />
-  <img src="https://img.shields.io/badge/version-0.7.0-orange" alt="Version" />
+  <img src="https://img.shields.io/badge/version-0.7.1-orange" alt="Version" />
   <img src="https://img.shields.io/badge/tauri-v2-blue" alt="Tauri v2" />
   <img src="https://img.shields.io/badge/coverage-93%25-brightgreen" alt="Coverage" />
 </p>
