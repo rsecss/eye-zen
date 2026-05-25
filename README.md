@@ -79,11 +79,29 @@ Eyezen is inspired by [ProjectEye](https://github.com/Jeremyyang920/ProjectEye),
 
 ## Screenshots
 
-| Resting | Settings | About | Tip Window |
-|:---:|:---:|:---:|:---:|
-| ![Resting](docs/public/screenshots/resting.png) | ![Settings](docs/public/screenshots/settings.png) | ![About](docs/public/screenshots/about.png) | ![Tip Window](docs/public/screenshots/tip_window.png) |
+### Core Experience
 
-> Statistics and Health Analysis pages — added in v0.6.0 — feature daily/weekly/monthly ECharts trends and an Eye-Care Index ribbon. Launch the app to explore the full interface.
+| Resting | Tip Window |
+|:---:|:---:|
+| ![Resting](docs/public/screenshots/resting.png) | ![Tip Window](docs/public/screenshots/tip_window.png) |
+
+| Settings | About |
+|:---:|:---:|
+| ![Settings](docs/public/screenshots/settings.png) | ![About](docs/public/screenshots/about.png) |
+
+### Statistics & Health Analysis (added in v0.6.0)
+
+| Overview · Eye-Care Index · 24h Ribbon | Daily / Weekly / Monthly Trend |
+|:---:|:---:|
+| ![Statistics Overview](docs/public/screenshots/statistics-overview.png) | ![Trend Chart](docs/public/screenshots/statistics-trend.png) |
+
+### Pomodoro Mode (added in v0.5.0)
+
+<p align="center">
+  <img src="docs/public/screenshots/settings-pomodoro.png" alt="Pomodoro Settings" width="720" />
+  <br/>
+  <em>Configurable focus / short break / long break cycle alongside 20-20-20</em>
+</p>
 
 ## Download
 

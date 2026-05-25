@@ -79,11 +79,29 @@ Eyezen 的灵感来自 [ProjectEye](https://github.com/Jeremyyang920/ProjectEye)
 
 ## 截图
 
-| 休息中 | 设置 | 关于 | 提醒窗口 |
-|:---:|:---:|:---:|:---:|
-| ![休息中](../docs/public/screenshots/resting.png) | ![设置](../docs/public/screenshots/settings.png) | ![关于](../docs/public/screenshots/about.png) | ![提醒窗口](../docs/public/screenshots/tip_window.png) |
+### 核心交互
 
-> 统计与健康分析页面在 v0.6.0 加入，提供日/周/月 ECharts 趋势图与 Eye-Care Index 色带。运行应用后即可探索完整界面。
+| 休息中 | 提醒窗口 |
+|:---:|:---:|
+| ![休息中](../docs/public/screenshots/resting.png) | ![提醒窗口](../docs/public/screenshots/tip_window.png) |
+
+| 设置 | 关于 |
+|:---:|:---:|
+| ![设置](../docs/public/screenshots/settings.png) | ![关于](../docs/public/screenshots/about.png) |
+
+### 统计与健康分析（v0.6.0 新增）
+
+| 总览 · 护眼指数 · 24 小时色带 | 日 / 周 / 月趋势 |
+|:---:|:---:|
+| ![统计总览](../docs/public/screenshots/statistics-overview.png) | ![趋势图](../docs/public/screenshots/statistics-trend.png) |
+
+### 番茄模式（v0.5.0 新增）
+
+<p align="center">
+  <img src="../docs/public/screenshots/settings-pomodoro.png" alt="番茄模式设置" width="720" />
+  <br/>
+  <em>与 20-20-20 并列的专注 / 短休 / 长休循环配置</em>
+</p>
 
 ## 下载
 
