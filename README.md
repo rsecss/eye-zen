@@ -5,7 +5,7 @@
 <h1 align="center">Eyezen</h1>
 
 <p align="center">
-  <strong>Cross-platform desktop eye care app based on the 20-20-20 rule</strong>
+  <strong>Cross-platform desktop eye care app — quiet, smart, out of your way</strong>
 </p>
 
 <p align="center">
@@ -20,48 +20,23 @@
   English | <a href=".github/README.zh-CN.md">简体中文</a>
 </p>
 
-> **Status**: v0.7.0 released (2026-05-24). Pre-built installers available on [GitHub Releases](https://github.com/rsecss/eye-zen/releases/latest).
-
 ---
 
-## What is the 20-20-20 Rule?
+## 👀 Introduction
 
-Every **20** minutes, look at something **20** feet (~6 meters) away for **20** seconds. This simple habit effectively reduces eye strain caused by prolonged screen time.
+Eyezen is a lightweight desktop companion that protects your eyes without breaking your flow. It applies the **20-20-20 rule** — every 20 minutes look ~6 m away for 20 seconds — and offers a Pomodoro alternative for deep-work sessions. Smart skipping during fullscreen apps, AFK periods, or whitelisted processes keeps reminders unobtrusive; built-in statistics and health analysis show whether the habit is actually sticking.
 
-Eyezen automates this process — it quietly runs in the background and gently reminds you to rest when it's time.
+## ✨ Highlights
 
-## Features
+- ⏱️ **Dual timer modes** — 20-20-20 or Pomodoro, both fully configurable
+- 🎯 **Smart skipping** — fullscreen detection, AFK idle, process whitelist, weekday schedule
+- 📊 **Statistics & Health Analysis** — daily / weekly / monthly ECharts trends and an Eye-Care Index that quantifies the habit
+- 🖥️ **Multi-monitor reminders** — break overlay on every connected display
+- 🌓 **Dark / Light + i18n** — Simplified Chinese / English hot switching, native title-bar adaptation on Windows
+- ⌨️ **Global hotkeys & glassmorphic tray** — start / skip / pause via shortcut; tray panel follows the icon, auto-hides on blur
+- ⚡ **Lightweight & tested** — ~15 MB RAM via Rust + Tauri; 90%+ coverage on both frontend and backend, enforced in CI
 
-### Core Timer
-- **20-20-20 Mode** — Customizable work/rest durations with a full state machine (Working → PreAlert → Alerting → Resting)
-- **Pomodoro Mode** — Alternative work-rest rhythm with configurable cycle length and long-break interval
-- **Multi-monitor Support** — Break reminder windows appear on all connected displays
-- **Sound Alerts** — Gentle audio cue on break reminders
-
-### Smart Skipping
-- **Fullscreen Detection** — Auto-skip reminders during fullscreen apps on Windows / macOS / Linux X11 (Wayland not yet supported)
-- **AFK Detection** — Skip the next reminder when you've been idle for a configurable threshold
-- **Process Whitelist** — Skip reminders when specific applications are in the foreground (cross-platform basename matching)
-- **Workday Schedule** — Suppress reminders entirely on configured weekdays
-
-### Analytics & Insights
-- **Statistics Dashboard** — Daily / weekly / monthly trends rendered via ECharts
-- **Health Analysis** — Eye-Care Index (ECI), adherence rate, and rhythm tracking to quantify your eye-care habit
-- **Data Export** — Export the SQLite statistics database to a user-chosen location for backup or external analysis
-
-### Interface & Integration
-- **System Tray Panel** — Persistent tray icon with a glassmorphic quick-action panel that follows the tray position; auto-hides on focus loss like a native popover
-- **Dark / Light Theme** — Follows your preference including native title-bar adaptation on Windows
-- **Internationalization** — Simplified Chinese / English with hot switching, no restart needed
-- **Global Hotkeys** — Configurable shortcuts for start-rest / skip-rest / toggle-pause
-- **Auto Start** — Launch at system startup (OS-native via tauri-plugin-autostart)
-
-### Engineering
-- **Lightweight** — Rust backend + native WebView via Tauri, minimal resource usage (~15 MB)
-- **Tested** — 90%+ line coverage on both frontend (Vitest) and backend (cargo-llvm-cov), enforced in CI
-- **Audited** — `cargo deny` security gate + zero npm advisories at every release
-
-## Screenshots
+## 📸 Screenshots
 
 ### Core Experience
 
@@ -87,7 +62,7 @@ Eyezen automates this process — it quietly runs in the background and gently r
   <em>Configurable focus / short break / long break cycle alongside 20-20-20</em>
 </p>
 
-## Quick Start
+## 🚀 Quick Start
 
 **Requirements**: [Node.js](https://nodejs.org/) v18+, [Rust](https://www.rust-lang.org/) (stable), platform-specific dependencies per [Tauri v2 Prerequisites](https://v2.tauri.app/start/prerequisites/).
 
@@ -105,7 +80,7 @@ Run all 8 local CI checks (fmt, clippy, cargo test, svelte-check, vitest, pretti
 npm run ci
 ```
 
-## Tech Stack
+## 🛠️ Tech Stack
 
 | Layer | Choice | Description |
 |-------|--------|-------------|
@@ -119,7 +94,7 @@ npm run ci
 | Audio | rodio | Rust-native, dedicated thread |
 | Type Bridge | ts-rs | Rust → TypeScript auto-generation |
 
-## Architecture
+## 🏗️ Architecture
 
 ```
 ┌────────────────────────────────────────────────────────────┐
@@ -148,7 +123,7 @@ npm run ci
 - **IPC contracts** are auto-generated by `ts-rs` and centralized in `src/lib/bindings/`, eliminating a class of Rust↔TS drift bugs.
 - **Coding rules** under `.trellis/spec/` are the canonical source for layering, IPC, and platform conventions — read them before contributing.
 
-## Configuration
+## ⚙️ Configuration
 
 Config is stored as `config.toml` in the system app data directory; the statistics database `data.db` lives alongside it.
 
@@ -160,10 +135,10 @@ Config is stored as `config.toml` in the system app data directory; the statisti
 
 All settings can be modified through the in-app Settings UI — you should never have to edit the TOML by hand.
 
-## Contributing
+## 🤝 Contributing
 
 Contributions are welcome! Please read [CONTRIBUTING.md](.github/CONTRIBUTING.md) for guidelines.
 
-## License
+## 📄 License
 
 [GNU General Public License v3.0 or later](LICENSE)
