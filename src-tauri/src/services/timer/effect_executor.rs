@@ -3,7 +3,7 @@ use tracing::info;
 use super::effect::{Effect, SoundType, TrayUpdate};
 use super::state::TimerState;
 use crate::models::statistics::{CycleEventDraft, RestSessionDraft};
-use crate::models::types::StatePayload;
+use crate::models::timer::StatePayload;
 
 /// Sink that executes side effects emitted by the pure timer core.
 ///

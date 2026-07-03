@@ -4,7 +4,7 @@ use chrono::Utc;
 
 use crate::models::config::TimerMode;
 use crate::models::statistics::{CycleEventDraft, CycleOutcome, RestSessionDraft};
-use crate::models::types::{PomodoroStatePayload, StatePayload};
+use crate::models::timer::{PomodoroStatePayload, StatePayload};
 
 use super::effect::{Effect, PomodoroProgress, SoundType, TrayTooltip, TrayUpdate};
 use super::state::{Inner, SkipFlags, TimerState, Transition, UserEvent};

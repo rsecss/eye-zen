@@ -16,7 +16,7 @@ use crate::models::hotkeys::{HotkeyStatus, HotkeysConfig};
 #[cfg(not(test))]
 use crate::models::statistics::{CycleOutcomesPayload, StatisticsTrendPayload};
 #[cfg(not(test))]
-use crate::models::types::{DetectorCapabilities, StatePayload};
+use crate::models::timer::{DetectorCapabilities, StatePayload};
 #[cfg(not(test))]
 use crate::services::timer::UserEvent;
 #[cfg(not(test))]
