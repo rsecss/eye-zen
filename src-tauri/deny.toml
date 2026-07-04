@@ -23,6 +23,20 @@ db-urls = ["https://github.com/rustsec/advisory-db"]
 # vulnerabilities still fail loudly via the other defaults.
 unmaintained = "workspace"
 yanked = "warn"
+# Temporary ignores — each entry MUST carry a removal condition.
+#
+# RUSTSEC-2026-0194 / RUSTSEC-2026-0195: DoS in quick-xml < 0.41
+# (quadratic attribute-duplicate check / unbounded xmlns allocation).
+# Reached only via plist -> tauri (Apple plist parsing); Eyezen parses
+# no attacker-controlled XML at runtime, so impact is negligible.
+# No upgrade path exists: latest plist 1.9.0 still requires
+# quick-xml ^0.39.2 (< 0.41.0).
+# REMOVE when tauri's plist dependency resolves quick-xml >= 0.41.0
+# (check with: cargo tree --manifest-path src-tauri/Cargo.toml -i quick-xml --target all).
+ignore = [
+    { id = "RUSTSEC-2026-0194", reason = "DoS-only, unreachable input path; blocked on plist adopting quick-xml >= 0.41" },
+    { id = "RUSTSEC-2026-0195", reason = "DoS-only, unreachable input path; blocked on plist adopting quick-xml >= 0.41" },
+]
 
 [licenses]
 version = 2
