@@ -446,7 +446,7 @@ pub(crate) enum Effect {
 
 - Effect MUST NOT 持有锁引用或可变 service 引用；通过克隆值传递。
 - Effect 执行失败 MUST 记录 `tracing::warn!` 但 MUST NOT 反向抛回状态机，MUST NOT 阻塞下一次 tick。
-- `EmitStateChanged` 是前端同步唯一来源；新增状态字段 MUST 同步更新 `StatePayload`（见 `src-tauri/src/models/types.rs`）+ ts-rs 绑定。
+- `EmitStateChanged` 是前端同步唯一来源；新增状态字段 MUST 同步更新 `StateChangedPayload`（定义在 `src-tauri/src/models/events.rs`，`StatePayload` 为其别名，见 `src-tauri/src/models/timer.rs`）+ ts-rs 绑定。
 - `RecordStat` 等 P2 effect 加入时 MUST 同步更新本表。
 
 ### SkipFlags

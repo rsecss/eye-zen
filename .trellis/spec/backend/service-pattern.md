@@ -101,6 +101,8 @@ pub(crate) trait Service: Send + Sync {
 
 `src-tauri/src/lib.rs` 中 `setup()` 的实际顺序 MUST 与依赖 DAG 一致：
 
+### 构造阶段（`new()`）
+
 1. `ConfigService::new` → 加载或生成 TOML
 2. `SoundService::new` → 启动音频线程
 3. `DetectorService::new(platform::create_platform())`
@@ -110,11 +112,32 @@ pub(crate) trait Service: Send + Sync {
 7. `I18nService::new(&initial_locale)` 并 `Arc::wrap`
 8. `TrayService::new(config_rx, Arc::clone(&i18n_service))`
 9. `HotkeyService::new(config_rx, app_handle)`（后端持有注册权限，前端不暴露 generic shortcut API）
-10. 顺序 `init`：config → i18n → detector → sound → stat → timer → window → tray → hotkeys
-11. `Arc<AppServices>` 包装并 `app.manage`
-12. 顺序 `start`：config → i18n → detector → sound → stat → window → tray → timer → hotkeys
 
-注意 `start` 阶段 hotkeys 必须在 timer 之后启动：快捷键是用户事件源，必须等 timer 与下游 effect 执行器就位后再接收全局输入。
+### 初始化阶段（`init()`）
+
+顺序遵循依赖 DAG：基础服务 → 独立服务 → timer → detector（依赖 timer 的 skip_flags）→ effect 执行器 → 事件源
+
+```
+config → i18n → sound → stat → timer → detector → window → tray → hotkeys
+```
+
+- `detector.init()` MUST 在 `timer.init()` 之后，因为 detector 在运行时通过同步拉取 `current_skip_flags()` 依赖 timer 内部状态
+- 当前 `init()` 实现仅缓存 `ServiceContext`，无跨服务调用，但保持正确顺序以支持未来扩展
+
+### 启动阶段（`start()`）
+
+顺序遵循"effect 执行器先启动，事件源后启动"原则：
+
+```
+config → i18n → detector → sound → stat → window → tray → timer → hotkeys
+```
+
+- `timer.start()` MUST 在 `window` / `tray` 之后：timer 的 effect 需要窗口服务已就绪
+- `hotkeys.start()` MUST 最后：快捷键是用户事件源，必须等 timer 与下游 effect 执行器就位后再接收全局输入
+
+### `Arc<AppServices>` 包装
+
+所有服务 `init()` 完成后，包装为 `Arc<AppServices>` 并通过 `app.manage()` 注册为 Tauri State，然后执行 `start()`。
 
 ## 优雅关闭顺序
 

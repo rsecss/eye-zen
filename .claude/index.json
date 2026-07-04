@@ -1,10 +1,10 @@
 {
-  "timestamp": "2026-05-24T00:00:00+00:00",
+  "timestamp": "2026-07-04T00:00:00+00:00",
   "project": {
     "name": "Eyezen",
     "description": "Cross-platform desktop eye health tool based on 20-20-20 rule",
     "license": "GPL-3.0-or-later",
-    "status": "v0.7.0-released; v0.7.x-hardening epic complete (single PR pending review)",
+    "status": "v0.7.1-released; architecture-review P0 fixes landed on main (service init order + models split, fb50077)",
     "branch": "main",
     "techStack": {
       "framework": { "name": "Tauri", "version": "~2.10", "installed": true },
@@ -126,9 +126,10 @@
       "models": [
         "src-tauri/src/models/mod.rs",
         "src-tauri/src/models/config.rs",
+        "src-tauri/src/models/events.rs",
         "src-tauri/src/models/hotkeys.rs",
         "src-tauri/src/models/statistics.rs",
-        "src-tauri/src/models/types.rs"
+        "src-tauri/src/models/timer.rs"
       ],
       "platform": [
         "src-tauri/src/platform/mod.rs",
@@ -229,6 +230,7 @@
           "src/lib/bindings/StatBucket.ts",
           "src/lib/bindings/StatPersistenceErrorPayload.ts",
           "src/lib/bindings/StatPersistenceKind.ts",
+          "src/lib/bindings/StateChangedPayload.ts",
           "src/lib/bindings/StatePayload.ts",
           "src/lib/bindings/StatisticsTrendPayload.ts",
           "src/lib/bindings/TimerConfig.ts",
@@ -357,7 +359,7 @@
         ]
       },
       "tests": {
-        "count": 260,
+        "count": 267,
         "framework": "cargo test",
         "coverageGate": "90% lines / 85% functions"
       }
@@ -409,7 +411,7 @@
           "src/lib/events.ts (typed listen/emit wrappers with 5 named event constants)",
           "src/lib/stores/ (timer + config + cycle-outcomes Runes stores)",
           "src/lib/i18n/ (zh-CN/en hot switching)",
-          "src/lib/bindings/ (28 ts-rs generated types)"
+          "src/lib/bindings/ (29 ts-rs generated types)"
         ]
       },
       "tests": {
@@ -449,8 +451,7 @@
     }
   ],
   "nextSteps": [
-    "v0.7.x hardening epic complete — 10 commits closing F03/F16-F22/F25/F28/F29 + tray-panel focus-loss UX bug; single PR ready for review",
-    "v0.7.1 release after epic PR merges",
-    "Decision pending: Phase 3 sequel (export enhancement / hotkey polish / monthly report) vs v1.0.0 SemVer freeze + docs site"
+    "Decision pending: Phase 3 sequel (export enhancement / hotkey polish / monthly report) vs v1.0.0 SemVer freeze + docs site",
+    "Architecture-review P2 leftovers (unscheduled): ServiceContext orchestrator naming, SQLite migration drill, whitelist diagnostics, E2E smoke tests"
   ]
 }

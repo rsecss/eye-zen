@@ -10,7 +10,7 @@
 
 ## 项目状态
 
-**当前阶段：v0.7.0 已发布（2026-05-24）；v0.7.x hardening epic 已完工（`chore/v0-7-x-hardening` 单 PR，10 commit），下一步 v0.7.1 release 后再评估 Phase 3 增功能 vs v1.0.0 API 冻结。**
+**当前阶段：v0.7.1 已发布（2026-05-25，patch release 承载 v0.7.x hardening epic PR #37）；2026-07-03 完成全项目架构审查并落地 P0 修复（服务 init 顺序对齐 DAG + models/ 拆分，fb50077）；下一步评估 Phase 3 增功能 vs v1.0.0 API 冻结。**
 
 - 脚手架已就绪：Tauri v2 + Svelte 5 + Vite 6 + TailwindCSS v4
 - 后端服务齐全：9 services（Config / Timer / Detector / Window / Sound / Tray / I18n / Stat / Hotkey），全部经 Port trait / EffectSink / 纯 helper 抽象（v0.7.0 PR #31/#32）
@@ -29,11 +29,12 @@
 - **v0.5.0**（2026-05-23）：番茄模式（TimerMode + PomodoroConfig + 长短休动态切换）+ 统计数据库 VACUUM INTO 导出
 - **v0.6.0**（2026-05-23）：Health Analysis（Eye-Care Index + 遵守率 + 节律追踪）
 - **v0.7.0**（2026-05-24，hardening release）：9 PR 完成 P0/P1 14 项 audit findings —— npm 漏洞清零（#28）+ stat 持久化事务化加导出路径白名单加有界 channel（#27）+ macOS fullscreen capability 降级（#29）+ defensive code 集中清理（#30）+ 引入 WindowPort/TrayPort/EffectSink trait 与 `tray_tooltip.rs` / `window_layout.rs` 纯 helper（#31/#32），把先前覆盖率排除的 tray/window 服务推到 ~93%+；覆盖率门禁分两阶段建立：先 80%/70% 起步（#26）后推到 90%/85%（#33）
+- **v0.7.1**（2026-05-25，patch release，10 artifacts）：承载 v0.7.x hardening epic（PR #37，10 commit 单 PR）—— 关闭全部 P2/P3 audit findings：F17 (stat.rs 拆分为 stat/ 六子模块) + F18 (Settings/Statistics 页面拆分) + F19 (locale canonical en) + F20 (IPC event 常量化) + F16 (IPC timeout 三档) + F22 (capability emit 收紧) + F25 (docs 漂移) + F29 (跨平台路径已知限制) + F03+F28 (macOS fullscreen 真实现) + tray-panel 失焦自动隐藏
 
 ### 下一步
 
-- 已完工待 PR：**v0.7.x hardening epic**（`chore/v0-7-x-hardening` 分支，10 commit 单 PR）—— 关闭 v0.7.0 epic 划到 v0.7.x 的全部 P2/P3 audit findings：F17 (stat.rs 拆分) ✅ F18 (Settings/Statistics 拆分) ✅ F19 (locale canonical en) ✅ F20 (IPC event 常量化) ✅ F16 (IPC timeout 三档) ✅ F22 (capability emit 收紧) ✅ F25 (docs 漂移) ✅ F29 (跨平台路径已知限制) ✅ F03+F28 (macOS fullscreen 真实现) ✅ tray-panel 失焦自动隐藏 ✅
-- 之后：v0.7.1 release + 评估 Phase 3 续集（数据导出 enhancement / 全局快捷键 polish / 月度报告）vs v1.0.0 SemVer 冻结 + 文档站点
+- 评估 Phase 3 续集（数据导出 enhancement / 全局快捷键 polish / 月度报告）vs v1.0.0 SemVer 冻结 + 文档站点
+- 架构审查 P2 遗留（未排期）：ServiceContext 编排者角色更名、SQLite schema 迁移演习、白名单条目失效诊断、前端 E2E smoke test
 - 已挪到 v1.0.0 / 未排期：覆盖率推至 95%、tip-window mini/角落通知模式、F15 stat fetch 全表扫描优化、F06/F07 API 重命名 + Beta 移除
 
 ---
@@ -113,7 +114,7 @@ graph TD
 | WindowService | `src-tauri/src/services/window.rs` | 已实现 | 多显示器 tip-window 管理 |
 | SoundService | `src-tauri/src/services/sound.rs` | 已实现 | rodio 独立线程 + mpsc |
 | TrayService | `src-tauri/src/services/tray.rs` | 已实现 | 托盘菜单 + tooltip + i18n 热切换 |
-| StatService | `src-tauri/src/services/stat.rs` | 已实现 | SQLite 统计持久化与趋势聚合 |
+| StatService | `src-tauri/src/services/stat/` | 已实现 | SQLite 统计持久化与趋势聚合（writer/migration/export/trends/health 子模块） |
 | I18nService | `src-tauri/src/services/i18n.rs` | 已实现 | zh-CN/en 双语 + 托盘翻译 |
 | PlatformApi | `src-tauri/src/platform/` | 已实现 | 跨平台抽象 (Windows/macOS/Linux) |
 | Commands | `src-tauri/src/commands/` | 已实现 | Tauri command 薄层 |

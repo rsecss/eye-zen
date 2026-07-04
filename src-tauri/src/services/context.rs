@@ -18,7 +18,7 @@ use crate::models::hotkeys::HotkeyStatus;
 use crate::models::statistics::{CycleEventDraft, CycleOutcome, RestSessionDraft};
 use crate::models::statistics::{CycleReason, StatPersistenceErrorPayload, StatPersistenceKind};
 #[cfg(not(test))]
-use crate::models::types::StatePayload;
+use crate::models::timer::StatePayload;
 #[cfg(not(test))]
 use crate::services::schedule::is_schedule_active;
 
@@ -435,7 +435,7 @@ impl ServiceContext {
 /// a dedicated recording sink.
 #[cfg(test)]
 impl super::timer::EffectSink for ServiceContext {
-    fn emit_state_changed(&self, _payload: &crate::models::types::StatePayload) {}
+    fn emit_state_changed(&self, _payload: &crate::models::timer::StatePayload) {}
     fn show_tip_windows(&self) {}
     fn hide_tip_windows(&self) {}
     fn play_sound(&self, _sound: super::timer::SoundType) {}
@@ -568,7 +568,7 @@ mod tests {
         use std::time::Duration;
 
         let ctx = ServiceContext::default();
-        let payload = crate::models::types::StatePayload {
+        let payload = crate::models::timer::StatePayload {
             state: "working".to_string(),
             remaining_secs: 0,
             work_minutes: 20,

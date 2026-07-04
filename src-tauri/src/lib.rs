@@ -166,12 +166,16 @@ pub fn run() -> Result<(), tauri::Error> {
             };
 
             tauri::async_runtime::block_on(async {
+                // Init order follows dependency DAG: base services (config, i18n)
+                // → independent services (sound, stat) → timer → services that
+                // depend on timer (detector) → effect executors (window, tray)
+                // → event sources (hotkeys).
                 config_service.init(&handle).await?;
                 i18n_service.init(&handle).await?;
-                detector_service.init(&handle).await?;
                 sound_service.init(&handle).await?;
                 stat_service.init(&handle).await?;
                 timer_service.init(&handle).await?;
+                detector_service.init(&handle).await?;
                 window_service.init(&handle).await?;
                 tray_service.init(&handle).await?;
                 hotkey_service.init(&handle).await?;

@@ -5,7 +5,7 @@ use std::time::Duration;
 use tracing::info;
 
 use crate::error::Result;
-use crate::models::types::DetectorCapabilities;
+use crate::models::timer::DetectorCapabilities;
 use crate::platform::PlatformApi;
 use crate::services::{Service, ServiceContext};
 

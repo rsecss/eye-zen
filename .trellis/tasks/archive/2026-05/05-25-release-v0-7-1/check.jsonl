@@ -1,0 +1,3 @@
+{"file": ".trellis/spec/architecture/testing-quality.md", "reason": "Defines the 8-step npm run ci local gate (version sync / fmt / clippy / Rust tests / coverage / Frontend tests / Frontend fmt / build) plus coverage thresholds (90% lines / 85% functions). Quality verification baseline."}
+{"file": "docs/workflows/release.md", "reason": "Verify section: post-merge checks (PR CI green, release CI 4 artifacts, draft notes accuracy, current-platform installer opens). Also Known CI Traps catalog."}
+{"file": "docs/workflows/release-naming.md", "reason": "Expected artifact naming for the 4 release.yml outputs (Windows MSI/exe / macOS dmg / Linux deb). Used to validate release.yml produced everything correctly before publish."}

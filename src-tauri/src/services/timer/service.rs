@@ -9,7 +9,7 @@ use tracing::{info, warn};
 
 use crate::error::{AppError, Result};
 use crate::models::config::{Config, TimerMode};
-use crate::models::types::{PomodoroStatePayload, StatePayload};
+use crate::models::timer::{PomodoroStatePayload, StatePayload};
 use crate::services::{Service, ServiceContext};
 
 use super::effect::Effect;

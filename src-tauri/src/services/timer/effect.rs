@@ -3,7 +3,7 @@
 use std::time::Duration;
 
 use crate::models::statistics::{CycleEventDraft, RestSessionDraft};
-use crate::models::types::StatePayload;
+use crate::models::timer::StatePayload;
 
 use super::state::TimerState;
 
