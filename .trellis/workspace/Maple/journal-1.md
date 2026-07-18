@@ -561,3 +561,37 @@ Completed the 60/100 B-confidence system audit, documented six P1 findings plus 
 ### Next Steps
 
 - None - task complete
+
+
+## Session 17: P1 修复与 review 复修
+
+**Date**: 2026-07-18
+**Task**: P1 修复与 review 复修
+**Branch**: `main`
+
+### Summary
+
+修复配置 revision 竞态、提醒状态、统计排空与导出、多屏呈现，并闭合 review 发现的慢 I/O、系统副作用、错误可见性和残留窗口负路径。
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `8d27fc3` | (see git log) |
+| `e0d9a7c` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
