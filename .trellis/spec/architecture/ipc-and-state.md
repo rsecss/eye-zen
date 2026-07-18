@@ -350,6 +350,74 @@ services.config.update_hotkeys(config)?;
 | `pomodoro.long_break_minutes` | 1 – 180 |
 | `pomodoro.cycles_per_long` | 1 – 12 |
 
+## Scenario: Active Timer Duration Whole-Config Validation
+
+### 1. Scope / Trigger
+
+- Trigger: loading TOML or updating `timer.mode`, `timer.pre_alert_seconds`, or `pomodoro.focus_minutes` can change the active work duration.
+- Scope: the boundary MUST validate the resulting complete `Config`; validating `TimerConfig` and `PomodoroConfig` independently is insufficient.
+
+### 2. Signatures
+
+- Inputs: `Config.timer.mode`, `Config.timer.work_minutes`, `Config.timer.pre_alert_seconds`, `Config.pomodoro.focus_minutes`.
+- Boundary operations: startup TOML load, `update_timer_config`, `update_pomodoro_config`, and a mode switch through `update_timer_config`.
+- Internal consumer: `TimerService` / `Inner` MUST receive only a configuration whose active work duration is strictly greater than the pre-alert duration.
+
+### 3. Contracts
+
+```text
+active_work_secs =
+  timer.work_minutes * 60          when mode == twenty_twenty_twenty
+  pomodoro.focus_minutes * 60      when mode == pomodoro
+
+active_work_secs > timer.pre_alert_seconds
+```
+
+- Every boundary operation MUST evaluate the formula against the post-update complete `Config` before persistence or runtime publication.
+- A section update MUST NOT validate only its incoming section while trusting the unchanged section; the invariant spans both sections.
+- Internal duration subtraction MAY rely on this invariant only after every construction path enforces it.
+
+### 4. Validation & Error Matrix
+
+| Condition | Result |
+|-----------|--------|
+| Active work seconds greater than pre-alert seconds | Accept and publish the complete config |
+| Active work seconds equal to pre-alert seconds | `AppError::ConfigInvalid { field: "timer.active_work_duration", ... }` |
+| Active work seconds less than pre-alert seconds | Same `ConfigInvalid`; do not persist or publish |
+| Invalid combination loaded from TOML | Reject the candidate, preserve a `.bak`, and load defaults through the existing invalid-config recovery path; MUST NOT publish it to the timer |
+
+### 5. Good / Base / Bad Cases
+
+- Good: Pomodoro focus `2 min` with pre-alert `60 s` is accepted.
+- Base: 20-20-20 work `20 min` with pre-alert `15 s` keeps existing behavior.
+- Bad: Pomodoro focus `1 min` with pre-alert `60 s` is rejected before timer state is constructed; IPC returns `ConfigInvalid`, while startup preserves the invalid file and loads defaults.
+
+### 6. Tests Required
+
+- TOML load, `update_timer_config`, `update_pomodoro_config`, and mode switch MUST reject the same invalid combination; the load test also asserts backup + default recovery.
+- Boundary values MUST cover `active_work_secs == pre_alert_seconds` and `active_work_secs == pre_alert_seconds + 1`.
+- A property test SHOULD generate both modes and assert that every accepted config makes Working duration subtraction strictly positive.
+- A regression test MUST prove the timer task cannot panic from a boundary-accepted config.
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```rust
+validate_timer_config(&incoming_timer)?;
+validate_pomodoro_config(&incoming_pomodoro)?;
+// The active mode can still combine two individually valid sections into an
+// invalid duration.
+```
+
+#### Correct
+
+```rust
+let candidate = current.with_updated_section(incoming_section);
+validate_active_timer_duration(&candidate)?;
+persist_and_publish(candidate)?;
+```
+
 修改范围 MUST 同步更新前端 Stepper 的 `min` / `max`。
 
 ### 超时策略
