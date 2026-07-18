@@ -11,7 +11,7 @@ Eyezen 前端的数据来源严格分层，每一类有明确的"住址"：
 | 数据 | 存储位置 | 更新方式 | 当前实现 |
 |------|---------|---------|---------|
 | Timer 状态（state、remaining_secs、work/rest 配置） | Svelte store | `listen('state_changed')` 事件驱动 + 初始 `invoke('get_state_snapshot')` | `src/lib/stores/timer.svelte.ts` |
-| 配置数据（timer/behavior/display） | Svelte store | `listen('config_changed')` 事件驱动 + 初始 `invoke('get_config')` | `src/lib/stores/config.svelte.ts` |
+| 配置数据（含 backend revision） | Svelte store | `ConfigSnapshot` event/response + 初始 `getConfig()` | `src/lib/stores/config.svelte.ts` |
 | 平台检测能力（如 AFK idle 是否可用） | 页面本地 state | `invoke('get_detector_capabilities')` 一次性读取，用于禁用不可用控件 | `SettingsPage.svelte` |
 | i18n 语言 + 字典 | Svelte store | 通过 `i18nStore.setLocale(...)` 显式驱动；`MainApp.svelte` 中由 `$effect` 与 `configStore.current.display.language` 联动 | `src/lib/i18n/index.svelte.ts` |
 | 统计数据 | 组件本地 state | `commands.ts#getStatisticsTrends(timezone)` 按需拉取 | `src/pages/main/StatisticsPage.svelte` |
@@ -26,7 +26,7 @@ Eyezen 前端的数据来源严格分层，每一类有明确的"住址"：
 
 ## 禁止乐观更新
 
-- 用户操作 MUST 通过 `commands.ts` 中的封装函数发送到后端，等待 `*_changed` 事件回推后由 store 更新 UI。
+- Settings 用户操作 MUST 调用 Config Store 的 typed field-intent 方法；Store 是唯一 command 写入 owner，并等待 backend snapshot 更新 UI。
 - MUST NOT 在调用 command 后立即修改本地状态（"乐观更新"）。
 - 后端是真理来源，前端是镜像。控件值始终读 `configStore.current.*` / `timerStore.current.*`，事件没回来就显示旧值。
 
@@ -36,10 +36,11 @@ Eyezen 前端的数据来源严格分层，每一类有明确的"住址"：
 
 ```
 [控件值来源]   configStore.current（只读、单一数据源、$derived 为 cfg）
-[用户操作]     onchange(v) → 组装完整子配置对象 → updateXxxConfig(updated)
-[后端处理]     ConfigService 校验 + 原子写入 TOML + emit 'config_changed'
-[前端更新]     configStore 收到 config_changed → 内部 $state 替换 → 控件自动响应
-[错误恢复]     command reject → store 未变 → 控件自动回弹到旧值
+[用户操作]     onchange(v) → configStore.updateXxx({ field, value })
+[Store 队列]   串行 field intent → 基于最新 ConfigSnapshot rebase 完整 section
+[后端处理]     校验 expected_revision + 原子写 TOML + 返回/emit 新 snapshot
+[前端更新]     仅接收更高 revision → 控件自动响应
+[错误恢复]     conflict 刷新最新 snapshot + inline error；不静默重试
 ```
 
 实现要点（参考 `SettingsPage.svelte`）：
@@ -48,14 +49,17 @@ Eyezen 前端的数据来源严格分层，每一类有明确的"住址"：
 const cfg = $derived(configStore.current);
 
 function handleTimerChange(field: keyof TimerConfig, value: number) {
-  const updated: TimerConfig = { ...cfg.timer, [field]: value };
-  updateTimerConfig(updated).catch((err) => console.error('Failed to update timer config:', err));
+  configStore
+    .updateTimer({ field, value })
+    .catch((err) => console.error('Failed to update timer config:', err));
 }
 ```
 
 - 控件 `value` MUST 直接读 `cfg.xxx`，MUST NOT 引入中间缓冲变量。
-- 每次 update 调用 MUST 传完整子配置对象（如 `TimerConfig` 整体），后端 command 是覆盖语义，前端 MUST NOT 自行做 patch。
-- 复合操作（如 autostart 切换需要先调用 plugin API 再写配置）MUST 在写配置失败时回滚副作用，模式见 `handleBehaviorChange('auto_start', ...)`。
+- Page/Section MUST 只提交 typed field intent；Config Store 在 intent 真正执行时基于最新 snapshot 构造完整子配置对象。
+- 所有 section 共用一个写队列，避免 timer/mode/pomodoro 等跨 section 更新交错。
+- Store MUST 忽略低 revision event/response/refresh；conflict refresh 后保留错误，且旧排队 intent 成功不得清除该错误。只有错误可见后用户显式 retry 才能清除对应 error generation。
+- 复合操作（如 autostart 切换需要先调用 plugin API 再写配置）MUST 在写配置失败时按刷新后的 `configStore.current` 权威值恢复副作用，不得简单对请求值取反。
 
 ## 何时使用组件本地 `$state`
 
@@ -94,5 +98,5 @@ $effect(() => {
 |---------|------|---------|
 | 在组件内 `let local = $state(cfg.work_minutes)` | 与 store 脱钩，事件回推不刷新 UI | 直接绑定 `cfg.work_minutes` |
 | `bind:value` 父子双向绑定 | 打破单向流，子组件可篡改父级数据 | callback prop（`onchange`） |
-| 调用 `updateTimerConfig` 后立刻 `state.x = newVal` | 与后端可能短暂不一致；后端拒绝时前端无回滚 | 不写本地副本，等 `config_changed` |
+| 调用 `configStore.updateTimer(...)` 后立刻 `state.x = newVal` | 与后端可能短暂不一致；后端拒绝时前端无回滚 | 不写本地副本，等更高 revision snapshot |
 | 把 `configStore.current.timer` 传给子组件做编辑 | 子组件可能持有过期引用 | 子组件只接收标量 + callback |

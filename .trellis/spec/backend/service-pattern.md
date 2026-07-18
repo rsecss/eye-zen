@@ -149,8 +149,9 @@ config → i18n → detector → sound → stat → window → tray → timer �
 3. 停止基础设施:    I18nService → StatService → ConfigService
 ```
 
-- 每个 `shutdown()` MUST 走 `shutdown_service()` 包装，超时 3 秒后强制放弃（`tokio::time::timeout(Duration::from_secs(3), ...)`）
-- 失败或超时 MUST 记录 `warn!`，MUST NOT 静默
+- 普通服务 `shutdown()` MUST 走 `shutdown_service()` 包装，超时 3 秒后放弃并记录 `warn!`。
+- `StatService` 是持久化排空例外：MUST 走 `shutdown_service_to_completion()`。3 秒只触发 slow-drain warning；同一 pinned future 随后继续 await，MUST NOT 被 timeout 取消。
+- 失败或超时/慢排空 MUST 记录 `warn!`，MUST NOT 静默。
 - StatService MUST 在 TimerService 停止之后关闭，避免 rest-session effect 仍在写库时提前关闭连接池
 
 ## 服务间通信
@@ -160,16 +161,108 @@ config → i18n → detector → sound → stat → window → tray → timer �
 ```
 ConfigService    --tokio::sync::watch-->  TimerService, TrayService, ...
 TimerService     --Effect via ServiceContext-->  WindowService, TrayService, SoundService
+WindowService    --PresentationReceipt feedback--> Timer effect executor
 TimerService     --Effect::RecordRestSession-->  StatService
 DetectorService  --同步拉取 (current_skip_flags / capabilities)-->  TimerService loop / Settings command
 SoundService     --tokio::sync::mpsc-->  内部音频线程
 ```
 
 - watch channel 用于"广播最新值"语义，订阅者拿到 `Arc<Config>` 后 lock-free 读取
-- 副作用通过 `Effect` 枚举集中分派，定义在 `src-tauri/src/services/timer/effect.rs`，执行在 `src-tauri/src/services/context.rs::execute_timer_effect`
+- 副作用通过 `Effect` 枚举集中分派，定义在 `src-tauri/src/services/timer/effect.rs`，由 `effect_executor::execute_effects` 调用 `ServiceContext` 的 typed `EffectSink` 方法。
+- `ShowTipWindows` MUST return `PresentationReceipt`; the effect executor owns feedback/recovery routing so `WindowService` never calls `TimerService` directly.
 - `DetectorService` MUST 保持薄包装：平台能力通过 `PlatformApi` 同步返回 `bool` / `Option<Duration>`，timer 只在 `current_skip_flags` 中拉取；Settings 只通过 `get_detector_capabilities` 读取能力，不直接依赖 platform 层。
 - 发送方 MUST NOT 关心接收方实现细节
 - 接收方 MUST 处理 channel 关闭（`RecvError`）的情况，关闭时不得 panic
+
+## Scenario: Bounded Stat Writer Shutdown
+
+### 1. Scope / Trigger
+
+- Trigger: the bounded writer queue may be full when application shutdown begins.
+
+### 2. Signatures
+
+```rust
+writer_tx: std::sync::Mutex<Option<mpsc::Sender<StatWriteCmd>>>
+writer_handle: tokio::sync::Mutex<Option<JoinHandle<()>>>
+StatService::shutdown(&self) -> Result<()>
+shutdown_service_to_completion(name, future, warning_after: Duration)
+```
+
+### 3. Contracts
+
+- `StatService` MUST NOT implement `Clone`; `Arc<AppServices>` is the sole sharing mechanism.
+- Shutdown takes the only sender, uses `send(Shutdown).await` so a full queue can drain, drops the sender, joins the writer, then closes the pool.
+- Already accepted drafts are processed before the Shutdown sentinel. Enqueue after sender take returns `IoError`.
+- Repeated shutdown is idempotent. Send/join failure returns structured `AppError` after resource cleanup.
+- Application orchestration pins the Stat shutdown future, polls it with a 3-second warning timeout, then resumes the same future to completion. The timeout MUST NOT drop a future that already took sender/handle ownership.
+
+### 4. Validation & Error Matrix
+
+| Condition | Result |
+|---|---|
+| queue has capacity | sentinel enqueued, writer drains and exits |
+| queue full | shutdown waits for capacity; sentinel is not dropped |
+| receiver closed | return shutdown send error; still join/close resources |
+| writer task failed | return writer task error; close pool |
+| second shutdown | `Ok(())` with sender/handle/pool already absent |
+| drain exceeds 3 seconds | warn once, then continue awaiting the same shutdown future until accepted writes are durable |
+
+### 5. Good / Base / Bad Cases
+
+- Good: a saturated queue or slow SQLite connection eventually becomes writable; all accepted drafts persist even when drain exceeds the warning threshold.
+- Base: an idle writer receives Shutdown immediately and exits.
+- Bad: `try_send(Shutdown)` drops the sentinel, or the outer generic timeout drops the future after it takes sender/handle ownership.
+
+### 6. Tests Required
+
+- Fill the queue while the writer is blocked, start shutdown, release the writer, and assert bounded completion.
+- Assert queued drafts persist before exit, enqueue-after-shutdown errors, repeated shutdown succeeds, and writer/send failures surface.
+- Use a short warning threshold with a slower future and assert `shutdown_service_to_completion` still observes the future's completion.
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```rust
+let _ = writer_tx.try_send(StatWriteCmd::Shutdown);
+tokio::time::timeout(Duration::from_secs(3), stat.shutdown()).await?;
+// Timeout cancellation drops ownership already taken by shutdown().
+```
+
+#### Correct
+
+```rust
+let sender = writer_tx
+    .lock()
+    .map_err(|_| AppError::IoError {
+        message: "stat writer sender lock poisoned".to_string(),
+    })?
+    .take();
+if let Some(sender) = sender {
+    sender.send(StatWriteCmd::Shutdown).await.map_err(|err| {
+        AppError::IoError {
+            message: format!("stat writer shutdown send failed: {err}"),
+        }
+    })?;
+    drop(sender);
+}
+handle.await.map_err(|err| AppError::IoError {
+    message: format!("stat writer task failed: {err}"),
+})?;
+
+let shutdown = stat.shutdown();
+tokio::pin!(shutdown);
+let outcome = if let Ok(outcome) =
+    tokio::time::timeout(warning_after, shutdown.as_mut()).await
+{
+    outcome
+} else {
+    warn!("stat shutdown is still draining");
+    shutdown.await
+};
+outcome?;
+```
 
 ## Rust 可见性
 

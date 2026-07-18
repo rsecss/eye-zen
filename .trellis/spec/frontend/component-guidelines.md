@@ -123,20 +123,19 @@ Settings 页面 MUST 遵循以下数据流（详见 `state-management.md`）：
 
 ```
 控件值来源: configStore.current（只读，单一数据源）
-用户操作:   onchange → 构造完整 *Config → update*Config()
+用户操作:   onchange → Config Store typed field intent
 后端处理:   validate → save TOML → emit config_changed
-前端更新:   configStore 收到事件 → UI 自动响应
-错误恢复:   command 失败 → store 未变 → 控件值自动回弹
+前端更新:   configStore 接收更高 revision snapshot → UI 自动响应
+错误恢复:   conflict 刷新 + inline error；不静默重试
 ```
 
 - MUST NOT 在 Page 组件内维护配置的本地副本（buffer）。
 - MUST NOT 做乐观更新；以后端推送为准。
-- 每次 `update_*_config` 调用 MUST 传完整的子配置对象（不做 patch）：
+- Page/Section MUST 提交 typed field intent；Config Store 在串行队列执行时构造完整子配置对象，组件不得直接调用 `update_*_config`：
 
 ```ts
 function handleTimerChange(field: keyof TimerConfig, value: number) {
-  const updated: TimerConfig = { ...cfg.timer, [field]: value };
-  updateTimerConfig(updated).catch((err) => console.error(err));
+  configStore.updateTimer({ field, value }).catch((err) => console.error(err));
 }
 ```
 
