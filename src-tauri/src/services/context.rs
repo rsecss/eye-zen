@@ -10,9 +10,10 @@ use tracing::warn;
 
 #[cfg(not(test))]
 use crate::events;
-use crate::models::config::Config;
+use crate::models::channels::PresentationReceipt;
 #[cfg(not(test))]
 use crate::models::config::TimerMode;
+use crate::models::config::{Config, ConfigSnapshot};
 use crate::models::hotkeys::HotkeyStatus;
 #[cfg(not(test))]
 use crate::models::statistics::{CycleEventDraft, CycleOutcome, RestSessionDraft};
@@ -59,18 +60,18 @@ impl ServiceContext {
     }
 
     #[cfg(not(test))]
-    pub(crate) fn emit_config_changed(&self, config: &Config) {
+    pub(crate) fn emit_config_changed(&self, snapshot: &ConfigSnapshot) {
         let Some(app) = self.app.as_ref() else {
             return;
         };
 
-        if let Err(err) = app.emit(events::CONFIG_CHANGED, config) {
+        if let Err(err) = app.emit(events::CONFIG_CHANGED, snapshot) {
             warn!("failed to emit config_changed: {err}");
         }
     }
 
     #[cfg(test)]
-    pub(crate) fn emit_config_changed(&self, _config: &Config) {}
+    pub(crate) fn emit_config_changed(&self, _snapshot: &ConfigSnapshot) {}
 
     #[cfg(not(test))]
     pub(crate) fn emit_hotkey_status_changed(&self, status: &HotkeyStatus) {
@@ -113,6 +114,7 @@ impl ServiceContext {
                     suppressed_skip,
                     mode,
                     is_long_break,
+                    expected_state,
                 } = {
                     let mut guard = inner.lock().await;
                     let now = std::time::Instant::now();
@@ -138,6 +140,7 @@ impl ServiceContext {
                                 suppressed_skip,
                                 mode,
                                 is_long_break,
+                                expected_state: transition.to,
                             }
                         }
                         None => TimerLoopStep {
@@ -145,6 +148,7 @@ impl ServiceContext {
                             suppressed_skip: false,
                             mode: guard.mode,
                             is_long_break: guard.is_long_break,
+                            expected_state: guard.state,
                         },
                     }
                 };
@@ -156,9 +160,13 @@ impl ServiceContext {
                 }
 
                 let context = ServiceContext::from(app.clone());
-                for effect in &effects {
-                    super::timer::effect_executor::execute_effect(Some(&context), effect);
-                }
+                let _ = super::timer::effect_executor::execute_effects(
+                    Some(&context),
+                    &inner,
+                    expected_state,
+                    &effects,
+                )
+                .await;
             }
         }))
     }
@@ -187,15 +195,15 @@ impl EffectSink for ServiceContext {
         }
     }
 
-    fn show_tip_windows(&self) {
+    fn show_tip_windows(&self) -> PresentationReceipt {
         let Some(app) = self.app.as_ref() else {
-            return;
+            return PresentationReceipt::default();
         };
         let Some(services) = app.try_state::<SharedAppServices>() else {
             warn!("shared services unavailable while showing tip windows");
-            return;
+            return PresentationReceipt::default();
         };
-        services.window.show_tip_windows();
+        services.window.show_tip_windows()
     }
 
     fn hide_tip_windows(&self) {
@@ -417,6 +425,7 @@ struct TimerLoopStep {
     suppressed_skip: bool,
     mode: TimerMode,
     is_long_break: bool,
+    expected_state: TimerState,
 }
 
 #[cfg(test)]
@@ -436,7 +445,9 @@ impl ServiceContext {
 #[cfg(test)]
 impl super::timer::EffectSink for ServiceContext {
     fn emit_state_changed(&self, _payload: &crate::models::timer::StatePayload) {}
-    fn show_tip_windows(&self) {}
+    fn show_tip_windows(&self) -> PresentationReceipt {
+        PresentationReceipt::default()
+    }
     fn hide_tip_windows(&self) {}
     fn play_sound(&self, _sound: super::timer::SoundType) {}
     fn update_tray_tooltip(&self, _tooltip: super::timer::TrayTooltip) {}
@@ -577,7 +588,7 @@ mod tests {
             pomodoro: None,
         };
         ctx.emit_state_changed(&payload);
-        ctx.show_tip_windows();
+        assert_eq!(ctx.show_tip_windows(), PresentationReceipt::default());
         ctx.hide_tip_windows();
         ctx.play_sound(crate::services::timer::SoundType::PreAlert);
         let tooltip = crate::services::timer::TrayTooltip {
@@ -613,7 +624,10 @@ mod tests {
     fn service_context_default_and_legacy_execute_stub_are_callable() {
         let ctx = ServiceContext::default();
         assert_eq!(ctx.app_handle(), None);
-        ctx.emit_config_changed(&crate::models::config::Config::default());
+        ctx.emit_config_changed(&crate::models::config::ConfigSnapshot {
+            revision: 0,
+            config: crate::models::config::Config::default(),
+        });
         ctx.emit_hotkey_status_changed(&crate::models::hotkeys::HotkeyStatus {
             bindings: vec![],
             macos_accessibility: crate::models::hotkeys::MacosAccessibilityStatus::NotRequired,

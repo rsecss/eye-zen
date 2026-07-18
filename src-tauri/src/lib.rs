@@ -10,19 +10,18 @@ pub(crate) mod models;
 pub(crate) mod platform;
 pub(crate) mod services;
 
-#[cfg(not(test))]
 use std::future::Future;
 #[cfg(not(test))]
 use std::sync::Arc;
-#[cfg(not(test))]
 use std::time::Duration;
 
 #[cfg(not(test))]
 use tauri::{Manager, RunEvent, WindowEvent};
 #[cfg(all(not(test), feature = "plugin-shortcuts"))]
 use tauri_plugin_global_shortcut::ShortcutState;
+use tracing::warn;
 #[cfg(not(test))]
-use tracing::{error, info, warn};
+use tracing::{error, info};
 
 #[cfg(all(not(test), feature = "plugin-shortcuts"))]
 use crate::models::hotkeys::HotkeyAction;
@@ -247,7 +246,12 @@ pub fn run() -> Result<(), tauri::Error> {
                     shutdown_service("window", services.window.shutdown()).await;
                     shutdown_service("sound", services.sound.shutdown()).await;
                     shutdown_service("i18n", services.i18n.shutdown()).await;
-                    shutdown_service("stat", services.stat.shutdown()).await;
+                    shutdown_service_to_completion(
+                        "stat",
+                        services.stat.shutdown(),
+                        Duration::from_secs(3),
+                    )
+                    .await;
                     shutdown_service("config", services.config.shutdown()).await;
                     info!("all services shut down");
                 });
@@ -267,5 +271,46 @@ where
         Ok(Ok(())) => {}
         Ok(Err(err)) => warn!("failed to shut down {name} service: {err}"),
         Err(_) => warn!("timed out shutting down {name} service"),
+    }
+}
+
+async fn shutdown_service_to_completion<F>(name: &str, future: F, warning_after: Duration)
+where
+    F: Future<Output = crate::error::Result<()>>,
+{
+    tokio::pin!(future);
+    let outcome = if let Ok(outcome) = tokio::time::timeout(warning_after, future.as_mut()).await {
+        outcome
+    } else {
+        warn!("{name} service shutdown is still draining after {warning_after:?}");
+        future.await
+    };
+    if let Err(err) = outcome {
+        warn!("failed to shut down {name} service: {err}");
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::sync::atomic::{AtomicBool, Ordering};
+    use std::sync::Arc;
+
+    #[tokio::test]
+    async fn critical_shutdown_continues_after_warning_timeout() {
+        let completed = Arc::new(AtomicBool::new(false));
+        let completed_by_future = Arc::clone(&completed);
+
+        super::shutdown_service_to_completion(
+            "stat",
+            async move {
+                tokio::time::sleep(std::time::Duration::from_millis(30)).await;
+                completed_by_future.store(true, Ordering::SeqCst);
+                Ok(())
+            },
+            std::time::Duration::from_millis(1),
+        )
+        .await;
+
+        assert!(completed.load(Ordering::SeqCst));
     }
 }

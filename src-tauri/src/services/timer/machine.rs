@@ -40,10 +40,7 @@ pub(crate) fn step_time(inner: &Inner, now: Instant, skip_flags: &SkipFlags) -> 
 
     match inner.state {
         Working => {
-            let work_threshold = inner
-                .work_duration
-                .checked_sub(inner.pre_alert_duration)
-                .unwrap_or(inner.work_duration);
+            let work_threshold = inner.work_threshold();
 
             if elapsed >= work_threshold {
                 if skip_flags.any_active() {
@@ -67,7 +64,7 @@ pub(crate) fn step_time(inner: &Inner, now: Instant, skip_flags: &SkipFlags) -> 
         }),
         Alerting => (elapsed >= inner.alert_timeout).then_some(Transition {
             from: Alerting,
-            to: Resting,
+            to: Working,
         }),
         Resting => (elapsed >= inner.rest_duration).then_some(Transition {
             from: Resting,
@@ -150,6 +147,37 @@ pub(crate) fn apply_transition_and_collect_effects(
         effects.push(Effect::RecordCycleEvent(event));
     }
     effects
+}
+
+/// Restore the work cycle when no interactive prompt could be presented.
+///
+/// This is intentionally separate from normal transitions: infrastructure
+/// failure must not advance Pomodoro cycles or create cycle/session records.
+#[must_use]
+pub(crate) fn recover_presentation_failure_and_collect_effects(
+    inner: &mut Inner,
+    expected_state: TimerState,
+    now: Instant,
+) -> Option<Vec<Effect>> {
+    if inner.state != expected_state
+        || !matches!(expected_state, TimerState::Alerting | TimerState::Resting)
+    {
+        return None;
+    }
+
+    inner.state = TimerState::Working;
+    inner.state_entered_at = now;
+    inner.paused_from = None;
+    inner.paused_remaining = None;
+    inner.is_long_break = false;
+
+    Some(vec![
+        Effect::EmitStateChanged(state_payload(inner, now)),
+        Effect::HideTipWindows,
+        Effect::ResetWorkTimer(inner.work_duration),
+        Effect::UpdateTray(TrayUpdate::StateIcon(TimerState::Working)),
+        Effect::UpdateTray(TrayUpdate::Tooltip(tray_tooltip(inner, now))),
+    ])
 }
 
 /// Collect periodic effects for the current state without a transition.
@@ -519,7 +547,7 @@ mod tests {
     }
 
     #[test]
-    fn alerting_timeout_auto_rest() {
+    fn alerting_timeout_returns_to_working() {
         let inner = make_inner(Alerting);
 
         let transition = step_time(&inner, future_instant(61), &SkipFlags::default());
@@ -527,9 +555,31 @@ mod tests {
             transition,
             Some(Transition {
                 from: Alerting,
-                to: Resting,
+                to: Working,
             })
         );
+    }
+
+    #[test]
+    fn alerting_timeout_records_skipped_without_rest_session() {
+        let mut inner = make_inner(Alerting);
+        let now = future_instant(61);
+        let transition = step_time(&inner, now, &SkipFlags::default())
+            .expect("alerting timeout should transition");
+
+        let effects = apply_transition_and_collect_effects(&mut inner, transition, now);
+
+        assert_eq!(inner.state, Working);
+        assert!(effects.iter().any(|effect| matches!(
+            effect,
+            Effect::RecordCycleEvent(CycleEventDraft {
+                outcome: CycleOutcome::Skipped,
+                ..
+            })
+        )));
+        assert!(!effects
+            .iter()
+            .any(|effect| matches!(effect, Effect::RecordRestSession(_))));
     }
 
     #[test]
@@ -991,5 +1041,56 @@ mod tests {
             now,
         );
         assert_eq!(inner.cycle_index, 3);
+    }
+
+    #[test]
+    fn presentation_failure_from_alerting_recovers_without_cycle_record() {
+        let mut inner = make_inner(Alerting);
+
+        let effects =
+            recover_presentation_failure_and_collect_effects(&mut inner, Alerting, Instant::now())
+                .expect("alerting should recover");
+
+        assert_eq!(inner.state, Working);
+        assert!(effects
+            .iter()
+            .any(|effect| matches!(effect, Effect::HideTipWindows)));
+        assert!(effects
+            .iter()
+            .any(|effect| matches!(effect, Effect::ResetWorkTimer(_))));
+        assert!(!effects.iter().any(|effect| matches!(
+            effect,
+            Effect::RecordCycleEvent(_) | Effect::RecordRestSession(_) | Effect::PlaySound(_)
+        )));
+    }
+
+    #[test]
+    fn presentation_failure_from_resting_preserves_pomodoro_cycle() {
+        let mut inner = make_pomodoro_inner(4, 4);
+        inner.state = Resting;
+        inner.is_long_break = true;
+
+        let effects =
+            recover_presentation_failure_and_collect_effects(&mut inner, Resting, Instant::now())
+                .expect("resting should recover");
+
+        assert_eq!(inner.state, Working);
+        assert_eq!(inner.cycle_index, 4);
+        assert!(!inner.is_long_break);
+        assert!(!effects.iter().any(|effect| matches!(
+            effect,
+            Effect::RecordCycleEvent(_) | Effect::RecordRestSession(_) | Effect::PlaySound(_)
+        )));
+    }
+
+    #[test]
+    fn presentation_failure_does_not_overwrite_newer_user_state() {
+        let mut inner = make_inner(Paused);
+
+        let effects =
+            recover_presentation_failure_and_collect_effects(&mut inner, Alerting, Instant::now());
+
+        assert!(effects.is_none());
+        assert_eq!(inner.state, Paused);
     }
 }

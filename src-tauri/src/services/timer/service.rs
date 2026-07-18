@@ -17,7 +17,7 @@ use super::effect_executor;
 use super::machine::{
     apply_transition_and_collect_effects, collect_tick_effects, resolve_user_event, step_time,
 };
-use super::state::{Inner, SkipFlags, UserEvent};
+use super::state::{Inner, SkipFlags, TimerState, UserEvent};
 
 pub(crate) struct TimerService {
     inner: Arc<Mutex<Inner>>,
@@ -44,24 +44,28 @@ impl TimerService {
 
     #[allow(dead_code)]
     pub(crate) async fn on_tick(&self, skip_flags: &SkipFlags) -> Vec<Effect> {
-        let effects = {
+        let (mut effects, expected_state) = {
             let mut inner = self.inner.lock().await;
             let now = Instant::now();
-            match step_time(&inner, now, skip_flags) {
+            let effects = match step_time(&inner, now, skip_flags) {
                 Some(transition) => {
                     apply_transition_and_collect_effects(&mut inner, transition, now)
                 }
                 None => collect_tick_effects(&inner, now),
-            }
+            };
+            (effects, inner.state)
         };
 
         let app = self.app.lock().await.clone();
-        for effect in &effects {
-            effect_executor::execute_effect(
-                app.as_ref().map(|c| c as &dyn super::EffectSink),
-                effect,
-            );
-        }
+        let recovery_effects = effect_executor::execute_effects(
+            app.as_ref()
+                .map(|context| context as &dyn super::EffectSink),
+            &self.inner,
+            expected_state,
+            &effects,
+        )
+        .await;
+        effects.extend(recovery_effects);
 
         effects
     }
@@ -72,11 +76,12 @@ impl TimerService {
     ///
     /// Returns an error when the event is invalid for the current timer state.
     pub(crate) async fn handle_user_event(&self, event: UserEvent) -> Result<()> {
-        let effects = {
+        let (effects, expected_state) = {
             let mut inner = self.inner.lock().await;
             if let Some(transition) = resolve_user_event(&inner.state, event, inner.paused_from) {
                 let now = Instant::now();
-                apply_transition_and_collect_effects(&mut inner, transition, now)
+                let effects = apply_transition_and_collect_effects(&mut inner, transition, now);
+                (effects, inner.state)
             } else {
                 warn!("invalid timer event {event:?} in state {:?}", inner.state);
                 return Err(AppError::InvalidOperation {
@@ -87,12 +92,14 @@ impl TimerService {
         };
 
         let app = self.app.lock().await.clone();
-        for effect in &effects {
-            effect_executor::execute_effect(
-                app.as_ref().map(|c| c as &dyn super::EffectSink),
-                effect,
-            );
-        }
+        let _ = effect_executor::execute_effects(
+            app.as_ref()
+                .map(|context| context as &dyn super::EffectSink),
+            &self.inner,
+            expected_state,
+            &effects,
+        )
+        .await;
 
         Ok(())
     }
@@ -101,7 +108,7 @@ impl TimerService {
     pub(crate) async fn toggle_pause(&self) -> Result<()> {
         let event = {
             let inner = self.inner.lock().await;
-            if inner.state == super::state::TimerState::Paused {
+            if inner.state == TimerState::Paused {
                 UserEvent::Resume
             } else {
                 UserEvent::Pause
@@ -149,8 +156,7 @@ impl TimerService {
             Some(PomodoroStatePayload {
                 cycle_index: inner.cycle_index,
                 cycles_per_long: inner.cycles_per_long,
-                is_long_break: inner.state == super::state::TimerState::Resting
-                    && inner.is_long_break,
+                is_long_break: inner.state == TimerState::Resting && inner.is_long_break,
             })
         } else {
             None
@@ -171,7 +177,7 @@ impl TimerService {
         let mode_changed = inner.mode != new_mode;
 
         // Pomodoro parameters always tracked so a later mode swap is cheap.
-        inner.cycles_per_long = config.pomodoro.cycles_per_long.max(1);
+        inner.cycles_per_long = config.pomodoro.cycles_per_long;
         inner.short_break_duration =
             Duration::from_secs(u64::from(config.pomodoro.short_break_minutes) * 60);
         inner.long_break_duration =
@@ -196,7 +202,7 @@ impl TimerService {
             inner.is_long_break = false;
             inner.paused_from = None;
             inner.paused_remaining = None;
-            inner.state = super::state::TimerState::Working;
+            inner.state = TimerState::Working;
             inner.state_entered_at = Instant::now();
             info!("timer mode switched to {:?}, runtime reset", new_mode);
         }
@@ -318,6 +324,41 @@ mod tests {
 
         let inner = service.inner.lock().await;
         assert_eq!(inner.state, TimerState::Resting);
+    }
+
+    #[tokio::test]
+    async fn direct_rest_presentation_failure_recovers_to_working() {
+        let (service, _tx) = make_test_service();
+
+        service
+            .handle_user_event(UserEvent::StartRest)
+            .await
+            .expect("start rest should be accepted");
+
+        let inner = service.inner.lock().await;
+        assert_eq!(inner.state, TimerState::Working);
+        assert_eq!(inner.cycle_index, 1);
+    }
+
+    #[tokio::test]
+    async fn alerting_presentation_failure_recovers_without_statistics() {
+        let (service, _tx) = make_test_service();
+        {
+            let mut inner = service.inner.lock().await;
+            inner.state = TimerState::PreAlert;
+            inner.pre_alert_duration = Duration::ZERO;
+        }
+
+        let effects = service.on_tick(&SkipFlags::default()).await;
+
+        assert_eq!(service.inner.lock().await.state, TimerState::Working);
+        assert!(effects
+            .iter()
+            .any(|effect| matches!(effect, Effect::HideTipWindows)));
+        assert!(!effects.iter().any(|effect| matches!(
+            effect,
+            Effect::RecordCycleEvent(_) | Effect::RecordRestSession(_)
+        )));
     }
 
     #[tokio::test]

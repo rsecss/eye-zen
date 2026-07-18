@@ -5,12 +5,10 @@
 use tauri::State;
 
 use crate::error::AppError;
-#[cfg(not(test))]
-use tracing::warn;
 
 use crate::models::config::{BehaviorConfig, DisplayConfig, PomodoroConfig, TimerConfig};
 #[cfg(not(test))]
-use crate::models::config::{Config, ScheduleConfig};
+use crate::models::config::{ConfigSnapshot, ScheduleConfig};
 #[cfg(not(test))]
 use crate::models::hotkeys::{HotkeyStatus, HotkeysConfig};
 #[cfg(not(test))]
@@ -59,8 +57,8 @@ pub(crate) async fn resume_timer(services: Services<'_>) -> CmdResult<()> {
 #[cfg(not(test))]
 #[allow(clippy::unnecessary_wraps)]
 #[tauri::command]
-pub(crate) fn get_config(services: Services<'_>) -> CmdResult<Config> {
-    Ok((*services.config.current()).clone())
+pub(crate) fn get_config(services: Services<'_>) -> CmdResult<ConfigSnapshot> {
+    Ok(services.config.snapshot())
 }
 
 #[cfg(not(test))]
@@ -227,10 +225,11 @@ fn validate_pomodoro_config(config: &PomodoroConfig) -> CmdResult<()> {
 pub(crate) async fn update_timer_config(
     services: Services<'_>,
     config: TimerConfig,
-) -> CmdResult<()> {
+    expected_revision: u32,
+) -> CmdResult<ConfigSnapshot> {
     validate_timer_config(&config)?;
     let services = services.inner().clone();
-    tokio::task::spawn_blocking(move || services.config.update_timer(config))
+    tokio::task::spawn_blocking(move || services.config.update_timer(config, expected_revision))
         .await
         .map_err(|err| AppError::IoError {
             message: format!("update_timer_config task failed: {err}"),
@@ -242,10 +241,11 @@ pub(crate) async fn update_timer_config(
 pub(crate) async fn update_behavior_config(
     services: Services<'_>,
     config: BehaviorConfig,
-) -> CmdResult<()> {
+    expected_revision: u32,
+) -> CmdResult<ConfigSnapshot> {
     validate_behavior_config(&config)?;
     let services = services.inner().clone();
-    tokio::task::spawn_blocking(move || services.config.update_behavior(config))
+    tokio::task::spawn_blocking(move || services.config.update_behavior(config, expected_revision))
         .await
         .map_err(|err| AppError::IoError {
             message: format!("update_behavior_config task failed: {err}"),
@@ -257,10 +257,11 @@ pub(crate) async fn update_behavior_config(
 pub(crate) async fn update_display_config(
     services: Services<'_>,
     config: DisplayConfig,
-) -> CmdResult<()> {
+    expected_revision: u32,
+) -> CmdResult<ConfigSnapshot> {
     validate_display_config(&config)?;
     let services = services.inner().clone();
-    tokio::task::spawn_blocking(move || services.config.update_display(config))
+    tokio::task::spawn_blocking(move || services.config.update_display(config, expected_revision))
         .await
         .map_err(|err| AppError::IoError {
             message: format!("update_display_config task failed: {err}"),
@@ -272,11 +273,12 @@ pub(crate) async fn update_display_config(
 pub(crate) async fn update_schedule_config(
     services: Services<'_>,
     config: ScheduleConfig,
-) -> CmdResult<()> {
+    expected_revision: u32,
+) -> CmdResult<ConfigSnapshot> {
     // ScheduleConfig only contains a bool flag and a fixed-size boolean array;
     // no range validation needed.
     let services = services.inner().clone();
-    tokio::task::spawn_blocking(move || services.config.update_schedule(config))
+    tokio::task::spawn_blocking(move || services.config.update_schedule(config, expected_revision))
         .await
         .map_err(|err| AppError::IoError {
             message: format!("update_schedule_config task failed: {err}"),
@@ -288,10 +290,11 @@ pub(crate) async fn update_schedule_config(
 pub(crate) async fn update_pomodoro_config(
     services: Services<'_>,
     config: PomodoroConfig,
-) -> CmdResult<()> {
+    expected_revision: u32,
+) -> CmdResult<ConfigSnapshot> {
     validate_pomodoro_config(&config)?;
     let services = services.inner().clone();
-    tokio::task::spawn_blocking(move || services.config.update_pomodoro(config))
+    tokio::task::spawn_blocking(move || services.config.update_pomodoro(config, expected_revision))
         .await
         .map_err(|err| AppError::IoError {
             message: format!("update_pomodoro_config task failed: {err}"),
@@ -303,28 +306,20 @@ pub(crate) async fn update_pomodoro_config(
 pub(crate) async fn update_hotkeys_config(
     services: Services<'_>,
     config: HotkeysConfig,
-) -> CmdResult<()> {
-    let previous = services.config.current().hotkeys.clone();
-    services.hotkeys.apply_config(&config)?;
-
-    let services_for_save = services.inner().clone();
-    let config_for_save = config.clone();
-    let save_result = tokio::task::spawn_blocking(move || {
-        services_for_save.config.update_hotkeys(config_for_save)
+    expected_revision: u32,
+) -> CmdResult<ConfigSnapshot> {
+    let services = services.inner().clone();
+    tokio::task::spawn_blocking(move || {
+        services
+            .config
+            .update_hotkeys(config, expected_revision, |candidate| {
+                services.hotkeys.apply_config(candidate)
+            })
     })
     .await
     .map_err(|err| AppError::IoError {
         message: format!("update_hotkeys_config task failed: {err}"),
-    })?;
-
-    if let Err(err) = save_result {
-        if let Err(rollback_err) = services.hotkeys.apply_config(&previous) {
-            warn!("failed to roll back hotkeys after config save failure: {rollback_err}");
-        }
-        return Err(err);
-    }
-
-    Ok(())
+    })?
 }
 
 #[cfg(test)]

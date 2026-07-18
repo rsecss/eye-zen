@@ -83,7 +83,7 @@ beforeEach(() => {
   vi.mocked(emitNavigateTab).mockResolvedValue(undefined);
   vi.mocked(onStateChanged).mockResolvedValue(() => {});
   vi.mocked(onConfigChanged).mockResolvedValue(() => {});
-  vi.mocked(getConfig).mockResolvedValue(DEFAULT_CONFIG);
+  vi.mocked(getConfig).mockResolvedValue({ revision: 0, config: DEFAULT_CONFIG });
 });
 
 afterEach(() => {

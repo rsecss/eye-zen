@@ -24,8 +24,8 @@ pub(crate) type MonitorName<'a> = Option<&'a str>;
 /// - When the OS reports no primary monitor, fall back to "the first one
 ///   wins" (`index == 0`).
 ///
-/// The primary monitor gets the full `tip.html` page with focus; secondaries
-/// get the `tip-minimal.html` overlay.
+/// The selected monitor gets the full `tip.html` page; secondaries get the
+/// `tip-minimal.html` overlay. Window creation never requests focus.
 #[must_use]
 pub(crate) fn is_primary_monitor(
     index: usize,

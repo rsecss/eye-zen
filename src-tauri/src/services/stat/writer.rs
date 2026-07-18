@@ -322,6 +322,56 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn shutdown_waits_for_space_when_writer_queue_is_full() {
+        let service = StatService::new_in_memory()
+            .await
+            .expect("in-memory stat service should init");
+        let pool_guard = std::sync::Arc::clone(&service.pool).lock_owned().await;
+        service
+            .start(&ServiceContext::default())
+            .await
+            .expect("writer task should start");
+
+        service
+            .enqueue_rest_session(make_session(0))
+            .expect("first draft should reach the blocked writer");
+        tokio::time::sleep(std::time::Duration::from_millis(20)).await;
+        for offset in 1..=STAT_WRITE_QUEUE_CAPACITY {
+            service
+                .enqueue_rest_session(make_session(i64::try_from(offset).unwrap_or(i64::MAX)))
+                .expect("queue fill should succeed");
+        }
+        assert!(service.enqueue_rest_session(make_session(3600)).is_err());
+
+        let release_pool = tokio::spawn(async move {
+            tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+            drop(pool_guard);
+        });
+        let shutdown =
+            tokio::time::timeout(std::time::Duration::from_secs(2), service.shutdown()).await;
+        release_pool.await.expect("pool release task should join");
+
+        assert!(
+            matches!(shutdown, Ok(Ok(()))),
+            "queue-full shutdown must drain and terminate, got {shutdown:?}"
+        );
+    }
+
+    #[tokio::test]
+    async fn repeated_shutdown_is_idempotent() {
+        let service = started_service().await;
+
+        service
+            .shutdown()
+            .await
+            .expect("first shutdown should succeed");
+        service
+            .shutdown()
+            .await
+            .expect("repeated shutdown should be a no-op");
+    }
+
+    #[tokio::test]
     async fn enqueue_after_shutdown_returns_io_error() {
         let service = started_service().await;
         service.shutdown().await.expect("shutdown should succeed");

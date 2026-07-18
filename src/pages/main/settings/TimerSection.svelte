@@ -1,42 +1,49 @@
 <script lang="ts">
   import type { PomodoroConfig } from '$lib/bindings/PomodoroConfig';
   import type { TimerConfig } from '$lib/bindings/TimerConfig';
-  import type { TimerMode } from '$lib/bindings/TimerMode';
-  import { updatePomodoroConfig, updateTimerConfig } from '$lib/commands';
   import { i18nStore } from '$lib/i18n/index.svelte';
   import { configStore } from '$lib/stores/config.svelte';
   import Select from '../components/Select.svelte';
   import SettingsCard from '../components/SettingsCard.svelte';
   import Stepper from '../components/Stepper.svelte';
+  import { errorMessage } from './utils';
+
+  type NumericTimerField = Exclude<keyof TimerConfig, 'mode'>;
 
   const cfg = $derived(configStore.current);
   const isPomodoroMode = $derived(cfg.timer.mode === 'pomodoro');
+  const timerError = $derived(configStore.errorFor('timer'));
+  const pomodoroError = $derived(configStore.errorFor('pomodoro'));
 
   const timerModeOptions = $derived([
     { value: 'twenty_twenty_twenty', label: i18nStore.t('settings.timer.mode.20-20-20') },
     { value: 'pomodoro', label: i18nStore.t('settings.timer.mode.pomodoro') },
   ]);
 
-  function handleTimerChange(field: keyof TimerConfig, value: number) {
-    const updated: TimerConfig = { ...cfg.timer, [field]: value };
-    updateTimerConfig(updated).catch((err) => console.error('Failed to update timer config:', err));
+  function handleTimerChange(field: NumericTimerField, value: number) {
+    configStore
+      .updateTimer({ field, value })
+      .catch((err) => console.error('Failed to update timer config:', err));
   }
 
   function handleModeChange(value: string) {
     if (value !== 'twenty_twenty_twenty' && value !== 'pomodoro') return;
-    const updated: TimerConfig = { ...cfg.timer, mode: value as TimerMode };
-    updateTimerConfig(updated).catch((err) => console.error('Failed to update timer mode:', err));
+    configStore
+      .updateTimer({ field: 'mode', value })
+      .catch((err) => console.error('Failed to update timer mode:', err));
   }
 
   function handlePomodoroChange(field: keyof PomodoroConfig, value: number) {
-    const updated: PomodoroConfig = { ...cfg.pomodoro, [field]: value };
-    updatePomodoroConfig(updated).catch((err) =>
-      console.error('Failed to update pomodoro config:', err),
-    );
+    configStore
+      .updatePomodoro({ field, value })
+      .catch((err) => console.error('Failed to update pomodoro config:', err));
   }
 </script>
 
-<SettingsCard title={i18nStore.t('settings.timer.title')}>
+<SettingsCard
+  title={i18nStore.t('settings.timer.title')}
+  error={timerError ? errorMessage(timerError) : null}
+>
   <div class="setting-row">
     <div class="setting-info">
       <span class="setting-label">{i18nStore.t('settings.timer.mode')}</span>
@@ -116,7 +123,10 @@
 </SettingsCard>
 
 {#if isPomodoroMode}
-  <SettingsCard title={i18nStore.t('settings.pomodoro.title')}>
+  <SettingsCard
+    title={i18nStore.t('settings.pomodoro.title')}
+    error={pomodoroError ? errorMessage(pomodoroError) : null}
+  >
     <div class="setting-row">
       <div class="setting-info">
         <span class="setting-label">{i18nStore.t('settings.pomodoro.focusMinutes')}</span>

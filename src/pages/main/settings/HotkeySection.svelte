@@ -4,7 +4,7 @@
   import type { HotkeyBindingStatus } from '$lib/bindings/HotkeyBindingStatus';
   import type { HotkeyStatus } from '$lib/bindings/HotkeyStatus';
   import type { HotkeysConfig } from '$lib/bindings/HotkeysConfig';
-  import { getHotkeyStatus, updateHotkeysConfig } from '$lib/commands';
+  import { getHotkeyStatus } from '$lib/commands';
   import { onHotkeyStatusChanged } from '$lib/events';
   import { i18nStore } from '$lib/i18n/index.svelte';
   import { configStore } from '$lib/stores/config.svelte';
@@ -12,6 +12,7 @@
   import { errorMessage } from './utils';
 
   const cfg = $derived(configStore.current);
+  const configError = $derived(configStore.errorFor('hotkeys'));
 
   let hotkeyStatus = $state<HotkeyStatus | null>(null);
   let hotkeySaveError = $state<string | null>(null);
@@ -21,7 +22,12 @@
       hotkeyStatus?.bindings.some((b) => b.state === 'permission_missing') === true,
   );
 
-  const lastError = $derived(hotkeySaveError ?? hotkeyStatus?.last_error ?? null);
+  const lastError = $derived(
+    hotkeySaveError ??
+      (configError ? errorMessage(configError) : null) ??
+      hotkeyStatus?.last_error ??
+      null,
+  );
 
   // MUST replace in order: CommandOrControl before Command/Control
   function prettify(value: string): string {
@@ -68,8 +74,8 @@
       input.value = prettify(cfg.hotkeys[field]);
       return;
     }
-    const updated: HotkeysConfig = { ...cfg.hotkeys, [field]: next };
-    updateHotkeysConfig(updated)
+    configStore
+      .updateHotkeys({ field, value: next })
       .then(() => {
         hotkeySaveError = null;
       })

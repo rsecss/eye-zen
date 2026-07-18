@@ -20,7 +20,7 @@ const en: TranslationDict = {
   'settings.timer.preAlertSeconds.desc': 'Heads-up before rest starts',
   'settings.timer.preAlertSeconds.unit': 'sec',
   'settings.timer.alertTimeout': 'Alert Timeout',
-  'settings.timer.alertTimeout.desc': 'Auto-rest after timeout',
+  'settings.timer.alertTimeout.desc': 'Auto-dismiss after timeout',
   'settings.timer.alertTimeout.unit': 'sec',
 
   'settings.pomodoro.title': 'Pomodoro Settings',
@@ -113,6 +113,9 @@ const en: TranslationDict = {
     'Allow Eyezen in System Settings → Privacy & Security → Accessibility, then restart the app or save the hotkeys again.',
   'settings.hotkeys.error.empty': 'Shortcut must not be empty',
   'settings.hotkeys.error.generic': 'Failed to save hotkeys',
+  'settings.config.error.generic': 'Failed to save settings. Please retry.',
+  'settings.config.error.conflict':
+    'Settings changed elsewhere. Review the latest values and retry.',
 
   'about.version': 'Version',
   'about.description': 'Cross-platform eye health tool based on the 20-20-20 rule',

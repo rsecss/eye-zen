@@ -1,12 +1,11 @@
 <script lang="ts">
-  import type { BehaviorConfig } from '$lib/bindings/BehaviorConfig';
-  import { updateBehaviorConfig } from '$lib/commands';
   import { i18nStore } from '$lib/i18n/index.svelte';
   import { configStore } from '$lib/stores/config.svelte';
   import SettingsCard from '../components/SettingsCard.svelte';
   import Stepper from '../components/Stepper.svelte';
   import Toggle from '../components/Toggle.svelte';
   import AutoStartSection from './AutoStartSection.svelte';
+  import { errorMessage } from './utils';
 
   type BooleanField = 'sound_enabled' | 'fullscreen_skip' | 'afk_skip_enabled';
 
@@ -21,27 +20,29 @@
   } = $props();
 
   const cfg = $derived(configStore.current);
+  const behaviorError = $derived(configStore.errorFor('behavior'));
   const afkDisabled = $derived(!capabilitiesLoaded || !afkSupported);
   const afkThresholdDisabled = $derived(afkDisabled || !cfg.behavior.afk_skip_enabled);
   const fullscreenSkipDisabled = $derived(!capabilitiesLoaded || !fullscreenSupported);
 
   function handleBooleanChange(field: BooleanField, value: boolean) {
-    const updated: BehaviorConfig = { ...cfg.behavior, [field]: value };
-    updateBehaviorConfig(updated).catch((err) =>
-      console.error('Failed to update behavior config:', err),
-    );
+    configStore
+      .updateBehavior({ field, value })
+      .catch((err) => console.error('Failed to update behavior config:', err));
   }
 
   function handleAfkThreshold(value: number) {
     if (afkDisabled) return;
-    const updated: BehaviorConfig = { ...cfg.behavior, afk_threshold_minutes: value };
-    updateBehaviorConfig(updated).catch((err) =>
-      console.error('Failed to update behavior config:', err),
-    );
+    configStore
+      .updateBehavior({ field: 'afk_threshold_minutes', value })
+      .catch((err) => console.error('Failed to update behavior config:', err));
   }
 </script>
 
-<SettingsCard title={i18nStore.t('settings.behavior.title')}>
+<SettingsCard
+  title={i18nStore.t('settings.behavior.title')}
+  error={behaviorError ? errorMessage(behaviorError) : null}
+>
   <div class="setting-row">
     <div class="setting-info">
       <span class="setting-label">{i18nStore.t('settings.behavior.sound')}</span>

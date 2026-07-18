@@ -46,8 +46,9 @@ describe('typed event listeners forward to listen with the documented event name
     expect(returned).toBe(unlisten);
 
     const innerHandler = mockListen.mock.calls[0][1];
-    innerHandler({ event: 'config_changed', id: 2, payload: { display: { theme: 'dark' } } });
-    expect(cb).toHaveBeenCalledWith({ display: { theme: 'dark' } });
+    const payload = { revision: 2, config: { display: { theme: 'dark' } } };
+    innerHandler({ event: 'config_changed', id: 2, payload });
+    expect(cb).toHaveBeenCalledWith(payload);
   });
 
   it('onHotkeyStatusChanged subscribes to "hotkey_status_changed" and unwraps payload', async () => {

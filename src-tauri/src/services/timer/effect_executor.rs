@@ -1,7 +1,13 @@
-use tracing::info;
+use std::sync::Arc;
+use std::time::Instant;
+
+use tokio::sync::Mutex;
+use tracing::{error, info};
 
 use super::effect::{Effect, SoundType, TrayUpdate};
-use super::state::TimerState;
+use super::machine::recover_presentation_failure_and_collect_effects;
+use super::state::{Inner, TimerState};
+use crate::models::channels::PresentationReceipt;
 use crate::models::statistics::{CycleEventDraft, RestSessionDraft};
 use crate::models::timer::StatePayload;
 
@@ -18,7 +24,7 @@ use crate::models::timer::StatePayload;
 /// rather than stringified `Debug`.
 pub(crate) trait EffectSink: Send + Sync {
     fn emit_state_changed(&self, payload: &StatePayload);
-    fn show_tip_windows(&self);
+    fn show_tip_windows(&self) -> PresentationReceipt;
     fn hide_tip_windows(&self);
     fn play_sound(&self, sound: SoundType);
     fn update_tray_tooltip(&self, tooltip: super::effect::TrayTooltip);
@@ -34,15 +40,18 @@ pub(crate) trait EffectSink: Send + Sync {
 /// runtime context (early boot, tests using `TimerService` directly) — in that
 /// case the effect is logged but not executed, matching the pre-refactor
 /// `STUB effect:` behavior.
-pub(crate) fn execute_effect(sink: Option<&dyn EffectSink>, effect: &Effect) {
+pub(crate) fn execute_effect(
+    sink: Option<&dyn EffectSink>,
+    effect: &Effect,
+) -> Option<PresentationReceipt> {
     let Some(sink) = sink else {
         info!("STUB effect: {effect:?}");
-        return;
+        return matches!(effect, Effect::ShowTipWindows).then_some(PresentationReceipt::default());
     };
 
     match effect {
         Effect::EmitStateChanged(payload) => sink.emit_state_changed(payload),
-        Effect::ShowTipWindows => sink.show_tip_windows(),
+        Effect::ShowTipWindows => return Some(sink.show_tip_windows()),
         Effect::HideTipWindows => sink.hide_tip_windows(),
         Effect::PlaySound(sound) => sink.play_sound(*sound),
         Effect::UpdateTray(update) => match update {
@@ -53,14 +62,58 @@ pub(crate) fn execute_effect(sink: Option<&dyn EffectSink>, effect: &Effect) {
         Effect::RecordRestSession(session) => sink.record_rest_session(session),
         Effect::RecordCycleEvent(event) => sink.record_cycle_event(event),
     }
+
+    None
+}
+
+/// Execute one effect batch and feed presentation failure back into Timer.
+///
+/// A failed presentation stops the stale batch. Recovery then re-checks the
+/// expected state under the Timer lock so a newer user action wins the race.
+pub(crate) async fn execute_effects(
+    sink: Option<&dyn EffectSink>,
+    inner: &Arc<Mutex<Inner>>,
+    expected_state: TimerState,
+    effects: &[Effect],
+) -> Vec<Effect> {
+    for effect in effects {
+        let Some(receipt) = execute_effect(sink, effect) else {
+            continue;
+        };
+        if receipt.interactive_shown {
+            continue;
+        }
+
+        error!(
+            windows_shown = receipt.windows_shown,
+            ?expected_state,
+            "tip window presentation failed: no interactive surface shown"
+        );
+        let recovery_effects = {
+            let mut guard = inner.lock().await;
+            recover_presentation_failure_and_collect_effects(
+                &mut guard,
+                expected_state,
+                Instant::now(),
+            )
+            .unwrap_or_default()
+        };
+        for recovery_effect in &recovery_effects {
+            let _ = execute_effect(sink, recovery_effect);
+        }
+        return recovery_effects;
+    }
+
+    Vec::new()
 }
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Mutex;
+    use std::sync::{Arc, Mutex};
     use std::time::Duration;
 
     use chrono::Utc;
+    use tokio::sync::Mutex as AsyncMutex;
 
     use super::*;
     use crate::models::config::TimerMode;
@@ -82,12 +135,31 @@ mod tests {
         RecordCycleEvent(CycleOutcome),
     }
 
-    #[derive(Default)]
     struct RecordingSink {
         calls: Mutex<Vec<Call>>,
+        presentation_receipt: PresentationReceipt,
+    }
+
+    impl Default for RecordingSink {
+        fn default() -> Self {
+            Self {
+                calls: Mutex::new(Vec::new()),
+                presentation_receipt: PresentationReceipt {
+                    windows_shown: 1,
+                    interactive_shown: true,
+                },
+            }
+        }
     }
 
     impl RecordingSink {
+        fn with_presentation_receipt(presentation_receipt: PresentationReceipt) -> Self {
+            Self {
+                presentation_receipt,
+                ..Self::default()
+            }
+        }
+
         fn calls(&self) -> Vec<Call> {
             self.calls.lock().expect("calls mutex").clone()
         }
@@ -104,8 +176,9 @@ mod tests {
                 payload.remaining_secs,
             ));
         }
-        fn show_tip_windows(&self) {
+        fn show_tip_windows(&self) -> PresentationReceipt {
             self.push(Call::ShowTipWindows);
+            self.presentation_receipt
         }
         fn hide_tip_windows(&self) {
             self.push(Call::HideTipWindows);
@@ -143,15 +216,17 @@ mod tests {
 
     #[test]
     fn no_sink_logs_stub_and_returns() {
-        // Should not panic when sink is None.
-        execute_effect(None, &Effect::ShowTipWindows);
-        execute_effect(None, &Effect::HideTipWindows);
+        assert_eq!(
+            execute_effect(None, &Effect::ShowTipWindows),
+            Some(PresentationReceipt::default())
+        );
+        assert_eq!(execute_effect(None, &Effect::HideTipWindows), None);
     }
 
     #[test]
     fn emit_state_changed_dispatches() {
         let sink = RecordingSink::default();
-        execute_effect(
+        let _ = execute_effect(
             Some(&sink),
             &Effect::EmitStateChanged(sample_state_payload()),
         );
@@ -164,8 +239,14 @@ mod tests {
     #[test]
     fn show_and_hide_tip_windows_dispatch() {
         let sink = RecordingSink::default();
-        execute_effect(Some(&sink), &Effect::ShowTipWindows);
-        execute_effect(Some(&sink), &Effect::HideTipWindows);
+        assert_eq!(
+            execute_effect(Some(&sink), &Effect::ShowTipWindows),
+            Some(PresentationReceipt {
+                windows_shown: 1,
+                interactive_shown: true,
+            })
+        );
+        assert_eq!(execute_effect(Some(&sink), &Effect::HideTipWindows), None);
         assert_eq!(
             sink.calls(),
             vec![Call::ShowTipWindows, Call::HideTipWindows]
@@ -175,8 +256,8 @@ mod tests {
     #[test]
     fn play_sound_routes_variants_distinctly() {
         let sink = RecordingSink::default();
-        execute_effect(Some(&sink), &Effect::PlaySound(SoundType::PreAlert));
-        execute_effect(Some(&sink), &Effect::PlaySound(SoundType::RestComplete));
+        let _ = execute_effect(Some(&sink), &Effect::PlaySound(SoundType::PreAlert));
+        let _ = execute_effect(Some(&sink), &Effect::PlaySound(SoundType::RestComplete));
         assert_eq!(
             sink.calls(),
             vec![
@@ -197,11 +278,11 @@ mod tests {
                 total: 4,
             }),
         };
-        execute_effect(
+        let _ = execute_effect(
             Some(&sink),
             &Effect::UpdateTray(TrayUpdate::Tooltip(tooltip)),
         );
-        execute_effect(
+        let _ = execute_effect(
             Some(&sink),
             &Effect::UpdateTray(TrayUpdate::StateIcon(TimerState::Paused)),
         );
@@ -217,7 +298,7 @@ mod tests {
     #[test]
     fn reset_work_timer_passes_duration() {
         let sink = RecordingSink::default();
-        execute_effect(
+        let _ = execute_effect(
             Some(&sink),
             &Effect::ResetWorkTimer(Duration::from_mins(20)),
         );
@@ -235,7 +316,7 @@ mod tests {
             ended_at_utc: Utc::now(),
             duration_secs: 20,
         };
-        execute_effect(Some(&sink), &Effect::RecordRestSession(session));
+        let _ = execute_effect(Some(&sink), &Effect::RecordRestSession(session));
         assert_eq!(sink.calls(), vec![Call::RecordRestSession(20)]);
     }
 
@@ -251,10 +332,53 @@ mod tests {
             mode: TimerMode::TwentyTwentyTwenty,
             is_long_break: false,
         };
-        execute_effect(Some(&sink), &Effect::RecordCycleEvent(event));
+        let _ = execute_effect(Some(&sink), &Effect::RecordCycleEvent(event));
         assert_eq!(
             sink.calls(),
             vec![Call::RecordCycleEvent(CycleOutcome::Suppressed)]
         );
+    }
+
+    #[tokio::test]
+    async fn failed_presentation_recovers_and_stops_stale_effects() {
+        let sink = RecordingSink::with_presentation_receipt(PresentationReceipt {
+            windows_shown: 1,
+            interactive_shown: false,
+        });
+        let mut timer = Inner::new(20, 20, 15, 60);
+        timer.state = TimerState::Alerting;
+        let inner = Arc::new(AsyncMutex::new(timer));
+        let effects = vec![
+            Effect::ShowTipWindows,
+            Effect::UpdateTray(TrayUpdate::StateIcon(TimerState::Alerting)),
+        ];
+
+        let recovery = execute_effects(Some(&sink), &inner, TimerState::Alerting, &effects).await;
+
+        assert_eq!(inner.lock().await.state, TimerState::Working);
+        assert!(recovery
+            .iter()
+            .any(|effect| matches!(effect, Effect::HideTipWindows)));
+        assert!(!sink
+            .calls()
+            .contains(&Call::UpdateTrayStateIcon(TimerState::Alerting)));
+    }
+
+    #[tokio::test]
+    async fn failed_presentation_does_not_overwrite_newer_user_state() {
+        let sink = RecordingSink::with_presentation_receipt(PresentationReceipt::default());
+        let mut timer = Inner::new(20, 20, 15, 60);
+        timer.state = TimerState::Paused;
+        let inner = Arc::new(AsyncMutex::new(timer));
+        let effects = vec![
+            Effect::ShowTipWindows,
+            Effect::UpdateTray(TrayUpdate::StateIcon(TimerState::Alerting)),
+        ];
+
+        let recovery = execute_effects(Some(&sink), &inner, TimerState::Alerting, &effects).await;
+
+        assert!(recovery.is_empty());
+        assert_eq!(inner.lock().await.state, TimerState::Paused);
+        assert_eq!(sink.calls(), vec![Call::ShowTipWindows]);
     }
 }

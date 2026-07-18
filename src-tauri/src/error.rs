@@ -8,6 +8,7 @@ pub type Result<T> = std::result::Result<T, AppError>;
 #[serde(tag = "kind", content = "detail")]
 pub enum AppError {
     ConfigInvalid { field: String, reason: String },
+    ConfigConflict { expected: u32, actual: u32 },
     InvalidOperation { operation: String, reason: String },
     IoError { message: String },
 }
@@ -17,6 +18,12 @@ impl std::fmt::Display for AppError {
         match self {
             Self::ConfigInvalid { field, reason } => {
                 write!(f, "invalid config [{field}]: {reason}")
+            }
+            Self::ConfigConflict { expected, actual } => {
+                write!(
+                    f,
+                    "config revision conflict: expected {expected}, actual {actual}"
+                )
             }
             Self::InvalidOperation { operation, reason } => {
                 write!(f, "invalid operation [{operation}]: {reason}")
@@ -75,6 +82,18 @@ mod tests {
         };
         let json = serde_json::to_value(&err).expect("error should serialize");
         assert_eq!(json["kind"], "IoError");
+    }
+
+    #[test]
+    fn serialize_config_conflict() {
+        let err = AppError::ConfigConflict {
+            expected: 2,
+            actual: 3,
+        };
+        let json = serde_json::to_value(&err).expect("error should serialize");
+        assert_eq!(json["kind"], "ConfigConflict");
+        assert_eq!(json["detail"]["expected"], 2);
+        assert_eq!(json["detail"]["actual"], 3);
     }
 
     #[test]

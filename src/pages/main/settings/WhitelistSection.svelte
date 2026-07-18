@@ -1,10 +1,9 @@
 <script lang="ts">
-  import type { BehaviorConfig } from '$lib/bindings/BehaviorConfig';
-  import { updateBehaviorConfig } from '$lib/commands';
   import { i18nStore } from '$lib/i18n/index.svelte';
   import { configStore } from '$lib/stores/config.svelte';
   import SettingsCard from '../components/SettingsCard.svelte';
   import Toggle from '../components/Toggle.svelte';
+  import { errorMessage } from './utils';
 
   const WHITELIST_MAX = 32;
   const WHITELIST_RESERVED = new Set(['eyezen', 'eyezen.exe']);
@@ -18,6 +17,7 @@
   } = $props();
 
   const cfg = $derived(configStore.current);
+  const whitelistSaveError = $derived(configStore.errorFor('whitelist'));
   const whitelistDisabled = $derived(!capabilitiesLoaded || !processSupported);
   const editingDisabled = $derived(whitelistDisabled || !cfg.behavior.process_whitelist_enabled);
 
@@ -27,10 +27,9 @@
   function handleEnabledChange(value: boolean) {
     if (whitelistDisabled) return;
     whitelistError = null;
-    const updated: BehaviorConfig = { ...cfg.behavior, process_whitelist_enabled: value };
-    updateBehaviorConfig(updated).catch((err) =>
-      console.error('Failed to update whitelist enabled:', err),
-    );
+    configStore
+      .updateWhitelist({ field: 'process_whitelist_enabled', value })
+      .catch((err) => console.error('Failed to update whitelist enabled:', err));
   }
 
   function handleAdd() {
@@ -55,8 +54,8 @@
       return;
     }
     const next = [...cfg.behavior.process_whitelist, raw];
-    const updated: BehaviorConfig = { ...cfg.behavior, process_whitelist: next };
-    updateBehaviorConfig(updated)
+    configStore
+      .updateWhitelist({ field: 'process_whitelist', value: next })
       .then(() => {
         whitelistInput = '';
         whitelistError = null;
@@ -67,8 +66,9 @@
   function handleRemove(index: number) {
     if (whitelistDisabled) return;
     const next = cfg.behavior.process_whitelist.filter((_, i) => i !== index);
-    const updated: BehaviorConfig = { ...cfg.behavior, process_whitelist: next };
-    updateBehaviorConfig(updated).catch((err) => console.error('Failed to update whitelist:', err));
+    configStore
+      .updateWhitelist({ field: 'process_whitelist', value: next })
+      .catch((err) => console.error('Failed to update whitelist:', err));
   }
 
   function handleInputKeydown(event: KeyboardEvent) {
@@ -79,7 +79,10 @@
   }
 </script>
 
-<SettingsCard title={i18nStore.t('settings.whitelist.title')}>
+<SettingsCard
+  title={i18nStore.t('settings.whitelist.title')}
+  error={whitelistSaveError ? errorMessage(whitelistSaveError) : null}
+>
   <div class="setting-row" class:disabled={whitelistDisabled}>
     <div class="setting-info">
       <span class="setting-label">{i18nStore.t('settings.whitelist.enabled')}</span>
