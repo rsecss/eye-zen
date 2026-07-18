@@ -528,3 +528,36 @@ Patch release shipping v0.7.x hardening epic (PR #37). Fixed PR #37 macOS clippy
 ### Next Steps
 
 - None - task complete
+
+
+## Session 16: System audit and optimization roadmap
+
+**Date**: 2026-07-18
+**Task**: System audit and optimization roadmap
+**Branch**: `main`
+
+### Summary
+
+Completed the 60/100 B-confidence system audit, documented six P1 findings plus the P2/P3 roadmap, and added the whole-config timer duration contract. Product fixes have not started.
+
+### Main Changes
+
+(Add details)
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `f979aee` | (see git log) |
+
+### Testing
+
+- [OK] (Add test results)
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
