@@ -1,12 +1,12 @@
 <script lang="ts">
-  import type { ScheduleConfig } from '$lib/bindings/ScheduleConfig';
-  import { updateScheduleConfig } from '$lib/commands';
   import { i18nStore } from '$lib/i18n/index.svelte';
   import { configStore } from '$lib/stores/config.svelte';
   import SettingsCard from '../components/SettingsCard.svelte';
   import Toggle from '../components/Toggle.svelte';
+  import { errorMessage } from './utils';
 
   const cfg = $derived(configStore.current);
+  const scheduleError = $derived(configStore.errorFor('schedule'));
 
   const weekdayKeys = [
     'settings.schedule.weekday.mon',
@@ -19,10 +19,9 @@
   ] as const;
 
   function handleEnabledChange(value: boolean) {
-    const updated: ScheduleConfig = { ...cfg.schedule, enabled: value };
-    updateScheduleConfig(updated).catch((err) =>
-      console.error('Failed to update schedule config:', err),
-    );
+    configStore
+      .updateSchedule({ field: 'enabled', value })
+      .catch((err) => console.error('Failed to update schedule config:', err));
   }
 
   function handleDayToggle(index: number, value: boolean) {
@@ -30,14 +29,16 @@
       ...cfg.schedule.active_days,
     ];
     nextDays[index] = value;
-    const updated: ScheduleConfig = { ...cfg.schedule, active_days: nextDays };
-    updateScheduleConfig(updated).catch((err) =>
-      console.error('Failed to update schedule config:', err),
-    );
+    configStore
+      .updateSchedule({ field: 'active_days', value: nextDays })
+      .catch((err) => console.error('Failed to update schedule config:', err));
   }
 </script>
 
-<SettingsCard title={i18nStore.t('settings.schedule.title')}>
+<SettingsCard
+  title={i18nStore.t('settings.schedule.title')}
+  error={scheduleError ? errorMessage(scheduleError) : null}
+>
   <div class="setting-row">
     <div class="setting-info">
       <span class="setting-label">{i18nStore.t('settings.schedule.enabled')}</span>

@@ -1,12 +1,13 @@
 <script lang="ts">
   import type { DisplayConfig } from '$lib/bindings/DisplayConfig';
-  import { updateDisplayConfig } from '$lib/commands';
   import { i18nStore } from '$lib/i18n/index.svelte';
   import { configStore } from '$lib/stores/config.svelte';
   import Select from '../components/Select.svelte';
   import SettingsCard from '../components/SettingsCard.svelte';
+  import { errorMessage } from './utils';
 
   const cfg = $derived(configStore.current);
+  const displayError = $derived(configStore.errorFor('display'));
 
   const languageOptions = [
     { value: 'zh-CN', label: '简体中文' },
@@ -21,14 +22,16 @@
   ]);
 
   function handleChange(field: keyof DisplayConfig, value: string) {
-    const updated: DisplayConfig = { ...cfg.display, [field]: value };
-    updateDisplayConfig(updated).catch((err) =>
-      console.error('Failed to update display config:', err),
-    );
+    configStore
+      .updateDisplay({ field, value })
+      .catch((err) => console.error('Failed to update display config:', err));
   }
 </script>
 
-<SettingsCard title={i18nStore.t('settings.display.title')}>
+<SettingsCard
+  title={i18nStore.t('settings.display.title')}
+  error={displayError ? errorMessage(displayError) : null}
+>
   <div class="setting-row">
     <div class="setting-info">
       <span class="setting-label">{i18nStore.t('settings.display.language')}</span>

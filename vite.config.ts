@@ -48,6 +48,8 @@ export default defineConfig(async () => ({
     exclude: [
       '**/node_modules/**',
       '**/dist/**',
+      // Scratch repositories contain duplicate tests, not project test inputs.
+      '.tmp/**',
       // Worktree copies under .claude/worktrees/** are duplicates of the
       // current source tree; vitest's repo-wide *.test.ts glob would otherwise
       // double-count them and slow CI.

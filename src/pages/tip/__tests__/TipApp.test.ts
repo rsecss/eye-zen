@@ -73,7 +73,7 @@ beforeEach(() => {
     mode: 'twenty_twenty_twenty',
     pomodoro: null,
   });
-  vi.mocked(getConfig).mockResolvedValue(DEFAULT_CONFIG);
+  vi.mocked(getConfig).mockResolvedValue({ revision: 0, config: DEFAULT_CONFIG });
 });
 
 describe('TipApp smoke', () => {

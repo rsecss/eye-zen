@@ -1,3 +1,4 @@
+pub(crate) mod channels;
 pub mod config;
 pub mod events;
 pub mod hotkeys;

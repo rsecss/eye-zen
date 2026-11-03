@@ -148,7 +148,7 @@ impl Inner {
             paused_remaining: None,
             mode: config.timer.mode,
             cycle_index: 1,
-            cycles_per_long: config.pomodoro.cycles_per_long.max(1),
+            cycles_per_long: config.pomodoro.cycles_per_long,
             short_break_duration: Duration::from_secs(
                 u64::from(config.pomodoro.short_break_minutes) * 60,
             ),
@@ -164,7 +164,16 @@ impl Inner {
     /// focus session. Only meaningful in Pomodoro mode.
     #[must_use]
     pub(crate) fn next_rest_is_long(&self) -> bool {
-        self.cycles_per_long > 0 && self.cycle_index.is_multiple_of(self.cycles_per_long)
+        self.cycle_index.is_multiple_of(self.cycles_per_long)
+    }
+
+    /// Duration spent in Working before entering `PreAlert`.
+    #[must_use]
+    pub(crate) fn work_threshold(&self) -> Duration {
+        match self.work_duration.checked_sub(self.pre_alert_duration) {
+            Some(threshold) if !threshold.is_zero() => threshold,
+            _ => panic!("timer invariant violated: work duration must exceed pre-alert duration"),
+        }
     }
 
     pub(crate) fn apply_transition_at(&mut self, transition: Transition, now: Instant) {
@@ -183,10 +192,7 @@ impl Inner {
             // work_duration <= pre_alert_duration, so this subtraction is
             // always strictly positive.
             let target_duration = match transition.to {
-                TimerState::Working => self
-                    .work_duration
-                    .checked_sub(self.pre_alert_duration)
-                    .expect("invariant: work_duration > pre_alert_duration"),
+                TimerState::Working => self.work_threshold(),
                 TimerState::PreAlert => self.pre_alert_duration,
                 TimerState::Alerting => self.alert_timeout,
                 TimerState::Resting => self.rest_duration,
@@ -226,10 +232,9 @@ impl Inner {
                     self.cycle_index = 1;
                 } else {
                     self.cycle_index = self.cycle_index.saturating_add(1);
-                    if self.cycles_per_long > 0 && self.cycle_index > self.cycles_per_long {
-                        // Defensive: keep within [1, cycles_per_long]. Should
-                        // not happen if `is_long_break` was set correctly, but
-                        // guards against config changes mid-cycle.
+                    if self.cycle_index > self.cycles_per_long {
+                        // A valid runtime config may lower the cycle limit
+                        // while a cycle is in progress.
                         self.cycle_index = 1;
                     }
                 }
@@ -261,10 +266,7 @@ impl Inner {
     #[must_use]
     pub(crate) fn remaining(&self, now: Instant) -> Option<Duration> {
         let target = match self.state {
-            TimerState::Working => self
-                .work_duration
-                .checked_sub(self.pre_alert_duration)
-                .expect("invariant: work_duration > pre_alert_duration"),
+            TimerState::Working => self.work_threshold(),
             TimerState::PreAlert => self.pre_alert_duration,
             TimerState::Alerting => self.alert_timeout,
             TimerState::Resting => self.rest_duration,

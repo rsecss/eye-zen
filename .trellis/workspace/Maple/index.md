@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 15
-- **Last Active**: 2026-05-25
+- **Total Sessions**: 17
+- **Last Active**: 2026-07-18
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~530 | Active |
+| `journal-1.md` | ~597 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,8 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 17 | 2026-07-18 | P1 修复与 review 复修 | `8d27fc3`, `e0d9a7c` | `main` |
+| 16 | 2026-07-18 | System audit and optimization roadmap | `f979aee` | `main` |
 | 15 | 2026-05-25 | release v0.7.1 | `bf4c900` | `main` |
 | 14 | 2026-05-25 | v0.7.x hardening epic: 10-commit single-PR closing P2/P3 audit findings + tray-panel UX bug | `58f1eb4`, `b42269c`, `01c6af8`, `ba336b2`, `a72fce6`, `c8a1719`, `5723431`, `530ee6c`, `7709305`, `feffdda`, `ff55c7e`, `73ad575`, `c848fa0`, `2a0249a` | `chore/v0-7-x-hardening` |
 | 13 | 2026-05-24 | Post-v0.7.0 docs housekeeping and stale branch cleanup | `ccc470b` | `main` |

@@ -18,6 +18,15 @@ pub struct Config {
     pub pomodoro: PomodoroConfig,
 }
 
+/// Revisioned configuration snapshot exposed across the IPC boundary.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[cfg_attr(test, derive(ts_rs::TS))]
+#[cfg_attr(test, ts(export, export_to = "../../src/lib/bindings/"))]
+pub struct ConfigSnapshot {
+    pub revision: u32,
+    pub config: Config,
+}
+
 /// Which rhythm the timer uses.
 ///
 /// `TwentyTwentyTwenty` keeps the existing eye-care behavior (`work_minutes`

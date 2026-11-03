@@ -40,11 +40,11 @@ pub struct PomodoroStatePayload {
 }
 
 // Re-export types that serve as event payloads but are defined elsewhere:
-// - Config: payload for `config_changed` event
+// - ConfigSnapshot: payload for `config_changed` event
 // - HotkeyStatus: payload for `hotkey_status_changed` event
 // - StatPersistenceErrorPayload: payload for `stat_persistence_error` event
 #[allow(unused_imports)]
-pub use super::config::Config as ConfigChangedPayload;
+pub use super::config::ConfigSnapshot as ConfigChangedPayload;
 #[allow(unused_imports)]
 pub use super::hotkeys::HotkeyStatus as HotkeyStatusChangedPayload;
 #[allow(unused_imports)]

@@ -1,6 +1,117 @@
+use std::ffi::OsString;
+use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicU64, Ordering};
+
 use chrono_tz::Tz;
+use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
 
 use crate::error::{AppError, Result};
+
+use super::SCHEMA_VERSION;
+
+static EXPORT_SEQUENCE: AtomicU64 = AtomicU64::new(0);
+
+pub(super) fn temporary_export_path(target: &Path) -> Result<PathBuf> {
+    let parent = target.parent().ok_or_else(|| AppError::ConfigInvalid {
+        field: "target_path".to_string(),
+        reason: format!("must have a parent directory, got {}", target.display()),
+    })?;
+    let file_name = target.file_name().ok_or_else(|| AppError::ConfigInvalid {
+        field: "target_path".to_string(),
+        reason: format!("must have a file name, got {}", target.display()),
+    })?;
+    let sequence = EXPORT_SEQUENCE.fetch_add(1, Ordering::Relaxed);
+    let mut temporary_name = OsString::from(".");
+    temporary_name.push(file_name);
+    temporary_name.push(format!(
+        ".eyezen-export-{}-{sequence}.tmp",
+        std::process::id()
+    ));
+    Ok(parent.join(temporary_name))
+}
+
+pub(super) async fn validate_exported_database(path: &Path) -> Result<()> {
+    let pool = SqlitePoolOptions::new()
+        .max_connections(1)
+        .connect_with(SqliteConnectOptions::new().filename(path).read_only(true))
+        .await?;
+    let validation = async {
+        let user_version: i64 = sqlx::query_scalar("PRAGMA user_version")
+            .fetch_one(&pool)
+            .await?;
+        if user_version != SCHEMA_VERSION {
+            return Err(AppError::IoError {
+                message: format!(
+                    "exported database schema version {user_version} does not match {SCHEMA_VERSION}"
+                ),
+            });
+        }
+
+        let quick_check: String = sqlx::query_scalar("PRAGMA quick_check")
+            .fetch_one(&pool)
+            .await?;
+        if quick_check != "ok" {
+            return Err(AppError::IoError {
+                message: format!("exported database quick_check failed: {quick_check}"),
+            });
+        }
+        Ok(())
+    }
+    .await;
+    pool.close().await;
+    validation
+}
+
+pub(super) async fn sync_export_file(path: &Path) -> Result<()> {
+    tokio::fs::OpenOptions::new()
+        .read(true)
+        .write(true)
+        .open(path)
+        .await?
+        .sync_all()
+        .await?;
+    Ok(())
+}
+
+#[cfg(not(target_os = "windows"))]
+pub(super) async fn replace_file(temporary: PathBuf, target: PathBuf) -> Result<()> {
+    tokio::fs::rename(temporary, target).await?;
+    Ok(())
+}
+
+#[cfg(target_os = "windows")]
+pub(super) async fn replace_file(temporary: PathBuf, target: PathBuf) -> Result<()> {
+    tokio::task::spawn_blocking(move || replace_file_windows(&temporary, &target))
+        .await
+        .map_err(|err| AppError::IoError {
+            message: format!("atomic file replace task failed: {err}"),
+        })?
+}
+
+#[cfg(target_os = "windows")]
+fn replace_file_windows(temporary: &Path, target: &Path) -> Result<()> {
+    use std::os::windows::ffi::OsStrExt;
+    use windows::core::PCWSTR;
+    use windows::Win32::Storage::FileSystem::{
+        MoveFileExW, MOVEFILE_REPLACE_EXISTING, MOVEFILE_WRITE_THROUGH,
+    };
+
+    let temporary_wide: Vec<u16> = temporary.as_os_str().encode_wide().chain(Some(0)).collect();
+    let target_wide: Vec<u16> = target.as_os_str().encode_wide().chain(Some(0)).collect();
+
+    // The buffers are NUL-terminated and remain alive for the duration of the
+    // Win32 call. Both paths share a directory, so no copy fallback is used.
+    unsafe {
+        MoveFileExW(
+            PCWSTR(temporary_wide.as_ptr()),
+            PCWSTR(target_wide.as_ptr()),
+            MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH,
+        )
+    }
+    .map_err(|err| AppError::IoError {
+        message: format!("atomic file replace failed: {err}"),
+    })
+}
 
 /// Boundary validation for `export_statistics`. Reject anything that is not
 /// a normal sqlite-shaped path the user could plausibly select via the OS
@@ -227,6 +338,89 @@ mod tests {
             .expect("user_version should query");
         assert_eq!(user_version, SCHEMA_VERSION);
         pool.close().await;
+    }
+
+    #[tokio::test]
+    async fn export_replace_failure_preserves_existing_target_and_cleans_temp() {
+        let dir = tempdir().expect("tempdir should be created");
+        let db_path = dir.path().join("data.db");
+        let service = StatService::new(db_path);
+        service
+            .init(&ServiceContext::default())
+            .await
+            .expect("stat service should init");
+
+        let target = dir.path().join("backup.db");
+        let old_bytes = b"existing backup must survive";
+        std::fs::write(&target, old_bytes).expect("seed backup should write");
+
+        let err = service
+            .export_to_with(target.clone(), |_temporary, _target| async {
+                Err(AppError::IoError {
+                    message: "injected replace failure".to_string(),
+                })
+            })
+            .await
+            .expect_err("injected replace failure should surface");
+
+        assert!(matches!(
+            err,
+            AppError::IoError { ref message } if message.contains("injected replace failure")
+        ));
+        assert_eq!(
+            std::fs::read(&target).expect("old backup should remain readable"),
+            old_bytes
+        );
+        let leftovers: Vec<_> = std::fs::read_dir(dir.path())
+            .expect("tempdir should be readable")
+            .filter_map(std::result::Result::ok)
+            .map(|entry| entry.file_name())
+            .filter(|name| name.to_string_lossy().contains("eyezen-export"))
+            .collect();
+        assert!(
+            leftovers.is_empty(),
+            "temporary exports remain: {leftovers:?}"
+        );
+    }
+
+    #[tokio::test]
+    async fn exported_database_validation_rejects_corrupt_file() {
+        let dir = tempdir().expect("tempdir should be created");
+        let corrupt = dir.path().join("corrupt.db");
+        std::fs::write(&corrupt, b"not a sqlite database").expect("corrupt file should write");
+
+        let err = validate_exported_database(&corrupt)
+            .await
+            .expect_err("corrupt database must be rejected");
+
+        assert!(matches!(err, AppError::IoError { .. }));
+    }
+
+    #[tokio::test]
+    async fn concurrent_exports_both_produce_valid_databases() {
+        let dir = tempdir().expect("tempdir should be created");
+        let db_path = dir.path().join("data.db");
+        let service = StatService::new(db_path);
+        service
+            .init(&ServiceContext::default())
+            .await
+            .expect("stat service should init");
+
+        let first = dir.path().join("first.db");
+        let second = dir.path().join("second.db");
+        let (first_outcome, second_outcome) = tokio::join!(
+            service.export_to(first.clone()),
+            service.export_to(second.clone())
+        );
+
+        first_outcome.expect("first export should succeed");
+        second_outcome.expect("second export should succeed");
+        validate_exported_database(&first)
+            .await
+            .expect("first export should validate");
+        validate_exported_database(&second)
+            .await
+            .expect("second export should validate");
     }
 
     #[tokio::test]

@@ -8,6 +8,7 @@ vi.mock('@tauri-apps/plugin-autostart', () => ({
 }));
 
 vi.mock('$lib/commands', () => ({
+  getConfig: vi.fn(),
   getDetectorCapabilities: vi.fn(),
   getHotkeyStatus: vi.fn().mockResolvedValue({
     bindings: [],
@@ -15,23 +16,78 @@ vi.mock('$lib/commands', () => ({
     last_error: null,
   }),
   updateTimerConfig: vi.fn(),
-  updateBehaviorConfig: vi.fn().mockResolvedValue(undefined),
+  updateBehaviorConfig: vi.fn(),
   updateDisplayConfig: vi.fn(),
   updateScheduleConfig: vi.fn(),
   updateHotkeysConfig: vi.fn(),
 }));
 
 vi.mock('$lib/events', () => ({
+  onConfigChanged: vi.fn().mockResolvedValue(() => {}),
   onHotkeyStatusChanged: vi.fn().mockResolvedValue(() => {}),
 }));
 
-const { getDetectorCapabilities, updateBehaviorConfig } = await import('$lib/commands');
+const { getConfig, getDetectorCapabilities, updateBehaviorConfig } = await import('$lib/commands');
+const { configStore } = await import('$lib/stores/config.svelte');
 const { default: SettingsPage } = await import('../SettingsPage.svelte');
+
+const DEFAULT_CONFIG = {
+  timer: {
+    work_minutes: 20,
+    rest_seconds: 20,
+    pre_alert_seconds: 15,
+    alert_timeout_seconds: 60,
+    mode: 'twenty_twenty_twenty' as const,
+  },
+  behavior: {
+    sound_enabled: true,
+    fullscreen_skip: true,
+    afk_skip_enabled: true,
+    afk_threshold_minutes: 5,
+    auto_start: false,
+    process_whitelist_enabled: false,
+    process_whitelist: [],
+  },
+  display: { language: 'zh-CN', theme: 'light' },
+  schedule: {
+    enabled: false,
+    active_days: [true, true, true, true, true, false, false] as [
+      boolean,
+      boolean,
+      boolean,
+      boolean,
+      boolean,
+      boolean,
+      boolean,
+    ],
+  },
+  hotkeys: {
+    start_rest: 'CommandOrControl+Alt+B',
+    skip_rest: 'CommandOrControl+Alt+S',
+    toggle_pause: 'CommandOrControl+Alt+P',
+  },
+  pomodoro: {
+    focus_minutes: 25,
+    short_break_minutes: 5,
+    long_break_minutes: 15,
+    cycles_per_long: 4,
+  },
+};
+
+beforeEach(async () => {
+  vi.mocked(getConfig).mockResolvedValue({ revision: 0, config: DEFAULT_CONFIG });
+  await configStore.init();
+});
 
 describe('SettingsPage AFK controls', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(updateBehaviorConfig).mockResolvedValue(undefined);
+    vi.mocked(updateBehaviorConfig).mockImplementation((behavior, expectedRevision) =>
+      Promise.resolve({
+        revision: expectedRevision + 1,
+        config: { ...DEFAULT_CONFIG, behavior },
+      }),
+    );
   });
 
   it('disables AFK controls when detector capabilities are unavailable', async () => {
@@ -68,6 +124,7 @@ describe('SettingsPage AFK controls', () => {
         afk_skip_enabled: true,
         afk_threshold_minutes: 6,
       }),
+      0,
     );
   });
 });
@@ -75,7 +132,12 @@ describe('SettingsPage AFK controls', () => {
 describe('SettingsPage process whitelist', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(updateBehaviorConfig).mockResolvedValue(undefined);
+    vi.mocked(updateBehaviorConfig).mockImplementation((behavior, expectedRevision) =>
+      Promise.resolve({
+        revision: expectedRevision + 1,
+        config: { ...DEFAULT_CONFIG, behavior },
+      }),
+    );
   });
 
   it('disables whitelist controls when foreground process detection is unsupported', async () => {
@@ -111,7 +173,12 @@ describe('SettingsPage process whitelist', () => {
 describe('SettingsPage fullscreen detection', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(updateBehaviorConfig).mockResolvedValue(undefined);
+    vi.mocked(updateBehaviorConfig).mockImplementation((behavior, expectedRevision) =>
+      Promise.resolve({
+        revision: expectedRevision + 1,
+        config: { ...DEFAULT_CONFIG, behavior },
+      }),
+    );
   });
 
   it('disables the fullscreen skip toggle when capability is unavailable', async () => {

@@ -6,8 +6,9 @@ mod migration;
 mod trends;
 mod writer;
 
+use std::future::Future;
 use std::path::PathBuf;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex as SyncMutex};
 use std::time::Duration;
 
 use chrono::{DateTime, Datelike, Duration as ChronoDuration, NaiveDate, Utc};
@@ -15,7 +16,7 @@ use sqlx::sqlite::{SqliteConnectOptions, SqliteJournalMode, SqlitePoolOptions};
 use sqlx::{Row, SqlitePool};
 use tokio::sync::{mpsc, Mutex};
 use tokio::task::JoinHandle;
-use tracing::{error, info};
+use tracing::{error, info, warn};
 
 use crate::error::{AppError, Result};
 use crate::models::config::Config;
@@ -52,16 +53,16 @@ impl StatWriteCmd {
     }
 }
 
-#[derive(Clone)]
 pub(crate) struct StatService {
     pub(super) db_path: PathBuf,
     pub(super) pool: Arc<Mutex<Option<SqlitePool>>>,
-    /// Writer-task ingress. Arc-internal clone, safe to share across tasks.
-    writer_tx: mpsc::Sender<StatWriteCmd>,
+    /// Taken exactly once during shutdown so no sender can outlive the writer.
+    writer_tx: SyncMutex<Option<mpsc::Sender<StatWriteCmd>>>,
     /// Taken out of the `Option` exactly once when `start()` spawns the writer.
-    writer_rx: Arc<Mutex<Option<mpsc::Receiver<StatWriteCmd>>>>,
+    writer_rx: Mutex<Option<mpsc::Receiver<StatWriteCmd>>>,
     /// Joined by `shutdown()` after the Shutdown sentinel drains the channel.
-    writer_handle: Arc<Mutex<Option<JoinHandle<()>>>>,
+    writer_handle: Mutex<Option<JoinHandle<()>>>,
+    export_lock: Mutex<()>,
 }
 
 #[derive(Debug, Clone)]
@@ -92,9 +93,10 @@ impl StatService {
         Self {
             db_path,
             pool: Arc::new(Mutex::new(None)),
-            writer_tx,
-            writer_rx: Arc::new(Mutex::new(Some(writer_rx))),
-            writer_handle: Arc::new(Mutex::new(None)),
+            writer_tx: SyncMutex::new(Some(writer_tx)),
+            writer_rx: Mutex::new(Some(writer_rx)),
+            writer_handle: Mutex::new(None),
+            export_lock: Mutex::new(()),
         }
     }
 
@@ -106,16 +108,25 @@ impl StatService {
     /// writer task has shut down. `execute_timer_effect` translates the
     /// failure into a `stat_persistence_error` event for the UI.
     pub(crate) fn enqueue_rest_session(&self, session: RestSessionDraft) -> Result<()> {
-        self.writer_tx
-            .try_send(StatWriteCmd::RestSession(session))
-            .map_err(|err| writer::map_send_error(&err))
+        self.enqueue(StatWriteCmd::RestSession(session))
     }
 
     /// Queue a cycle event for asynchronous persistence. See
     /// `enqueue_rest_session` for failure semantics.
     pub(crate) fn enqueue_cycle_event(&self, draft: CycleEventDraft) -> Result<()> {
-        self.writer_tx
-            .try_send(StatWriteCmd::CycleEvent(draft))
+        self.enqueue(StatWriteCmd::CycleEvent(draft))
+    }
+
+    fn enqueue(&self, command: StatWriteCmd) -> Result<()> {
+        let sender = self.writer_tx.lock().map_err(|_| AppError::IoError {
+            message: "stat writer sender lock poisoned".to_string(),
+        })?;
+        sender
+            .as_ref()
+            .ok_or_else(|| AppError::IoError {
+                message: "stat writer task has shut down".to_string(),
+            })?
+            .try_send(command)
             .map_err(|err| writer::map_send_error(&err))
     }
 
@@ -227,33 +238,57 @@ impl StatService {
             .collect()
     }
 
-    /// Atomically export the statistics database via `VACUUM INTO`.
-    ///
-    /// `VACUUM INTO` requires the destination not to exist, so any pre-existing
-    /// file is removed first (the OS save dialog already confirmed the
-    /// overwrite). The filename is interpolated into the SQL because
-    /// `VACUUM INTO` is a directive that does not accept a bind parameter, so
-    /// `validate_export_path` enforces the trust boundary explicitly and any
-    /// embedded single quote is doubled per the SQL escape rule.
+    /// Export through a validated same-directory temporary database, then
+    /// atomically replace the selected target.
     pub(crate) async fn export_to(&self, target_path: PathBuf) -> Result<()> {
+        self.export_to_with(target_path, export::replace_file).await
+    }
+
+    async fn export_to_with<Replace, ReplaceFuture>(
+        &self,
+        target_path: PathBuf,
+        replace: Replace,
+    ) -> Result<()>
+    where
+        Replace: FnOnce(PathBuf, PathBuf) -> ReplaceFuture + Send,
+        ReplaceFuture: Future<Output = Result<()>> + Send,
+    {
         export::validate_export_path(&target_path, &self.db_path)?;
+        let _export_guard = self.export_lock.lock().await;
         let pool = self.pool().await?;
+        let temporary_path = export::temporary_export_path(&target_path)?;
 
-        if let Some(parent) = target_path.parent() {
-            if !parent.as_os_str().is_empty() {
-                tokio::fs::create_dir_all(parent).await?;
+        if tokio::fs::try_exists(&temporary_path).await? {
+            return Err(AppError::IoError {
+                message: format!(
+                    "temporary statistics export already exists: {}",
+                    temporary_path.display()
+                ),
+            });
+        }
+
+        let export_outcome = async {
+            let temporary_sql = temporary_path.to_string_lossy().replace('\'', "''");
+            sqlx::query(&format!("VACUUM INTO '{temporary_sql}'"))
+                .execute(&pool)
+                .await?;
+            export::validate_exported_database(&temporary_path).await?;
+            export::sync_export_file(&temporary_path).await?;
+            replace(temporary_path.clone(), target_path.clone()).await
+        }
+        .await;
+
+        if let Err(err) = export_outcome {
+            match tokio::fs::remove_file(&temporary_path).await {
+                Ok(()) => {}
+                Err(cleanup_err) if cleanup_err.kind() == std::io::ErrorKind::NotFound => {}
+                Err(cleanup_err) => warn!(
+                    "failed to clean temporary statistics export {}: {cleanup_err}",
+                    temporary_path.display()
+                ),
             }
+            return Err(err);
         }
-        match tokio::fs::remove_file(&target_path).await {
-            Ok(()) => {}
-            Err(err) if err.kind() == std::io::ErrorKind::NotFound => {}
-            Err(err) => return Err(err.into()),
-        }
-
-        let target_sql = target_path.to_string_lossy().replace('\'', "''");
-        sqlx::query(&format!("VACUUM INTO '{target_sql}'"))
-            .execute(&pool)
-            .await?;
 
         info!("statistics database exported to {}", target_path.display());
         Ok(())
@@ -331,9 +366,10 @@ impl StatService {
         Ok(Self {
             db_path: PathBuf::from(":memory:"),
             pool: Arc::new(Mutex::new(Some(pool))),
-            writer_tx,
-            writer_rx: Arc::new(Mutex::new(Some(writer_rx))),
-            writer_handle: Arc::new(Mutex::new(None)),
+            writer_tx: SyncMutex::new(Some(writer_tx)),
+            writer_rx: Mutex::new(Some(writer_rx)),
+            writer_handle: Mutex::new(None),
+            export_lock: Mutex::new(()),
         })
     }
 }
@@ -370,24 +406,45 @@ impl Service for StatService {
     }
 
     async fn shutdown(&self) -> Result<()> {
-        // Shutdown sentinel rides the same channel so the writer drains every
-        // queued draft before exiting. If the queue is already saturated the
-        // sentinel is rejected, but the writer falls out of `recv()` once the
-        // queue empties; the join below still bounds wait time.
-        if let Err(err) = self.writer_tx.try_send(StatWriteCmd::Shutdown) {
-            tracing::warn!("stat writer shutdown sentinel rejected: {err}");
-        }
-        if let Some(handle) = self.writer_handle.lock().await.take() {
+        let handle = self.writer_handle.lock().await.take();
+        let sender = self
+            .writer_tx
+            .lock()
+            .map_err(|_| AppError::IoError {
+                message: "stat writer sender lock poisoned".to_string(),
+            })?
+            .take();
+
+        let mut shutdown_error = None;
+        if let Some(handle) = handle {
+            if let Some(sender) = sender {
+                if let Err(err) = sender.send(StatWriteCmd::Shutdown).await {
+                    shutdown_error = Some(AppError::IoError {
+                        message: format!("stat writer shutdown send failed: {err}"),
+                    });
+                }
+                drop(sender);
+            }
             match handle.await {
                 Ok(()) => info!("statistics writer task drained"),
-                Err(err) if err.is_cancelled() => info!("statistics writer task cancelled"),
-                Err(err) => error!("statistics writer task panicked: {err}"),
+                Err(err) => {
+                    error!("statistics writer task failed: {err}");
+                    shutdown_error = Some(AppError::IoError {
+                        message: format!("stat writer task failed: {err}"),
+                    });
+                }
             }
+        } else {
+            drop(sender);
+            drop(self.writer_rx.lock().await.take());
         }
         if let Some(pool) = self.pool.lock().await.take() {
             pool.close().await;
             info!("statistics database closed");
         }
-        Ok(())
+        match shutdown_error {
+            Some(err) => Err(err),
+            None => Ok(()),
+        }
     }
 }

@@ -66,13 +66,13 @@ Each `## [X.Y.Z]` body uses categorized H3 sections with emoji titles. Line
 format is `- imperative-lowercase description (#NN) (sha7)`. PR number is
 omitted only when the change predates the pull-request workflow (v0.1.0).
 
-| Emoji | Category | Conventional Commit types | When to use |
-|-------|----------|---------------------------|-------------|
-| 🎉 | Features | `feat` | user-visible new capability |
-| 🛠️ | Fixes | `fix` | bug fix users would notice |
-| 📃 | Documentation | `docs` | doc-only PR worth surfacing in release notes |
-| 🧪 | Refactor | `refactor` | internal restructuring with no behavior change |
-| 🔧 | Maintenance | `chore`, `ci`, `build`, `perf`, `style`, `test` | infra, deps, CI, build, perf, formatting |
+| Emoji | Category      | Conventional Commit types                       | When to use                                    |
+| ----- | ------------- | ----------------------------------------------- | ---------------------------------------------- |
+| 🎉    | Features      | `feat`                                          | user-visible new capability                    |
+| 🛠️    | Fixes         | `fix`                                           | bug fix users would notice                     |
+| 📃    | Documentation | `docs`                                          | doc-only PR worth surfacing in release notes   |
+| 🧪    | Refactor      | `refactor`                                      | internal restructuring with no behavior change |
+| 🔧    | Maintenance   | `chore`, `ci`, `build`, `perf`, `style`, `test` | infra, deps, CI, build, perf, formatting       |
 
 Conventions:
 
@@ -125,11 +125,11 @@ After merge, tag on `main` and publish.
 
 ## Known CI Traps
 
-| Trap | Constraint |
-|------|------------|
-| `tauri-action@v1` missing | Use `tauri-apps/tauri-action@v0`. |
-| Linux audio build | Install `libasound2-dev`. |
-| Clippy misses test warnings | Always use `--all-targets`. |
-| Windows `Instant` underflow | Do not subtract duration from short-uptime `Instant::now()`. |
-| ts-rs format drift | Pin ts-rs and exclude generated bindings from Prettier. |
-| Version drift across files | `check-version-sync.mjs` runs in `npm run ci`; CHANGELOG must have a matching `## [X.Y.Z]` section before release CI starts. |
+| Trap                        | Constraint                                                                                                                   |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `tauri-action@v1` missing   | Use `tauri-apps/tauri-action@v0`.                                                                                            |
+| Linux audio build           | Install `libasound2-dev`.                                                                                                    |
+| Clippy misses test warnings | Always use `--all-targets`.                                                                                                  |
+| Windows `Instant` underflow | Do not subtract duration from short-uptime `Instant::now()`.                                                                 |
+| ts-rs format drift          | Pin ts-rs and exclude generated bindings from Prettier.                                                                      |
+| Version drift across files  | `check-version-sync.mjs` runs in `npm run ci`; CHANGELOG must have a matching `## [X.Y.Z]` section before release CI starts. |

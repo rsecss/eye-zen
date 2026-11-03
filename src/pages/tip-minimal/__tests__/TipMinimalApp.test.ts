@@ -29,34 +29,37 @@ beforeEach(() => {
     pomodoro: null,
   });
   vi.mocked(getConfig).mockResolvedValue({
-    timer: {
-      work_minutes: 20,
-      rest_seconds: 20,
-      pre_alert_seconds: 15,
-      alert_timeout_seconds: 60,
-      mode: 'twenty_twenty_twenty',
-    },
-    behavior: {
-      sound_enabled: true,
-      fullscreen_skip: true,
-      afk_skip_enabled: false,
-      afk_threshold_minutes: 5,
-      auto_start: false,
-      process_whitelist_enabled: false,
-      process_whitelist: [],
-    },
-    display: { language: 'zh-CN', theme: 'light' },
-    schedule: { enabled: false, active_days: [true, true, true, true, true, false, false] },
-    hotkeys: {
-      start_rest: 'CommandOrControl+Alt+B',
-      skip_rest: 'CommandOrControl+Alt+S',
-      toggle_pause: 'CommandOrControl+Alt+P',
-    },
-    pomodoro: {
-      focus_minutes: 25,
-      short_break_minutes: 5,
-      long_break_minutes: 15,
-      cycles_per_long: 4,
+    revision: 0,
+    config: {
+      timer: {
+        work_minutes: 20,
+        rest_seconds: 20,
+        pre_alert_seconds: 15,
+        alert_timeout_seconds: 60,
+        mode: 'twenty_twenty_twenty',
+      },
+      behavior: {
+        sound_enabled: true,
+        fullscreen_skip: true,
+        afk_skip_enabled: false,
+        afk_threshold_minutes: 5,
+        auto_start: false,
+        process_whitelist_enabled: false,
+        process_whitelist: [],
+      },
+      display: { language: 'zh-CN', theme: 'light' },
+      schedule: { enabled: false, active_days: [true, true, true, true, true, false, false] },
+      hotkeys: {
+        start_rest: 'CommandOrControl+Alt+B',
+        skip_rest: 'CommandOrControl+Alt+S',
+        toggle_pause: 'CommandOrControl+Alt+P',
+      },
+      pomodoro: {
+        focus_minutes: 25,
+        short_break_minutes: 5,
+        long_break_minutes: 15,
+        cycles_per_long: 4,
+      },
     },
   });
 });

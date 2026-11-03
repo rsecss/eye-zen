@@ -1,6 +1,6 @@
 import { emit, listen, type UnlistenFn } from '@tauri-apps/api/event';
 import type { StatePayload } from './bindings/StatePayload';
-import type { Config } from './bindings/Config';
+import type { ConfigSnapshot } from './bindings/ConfigSnapshot';
 import type { HotkeyStatus } from './bindings/HotkeyStatus';
 import type { StatPersistenceErrorPayload } from './bindings/StatPersistenceErrorPayload';
 
@@ -14,8 +14,8 @@ export function onStateChanged(callback: (payload: StatePayload) => void): Promi
   return listen<StatePayload>(EVENT_STATE_CHANGED, (e) => callback(e.payload));
 }
 
-export function onConfigChanged(callback: (payload: Config) => void): Promise<UnlistenFn> {
-  return listen<Config>(EVENT_CONFIG_CHANGED, (e) => callback(e.payload));
+export function onConfigChanged(callback: (payload: ConfigSnapshot) => void): Promise<UnlistenFn> {
+  return listen<ConfigSnapshot>(EVENT_CONFIG_CHANGED, (e) => callback(e.payload));
 }
 
 export function onHotkeyStatusChanged(

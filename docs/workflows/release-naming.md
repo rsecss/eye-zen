@@ -10,15 +10,15 @@ MSI may add `_en-US`; this is produced by Tauri.
 
 ## Assets
 
-| Platform | Asset |
-|----------|-------|
-| Windows NSIS | `Eyezen_{ver}_x64-setup.exe` |
-| Windows MSI | `Eyezen_{ver}_x64_en-US.msi` |
-| Windows portable | `Eyezen_{ver}_x64-portable.zip` |
-| macOS Apple Silicon | `Eyezen_{ver}_aarch64.dmg` |
-| macOS Intel | `Eyezen_{ver}_x64.dmg` |
-| Linux AppImage | `Eyezen_{ver}_amd64.AppImage` |
-| Linux DEB | `Eyezen_{ver}_amd64.deb` |
+| Platform            | Asset                           |
+| ------------------- | ------------------------------- |
+| Windows NSIS        | `Eyezen_{ver}_x64-setup.exe`    |
+| Windows MSI         | `Eyezen_{ver}_x64_en-US.msi`    |
+| Windows portable    | `Eyezen_{ver}_x64-portable.zip` |
+| macOS Apple Silicon | `Eyezen_{ver}_aarch64.dmg`      |
+| macOS Intel         | `Eyezen_{ver}_x64.dmg`          |
+| Linux AppImage      | `Eyezen_{ver}_amd64.AppImage`   |
+| Linux DEB           | `Eyezen_{ver}_amd64.deb`        |
 
 ## Rules
 

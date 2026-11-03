@@ -58,6 +58,8 @@ for effect in &effects {
 - MUST NOT 嵌套锁（避免死锁）
 - 同步锁中毒（`Mutex<T>` poisoned）MUST 显式处理而非 `unwrap`，参考 `ConfigService::emit_config_changed` 对 poisoned 锁记录 `warn!` 后早返
 
+`ConfigService::write_lock` 是明确记录的例外：配置原子写本来就需要锁住完整 read-modify-write；Hotkey 更新还必须在同一锁内完成 revision 校验、同步 OS registry 调用、保存与回滚。该完整操作 MUST 运行在 `spawn_blocking`，MUST NOT 持锁跨 `.await`，也不得把步骤重新拆回 command 层。
+
 ## 异步
 
 - MUST NOT 在 async 上下文中做长时间同步 I/O；阻塞操作 SHOULD 用 `tokio::task::spawn_blocking` 或独立线程（如 `SoundService` 用 `std::thread` 跑 rodio）

@@ -18,7 +18,7 @@ const zhCN = {
   'settings.timer.preAlertSeconds.desc': '休息前预提醒时间',
   'settings.timer.preAlertSeconds.unit': 'sec',
   'settings.timer.alertTimeout': '提醒超时',
-  'settings.timer.alertTimeout.desc': '提醒等待上限，超时自动休息',
+  'settings.timer.alertTimeout.desc': '提醒等待上限，超时自动关闭',
   'settings.timer.alertTimeout.unit': 'sec',
 
   'settings.pomodoro.title': '番茄设置',
@@ -106,6 +106,8 @@ const zhCN = {
     '请在 System Settings → Privacy & Security → Accessibility 中允许 Eyezen，然后重启应用或重新保存快捷键。',
   'settings.hotkeys.error.empty': '快捷键不能为空',
   'settings.hotkeys.error.generic': '快捷键保存失败',
+  'settings.config.error.generic': '设置保存失败，请重试',
+  'settings.config.error.conflict': '设置已在其他位置更新，请确认最新值后重试',
 
   'about.version': '版本',
   'about.description': '基于 20-20-20 规则的跨平台桌面护眼工具',

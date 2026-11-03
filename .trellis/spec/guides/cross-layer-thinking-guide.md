@@ -68,6 +68,19 @@ For each boundary:
 
 **Good**: Each layer only knows its neighbors
 
+## Async Revision + Side-Effect Checklist
+
+When a command can time out, conflict, emit events, or change OS state, trace one shared timeline instead of reviewing each layer independently:
+
+- [ ] Does every snapshot source (initial load, command response, event, conflict refresh) pass through one monotonic revision gate?
+- [ ] Can work queued before an error clear that later error, or is clearing tied to an error generation observed by an explicit retry?
+- [ ] Are revision validation and irreversible/system side effects owned by one serialized operation, with no TOCTOU gap between command and service?
+- [ ] After a timeout/conflict, does rollback use refreshed authoritative state rather than invert the original request?
+- [ ] If an existing resource has a stable label but movable physical placement, is placement queried before layout decisions?
+- [ ] If a timeout wraps a future that takes resource ownership, is that same future resumed or otherwise owned after the warning threshold?
+
+Concrete Eyezen contracts live in `architecture/ipc-and-state.md`, `backend/service-pattern.md`, `backend/platform-storage.md`, and `frontend/store-and-ipc-patterns.md`.
+
 ---
 
 ## Checklist for Cross-Layer Features

@@ -109,7 +109,7 @@ toggle_pause = "CommandOrControl+Alt+P"
 
 ```rust
 pub(crate) struct ConfigService {
-    config: Arc<ArcSwap<Config>>,     // 无锁读取
+    config: Arc<ArcSwap<VersionedConfig>>, // revision + config 同一无锁快照
     tx: watch::Sender<Arc<Config>>,   // 变更广播
     path: PathBuf,
     write_lock: Mutex<()>,            // 串行化 read-modify-write
@@ -119,9 +119,9 @@ pub(crate) struct ConfigService {
 
 | 操作 | 实现 | 规则 |
 |------|------|------|
-| 读取 | `config.load_full()` 通过 `ArcSwap` 无锁 | 任意线程可读，MUST NOT 持锁 |
+| 读取 | `current()` / `snapshot()` 通过 `ArcSwap<VersionedConfig>` 无锁 | config 与 revision MUST 来自同一快照 |
 | 订阅 | `subscribe() -> watch::Receiver<Arc<Config>>` | 服务 init 阶段获取 |
-| 更新 | section 级方法：`update_timer` / `update_behavior` / `update_display` | MUST NOT 暴露逐字段字符串匹配的"通用 update" |
+| 更新 | section 级方法接收 `expected_revision` 并返回 `ConfigSnapshot` | stale revision MUST 返回 `ConfigConflict` |
 | 写入 | tmp + rename 原子操作（`write_config_file`） | MUST NOT 直接覆盖原文件 |
 | 解析失败 | 写 `config.toml.bak` 备份并使用默认值 | MUST NOT 静默覆盖原始文件，原文件保留 |
 | 串行化 | `write_lock: Mutex<()>` 包裹 read-modify-write | 防止并发 section update 互相覆盖 |
@@ -131,22 +131,58 @@ pub(crate) struct ConfigService {
 锁内完成 read-modify-write，锁外 emit 事件：
 
 ```rust
-let updated = {
-    let _write_guard = self.write_lock.lock()?;
-    let mut config = (*self.current()).clone();
+let snapshot = {
+    let _write_guard = self.write_lock.lock().map_err(|_| AppError::IoError {
+        message: "config write lock poisoned".to_string(),
+    })?;
+    let current = self.config.load_full();
+    if current.revision != expected_revision {
+        return Err(AppError::ConfigConflict {
+            expected: expected_revision,
+            actual: current.revision,
+        });
+    }
+    let mut config = (*current.config).clone();
     update(&mut config);
+    Self::validate_timer_contract(&config)?;
+    let revision = current.revision.checked_add(1).ok_or_else(|| {
+        AppError::InvalidOperation {
+            operation: "config revision increment".to_string(),
+            reason: "revision counter exhausted".to_string(),
+        }
+    })?;
     self.save(&config)?;
     let config = Arc::new(config);
-    self.config.store(Arc::clone(&config));
+    self.config.store(Arc::new(VersionedConfig {
+        revision,
+        config: Arc::clone(&config),
+    }));
     let _ = self.tx.send(Arc::clone(&config));
-    config
+    ConfigSnapshot { revision, config: (*config).clone() }
 };
 
-self.emit_config_changed(updated.as_ref());
+self.emit_config_changed(&snapshot);
 ```
 
 - write lock 用 `std::sync::Mutex<()>` 而非 `tokio::sync::Mutex`：临界区是同步 I/O（`std::fs::rename`），MUST NOT 跨 `.await` 持有
 - 中毒处理：MUST 返回 `AppError::IoError`，MUST NOT `unwrap()`
+- TOML load 与每个 section update MUST 校验 Timer/Pomodoro 字段范围及 active work duration；Timer 内部不得用 `.max(1)` 或 subtraction fallback 接受非法配置。
+- revision 溢出检查 MUST 在写文件前完成，避免“文件已更新但内存/revision 返回错误”的分裂状态。
+
+### Hotkey 配置完整操作
+
+```rust
+ConfigService::update_hotkeys(
+    hotkeys: HotkeysConfig,
+    expected_revision: u32,
+    apply_hotkeys: impl FnMut(&HotkeysConfig) -> Result<()>,
+) -> Result<ConfigSnapshot>
+```
+
+- `ConfigService` MUST hold `write_lock` across revision comparison, desired binding apply, TOML save, in-memory revision commit, and failure rollback.
+- The apply closure is synchronous and the command invokes the complete operation through `spawn_blocking`; the transaction MUST NOT cross `.await`.
+- A stale revision returns `ConfigConflict` before invoking the closure. Apply failure or save failure re-applies the previous `HotkeysConfig` best-effort and leaves TOML/revision unchanged.
+- The config watch notification may re-apply the committed hotkeys idempotently, but it is not the transaction owner and MUST NOT repair a stale command after the fact.
 
 ## 配置更新语义
 
@@ -157,13 +193,13 @@ self.emit_config_changed(updated.as_ref());
 | `display.language` | 即时 | I18nService 订阅 watch，托盘菜单与前端同步刷新 |
 | `display.theme` | 即时 | 前端监听 `config_changed` 事件即时切换 |
 | `behavior.auto_start` | 即时 | 调用 `tauri-plugin-autostart` 同步系统状态 |
-| `hotkeys.*` | 即时 | `update_hotkeys_config` 先重绑 OS 快捷键，成功后写 TOML；失败回滚旧绑定并发 `hotkey_status_changed` |
+| `hotkeys.*` | 即时 | ConfigService 在同一 revision-checked write transaction 内重绑 OS 快捷键并写 TOML；失败回滚旧绑定 |
 
 规则：
 
 - 即时生效配置 MUST 在变更后通过 `ServiceContext::emit_config_changed` 广播 `config_changed` 事件（见 `src-tauri/src/services/context.rs`）
 - 下周期生效的字段 MUST NOT 中断当前计时周期；现行实现由 timer loop 在每秒 tick 时检查 `config_rx.has_changed()` 并调用 `sync_runtime_config` 更新内部 `Duration`
-- 快捷键配置 MUST NOT 只依赖 `config_changed` 事后同步；Settings 写入路径 MUST 先完成 `HotkeyService` 事务式注册，避免 TOML 已保存但系统绑定失败。
+- 快捷键配置 MUST NOT 由 command 分步编排“apply → save”。完整操作由 ConfigService 串行拥有，避免 stale request 在 revision check 前改变系统绑定。
 
 ## SQLite Schema（P2，已实现）
 
@@ -192,6 +228,71 @@ CREATE INDEX idx_activity_segments_state_started_at
 - StatService 在 `shutdown` 中 MUST flush 待写记录并关闭连接池
 - 持久化时间戳 MUST 使用 UTC RFC3339；日/周/月 bucket MUST 在查询时按请求 IANA timezone 聚合，不能把单个 `date` 字段当作跨时区事实来源
 - 当前记录语义：只在完成休息的 `Resting -> Working` transition 记录一条 `state = 'resting'` segment；跳过提醒不计入休息统计
+
+## Scenario: Safe Statistics Export Replacement
+
+### 1. Scope / Trigger
+
+- Trigger: `export_statistics` may overwrite an existing backup; any export, validation, sync, or replacement failure must preserve the old target.
+
+### 2. Signatures
+
+```rust
+StatService::export_to(target: PathBuf) -> Result<()>
+temporary_export_path(target: &Path) -> Result<PathBuf>
+validate_exported_database(path: &Path) -> Result<()>
+replace_file(temporary: PathBuf, target: PathBuf) -> Result<()>
+```
+
+### 3. Contracts
+
+- Serialize exports with `StatService.export_lock` and create a unique temporary database in the target directory.
+- Run `VACUUM INTO` only against the temporary path, then verify `PRAGMA user_version == SCHEMA_VERSION` and `PRAGMA quick_check == "ok"`.
+- Call file `sync_all` before replacement. Never remove or truncate the target first.
+- Unix uses same-filesystem `rename`; Windows uses `MoveFileExW(MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH)`.
+- Any failure cleans the temporary file best-effort and returns the original error; cleanup failure is logged without replacing it.
+
+### 4. Validation & Error Matrix
+
+| Condition | Result |
+|---|---|
+| invalid/relative/non-`.db`/source-self target | reject before export |
+| temporary path collision | `IoError`; old target untouched |
+| `VACUUM INTO`, schema, quick-check, or sync failure | remove temporary; old target untouched |
+| platform replacement failure | remove temporary; old target bytes unchanged |
+| success with existing target | atomically replace target with validated database |
+
+### 5. Good / Base / Bad Cases
+
+- Good: existing backup is atomically replaced and opens with expected rows.
+- Base: absent target and empty source database produce a valid schema-versioned backup.
+- Bad: injected replacement failure preserves the exact old bytes and leaves no export temp file.
+
+### 6. Tests Required
+
+- Success: empty DB, populated DB, absent target, existing target, concurrent exports.
+- Failure: corrupt validation input, unwritable target directory, injected replacement failure and cleanup assertion.
+- Platform: Windows local overwrite check; Unix/macOS parity through CI runners.
+
+### 7. Wrong vs Correct
+
+#### Wrong
+
+```rust
+tokio::fs::remove_file(&target).await?;
+sqlx::query(&format!("VACUUM INTO '{target_sql}'")).execute(&pool).await?;
+```
+
+#### Correct
+
+```rust
+sqlx::query(&format!("VACUUM INTO '{temporary_sql}'"))
+    .execute(&pool)
+    .await?;
+validate_exported_database(&temporary).await?;
+sync_export_file(&temporary).await?;
+replace_file(temporary, target).await?;
+```
 
 ## Known limitations（跨平台路径/字符串）
 

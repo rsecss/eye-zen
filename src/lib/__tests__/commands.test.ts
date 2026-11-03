@@ -91,8 +91,8 @@ describe('command wrappers forward to invoke with the correct name + args', () =
     expect(mockInvoke).toHaveBeenCalledWith('get_detector_capabilities', undefined);
   });
 
-  it('updateTimerConfig wraps the payload in { config }', async () => {
-    mockInvoke.mockResolvedValue(undefined);
+  it('updateTimerConfig forwards the expected revision', async () => {
+    mockInvoke.mockResolvedValue({});
     const cfg = {
       work_minutes: 25,
       rest_seconds: 20,
@@ -100,12 +100,15 @@ describe('command wrappers forward to invoke with the correct name + args', () =
       alert_timeout_seconds: 60,
       mode: 'twenty_twenty_twenty' as const,
     };
-    await commands.updateTimerConfig(cfg);
-    expect(mockInvoke).toHaveBeenCalledWith('update_timer_config', { config: cfg });
+    await commands.updateTimerConfig(cfg, 4);
+    expect(mockInvoke).toHaveBeenCalledWith('update_timer_config', {
+      config: cfg,
+      expectedRevision: 4,
+    });
   });
 
-  it('updateBehaviorConfig wraps the payload in { config }', async () => {
-    mockInvoke.mockResolvedValue(undefined);
+  it('updateBehaviorConfig forwards the expected revision', async () => {
+    mockInvoke.mockResolvedValue({});
     const cfg = {
       sound_enabled: true,
       fullscreen_skip: false,
@@ -115,19 +118,25 @@ describe('command wrappers forward to invoke with the correct name + args', () =
       process_whitelist_enabled: false,
       process_whitelist: [],
     };
-    await commands.updateBehaviorConfig(cfg);
-    expect(mockInvoke).toHaveBeenCalledWith('update_behavior_config', { config: cfg });
+    await commands.updateBehaviorConfig(cfg, 5);
+    expect(mockInvoke).toHaveBeenCalledWith('update_behavior_config', {
+      config: cfg,
+      expectedRevision: 5,
+    });
   });
 
-  it('updateDisplayConfig wraps the payload in { config }', async () => {
-    mockInvoke.mockResolvedValue(undefined);
+  it('updateDisplayConfig forwards the expected revision', async () => {
+    mockInvoke.mockResolvedValue({});
     const cfg = { language: 'en' as const, theme: 'dark' as const };
-    await commands.updateDisplayConfig(cfg);
-    expect(mockInvoke).toHaveBeenCalledWith('update_display_config', { config: cfg });
+    await commands.updateDisplayConfig(cfg, 6);
+    expect(mockInvoke).toHaveBeenCalledWith('update_display_config', {
+      config: cfg,
+      expectedRevision: 6,
+    });
   });
 
-  it('updateScheduleConfig wraps the payload in { config }', async () => {
-    mockInvoke.mockResolvedValue(undefined);
+  it('updateScheduleConfig forwards the expected revision', async () => {
+    mockInvoke.mockResolvedValue({});
     const cfg = {
       enabled: true,
       active_days: [true, true, true, true, true, false, false] as [
@@ -140,31 +149,40 @@ describe('command wrappers forward to invoke with the correct name + args', () =
         boolean,
       ],
     };
-    await commands.updateScheduleConfig(cfg);
-    expect(mockInvoke).toHaveBeenCalledWith('update_schedule_config', { config: cfg });
+    await commands.updateScheduleConfig(cfg, 7);
+    expect(mockInvoke).toHaveBeenCalledWith('update_schedule_config', {
+      config: cfg,
+      expectedRevision: 7,
+    });
   });
 
-  it('updateHotkeysConfig wraps the payload in { config }', async () => {
-    mockInvoke.mockResolvedValue(undefined);
+  it('updateHotkeysConfig forwards the expected revision', async () => {
+    mockInvoke.mockResolvedValue({});
     const cfg = {
       start_rest: 'CommandOrControl+Alt+B',
       skip_rest: 'CommandOrControl+Alt+S',
       toggle_pause: 'CommandOrControl+Alt+P',
     };
-    await commands.updateHotkeysConfig(cfg);
-    expect(mockInvoke).toHaveBeenCalledWith('update_hotkeys_config', { config: cfg });
+    await commands.updateHotkeysConfig(cfg, 8);
+    expect(mockInvoke).toHaveBeenCalledWith('update_hotkeys_config', {
+      config: cfg,
+      expectedRevision: 8,
+    });
   });
 
-  it('updatePomodoroConfig wraps the payload in { config }', async () => {
-    mockInvoke.mockResolvedValue(undefined);
+  it('updatePomodoroConfig forwards the expected revision', async () => {
+    mockInvoke.mockResolvedValue({});
     const cfg = {
       focus_minutes: 25,
       short_break_minutes: 5,
       long_break_minutes: 15,
       cycles_per_long: 4,
     };
-    await commands.updatePomodoroConfig(cfg);
-    expect(mockInvoke).toHaveBeenCalledWith('update_pomodoro_config', { config: cfg });
+    await commands.updatePomodoroConfig(cfg, 9);
+    expect(mockInvoke).toHaveBeenCalledWith('update_pomodoro_config', {
+      config: cfg,
+      expectedRevision: 9,
+    });
   });
 });
 

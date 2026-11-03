@@ -1,6 +1,4 @@
 <script lang="ts">
-  import type { BehaviorConfig } from '$lib/bindings/BehaviorConfig';
-  import { updateBehaviorConfig } from '$lib/commands';
   import { disable, enable, isEnabled } from '@tauri-apps/plugin-autostart';
   import { i18nStore } from '$lib/i18n/index.svelte';
   import { configStore } from '$lib/stores/config.svelte';
@@ -8,9 +6,10 @@
   import { errorMessage } from './utils';
 
   const cfg = $derived(configStore.current);
-
   let autoStartError = $state<string | null>(null);
   let autoStartSynced = false;
+  const configError = $derived(configStore.errorFor('autoStart'));
+  const visibleError = $derived(autoStartError ?? (configError ? errorMessage(configError) : null));
 
   async function handleToggle(value: boolean) {
     autoStartError = null;
@@ -22,19 +21,16 @@
       return;
     }
     try {
-      const updated: BehaviorConfig = { ...cfg.behavior, auto_start: value };
-      await updateBehaviorConfig(updated);
+      await configStore.updateAutoStart(value);
     } catch (err) {
-      // OS-level autostart toggle succeeded but config save failed; attempt
-      // to revert the OS state so it matches the saved config. If that
-      // revert also fails, surface the drift to the user via the banner so
-      // they know to retry instead of silently swallowing it.
-      console.error('Failed to save autostart config, attempting OS-level revert:', err);
+      // A conflict refreshes the store before rejecting, so reconcile the OS
+      // state to that authoritative snapshot rather than inverting the request.
+      console.error('Failed to save autostart config, reconciling OS state:', err);
       try {
-        if (value) await disable();
-        else await enable();
+        if (configStore.current.behavior.auto_start) await enable();
+        else await disable();
       } catch (revertErr) {
-        console.error('Failed to revert autostart after save failure:', revertErr);
+        console.error('Failed to reconcile autostart after save failure:', revertErr);
         autoStartError = i18nStore
           .t('settings.behavior.autoStart.error.save')
           .replace('{reason}', errorMessage(err));
@@ -48,10 +44,9 @@
         .then((enabled) => {
           autoStartSynced = true;
           if (enabled !== cfg.behavior.auto_start) {
-            const updated: BehaviorConfig = { ...cfg.behavior, auto_start: enabled };
-            updateBehaviorConfig(updated).catch((err) =>
-              console.error('Failed to sync autostart config:', err),
-            );
+            configStore
+              .updateAutoStart(enabled)
+              .catch((err) => console.error('Failed to sync autostart config:', err));
           }
         })
         .catch((err) => console.error('Failed to check autostart status:', err));
@@ -72,8 +67,8 @@
     />
   </div>
 
-  {#if autoStartError}
-    <div class="setting-error" role="alert">{autoStartError}</div>
+  {#if visibleError}
+    <div class="setting-error" role="alert">{visibleError}</div>
   {/if}
 </div>
 

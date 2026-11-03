@@ -35,7 +35,7 @@ commands/  →  services/  →  platform/
 | `hotkeys.rs` | 全局快捷键配置与状态：`HotkeyAction`、`HotkeyStatus`、`HotkeyBindingStatus` | `pub` | 同上 |
 | `statistics.rs` | 统计数据类型：`StatBucket`、`StatisticsTrendPayload`、`CycleOutcome`、`StatPersistenceErrorPayload` | `pub` | 同上 |
 | `error.rs`（位于 `src-tauri/src/error.rs`，未来 MAY 迁入）| `AppError`、`Result<T>` | `pub` | 不导出（前端通过 invoke 错误捕获） |
-| `channels.rs`（待新增）| 服务间内部 channel 消息类型 | `pub(crate)` | **不导出** |
+| `channels.rs` | 服务间内部 typed feedback / channel 类型（当前含 `PresentationReceipt`） | `pub(crate)` | **不导出** |
 
 - `models/events.rs` 中的类型 MUST 为 `pub` 且 `#[derive(TS)]`，前端通过 `src/lib/bindings/` 消费。
 - `models/channels.rs` 中的类型 MUST 为 `pub(crate)`，**禁止**在前端导出。

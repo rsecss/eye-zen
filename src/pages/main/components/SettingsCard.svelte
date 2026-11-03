@@ -3,9 +3,11 @@
 
   let {
     title,
+    error = null,
     children,
   }: {
     title: string;
+    error?: string | null;
     children: Snippet;
   } = $props();
 </script>
@@ -17,6 +19,9 @@
   </header>
   <div class="card-body">
     {@render children()}
+    {#if error}
+      <div class="card-error" role="alert">{error}</div>
+    {/if}
   </div>
 </section>
 
@@ -72,5 +77,16 @@
 
   .card-body {
     padding: 18px 20px;
+  }
+
+  .card-error {
+    margin-top: 12px;
+    padding: 8px 10px;
+    border: 1px solid var(--state-alert);
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--state-alert) 10%, transparent);
+    color: var(--state-alert-label);
+    font-size: 12px;
+    line-height: 1.45;
   }
 </style>

@@ -76,13 +76,13 @@ npx --no -- commitlint --edit "$1"  # Conventional Commits 校验
 `.husky/pre-push` MUST call `npm run ci`. The `npm run ci` script is the single local parity entrypoint shared with GitHub Actions and currently runs eight checks:
 
 ```bash
-[1/8] cargo fmt --all --manifest-path src-tauri/Cargo.toml --check
-[2/8] cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
-[3/8] cargo test --manifest-path src-tauri/Cargo.toml
-[4/8] npx svelte-check --tsconfig ./tsconfig.json
-[5/8] npm test -- --run
-[6/8] npm run format:check
-[7/8] cargo check --manifest-path src-tauri/Cargo.toml
+[1/8] node scripts/check-version-sync.mjs
+[2/8] cargo fmt --all --manifest-path src-tauri/Cargo.toml --check
+[3/8] cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
+[4/8] cargo test --manifest-path src-tauri/Cargo.toml --no-default-features
+[5/8] npx svelte-check --tsconfig ./tsconfig.json
+[6/8] npm run test:ci
+[7/8] npm run format:check
 [8/8] npm run build
 ```
 
@@ -98,7 +98,7 @@ npx --no -- commitlint --edit "$1"  # Conventional Commits 校验
 
 ### 触发条件
 
-- `push` 到 `main` / `dev` 分支
+- `push` 到 `main` 分支
 - `pull_request` 到 `main` 分支
 - 详细配置：`.github/workflows/ci.yml`
 
@@ -106,10 +106,12 @@ npx --no -- commitlint --edit "$1"  # Conventional Commits 校验
 
 | Job | Runner | 内容 |
 |-----|--------|------|
-| `audit` | `ubuntu-22.04` | `cargo audit --file src-tauri/Cargo.lock`，独立 job，仅 Linux |
+| `audit` | `ubuntu-22.04` | `EmbarkStudios/cargo-deny-action@v2` 执行 `check`，启用 `--all-features` |
 | `check` (Windows) | `windows-latest` | `npm run ci` local/cloud parity checks |
 | `check` (macOS) | `macos-latest` | `npm run ci` local/cloud parity checks |
 | `check` (Linux) | `ubuntu-22.04` | `npm run ci` local/cloud parity checks；需 `libwebkit2gtk-4.1-dev`、`libappindicator3-dev`、`librsvg2-dev`、`patchelf`、`libasound2-dev` |
+| `cargo-test-default-features` | `ubuntu-22.04` | 使用默认 feature 集运行 Rust 测试，覆盖 `plugin-shortcuts` 生产路径 |
+| `cargo-coverage` | `ubuntu-22.04` | `cargo llvm-cov`，行覆盖率至少 90%，函数覆盖率至少 85% |
 
 `check` job 步骤顺序：npm run ci。`npm run ci` owns the shared local/cloud parity checks. Full Tauri packaging belongs to `release.yml` on `v*` tags, not every push or PR.
 
