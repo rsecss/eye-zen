@@ -10,26 +10,24 @@
 
 ## Scope
 
-| File | Role |
-|------|------|
-| `README.md`, `.github/README.zh-CN.md` | Public user-facing docs. |
-| `CHANGELOG.md` | Release history. |
-| `CLAUDE.md` | Claude-facing project index. |
-| `AGENTS.md` | Trellis-managed agent entrypoint. |
-| `docs/workflows/*.md` | Human workflow docs. |
-| `AGENTS.md` | Trellis-managed agent entrypoint and platform file map. |
-| `.trellis/spec/` | Canonical engineering rules. |
-| `.claude/index.json` | Machine-readable project index. |
+| File                                   | Role                                                               |
+| -------------------------------------- | ------------------------------------------------------------------ |
+| `README.md`, `.github/README.zh-CN.md` | Public user-facing docs.                                           |
+| `CHANGELOG.md`                         | Release history.                                                   |
+| `AGENTS.md`                            | Shared project instructions, project index, and platform file map. |
+| `docs/workflows/*.md`                  | Human workflow docs.                                               |
+| `.trellis/spec/`                       | Canonical engineering rules.                                       |
+| `.claude/index.json`                   | Machine-readable project index.                                    |
 
 ## When To Update
 
-| Change | Update |
-|--------|--------|
-| User-visible behavior | README, CHANGELOG, relevant workflow/spec doc. |
-| Architecture or API contract | `.trellis/spec/`, CLAUDE.md index if needed. |
-| CI/release behavior | `docs/workflows/`, `.trellis/spec/architecture/testing-quality.md`. |
-| Agent config | `AGENTS.md` (platform file map) and actual platform files. |
-| Plan status | `docs/plans/README.md`. |
+| Change                       | Update                                                              |
+| ---------------------------- | ------------------------------------------------------------------- |
+| User-visible behavior        | README, CHANGELOG, relevant workflow/spec doc.                      |
+| Architecture or API contract | `.trellis/spec/`, AGENTS.md index if needed.                        |
+| CI/release behavior          | `docs/workflows/`, `.trellis/spec/architecture/testing-quality.md`. |
+| Agent config                 | `AGENTS.md` (platform file map) and actual platform files.          |
+| Plan status                  | `docs/plans/README.md`.                                             |
 
 ## Style Constraints
 
@@ -41,7 +39,9 @@
 
 ## Validation
 
+显式使用 `.gitignore`，避免 `.prettierignore` 中的 `*.md` 规则跳过 Markdown。检查发现格式差异时会返回非零退出码，不会改写文件。
+
 ```bash
 git diff --check
-npx prettier --check README.md .github/README.zh-CN.md CLAUDE.md docs/**/*.md
+npx prettier --check --ignore-path .gitignore README.md .github/README.zh-CN.md AGENTS.md "docs/**/*.md"
 ```

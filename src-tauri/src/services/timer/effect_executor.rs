@@ -19,7 +19,7 @@ use crate::models::timer::StatePayload;
 /// without needing an `AppHandle`.
 ///
 /// One method per `Effect` variant on purpose: a single dispatch `fn(&Effect)`
-/// would push the match into every fake, which CLAUDE.md forbids ("flag-driven
+/// would push the match into every fake, which AGENTS.md forbids ("flag-driven
 /// branching"). Granular methods also make fakes record structured payloads
 /// rather than stringified `Debug`.
 pub(crate) trait EffectSink: Send + Sync {

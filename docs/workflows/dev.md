@@ -10,10 +10,10 @@
 
 ## Hooks
 
-| Hook | Runs | Purpose |
-|------|------|---------|
+| Hook         | Runs                       | Purpose                                                        |
+| ------------ | -------------------------- | -------------------------------------------------------------- |
 | `pre-commit` | `lint-staged` + commitlint | Format staged frontend files and enforce Conventional Commits. |
-| `pre-push` | `npm run ci` | Match local checks with GitHub Actions. |
+| `pre-push`   | `npm run ci`               | Match local checks with GitHub Actions.                        |
 
 `npm run ci` runs:
 
@@ -24,13 +24,12 @@
 5. Svelte type check
 6. Vitest with `--coverage` (enforces threshold gate)
 7. Prettier check
-8. Rust check
-9. Frontend build
+8. Frontend build
 
 GitHub Actions adds two extra jobs beyond `npm run ci`:
 
 - `cargo-test-default-features` — Linux Rust tests with the default feature set (covers the production `plugin-shortcuts` path that `npm run ci` skips).
-- `cargo-coverage` — Linux `cargo llvm-cov` with `--fail-under-lines 80`.
+- `cargo-coverage` — Linux `cargo llvm-cov` with `--fail-under-lines 90 --fail-under-functions 85`.
 
 ## Coverage gate
 
@@ -84,13 +83,13 @@ cargo llvm-cov --manifest-path src-tauri/Cargo.toml --summary-only
 
 ## Branches
 
-| Branch | Use |
-|--------|-----|
-| `main` | Single long-lived branch; always releasable; PR only. |
-| `feat/<scope>` | New feature branch off `main`. |
-| `fix/<scope>` | Bug fix or hotfix branch off `main`. |
-| `chore/<scope>` | Tooling, docs, or maintenance branch off `main`. |
-| `release/vX.Y.Z` | Short-lived release prep branch off `main`. |
+| Branch           | Use                                                   |
+| ---------------- | ----------------------------------------------------- |
+| `main`           | Single long-lived branch; always releasable; PR only. |
+| `feat/<scope>`   | New feature branch off `main`.                        |
+| `fix/<scope>`    | Bug fix or hotfix branch off `main`.                  |
+| `chore/<scope>`  | Tooling, docs, or maintenance branch off `main`.      |
+| `release/vX.Y.Z` | Short-lived release prep branch off `main`.           |
 
 ## References
 

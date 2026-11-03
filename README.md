@@ -40,18 +40,18 @@ Eyezen is a lightweight desktop companion that protects your eyes without breaki
 
 ### Core Experience
 
-| Resting | Tip Window |
-|:---:|:---:|
+|                     Resting                     |                      Tip Window                       |
+| :---------------------------------------------: | :---------------------------------------------------: |
 | ![Resting](docs/public/screenshots/resting.png) | ![Tip Window](docs/public/screenshots/tip_window.png) |
 
-| Settings | About |
-|:---:|:---:|
+|                     Settings                      |                    About                    |
+| :-----------------------------------------------: | :-----------------------------------------: |
 | ![Settings](docs/public/screenshots/settings.png) | ![About](docs/public/screenshots/about.png) |
 
 ### Statistics & Health Analysis
 
-| Overview · Eye-Care Index · 24h Ribbon | Daily / Weekly / Monthly Trend |
-|:---:|:---:|
+|                 Overview · Eye-Care Index · 24h Ribbon                  |                Daily / Weekly / Monthly Trend                |
+| :---------------------------------------------------------------------: | :----------------------------------------------------------: |
 | ![Statistics Overview](docs/public/screenshots/statistics-overview.png) | ![Trend Chart](docs/public/screenshots/statistics-trend.png) |
 
 ### Pomodoro Mode
@@ -82,17 +82,17 @@ npm run ci
 
 ## 🛠️ Tech Stack
 
-| Layer | Choice | Description |
-|-------|--------|-------------|
-| Framework | [Tauri v2](https://v2.tauri.app/) | Rust backend + native WebView |
-| Frontend | [Svelte 5](https://svelte.dev/) | Runes reactivity, zero runtime |
-| Build | [Vite 6](https://vite.dev/) | Fast HMR, multi-entry windows |
-| Styling | [TailwindCSS v4](https://tailwindcss.com/) | Utility-first |
-| Charts | [ECharts](https://echarts.apache.org/) | Tree-shaken, lazy-loaded |
-| Database | SQLite via [sqlx](https://github.com/launchbadge/sqlx) | Statistics persistence |
-| Config | TOML | Human-readable |
-| Audio | rodio | Rust-native, dedicated thread |
-| Type Bridge | ts-rs | Rust → TypeScript auto-generation |
+| Layer       | Choice                                                 | Description                       |
+| ----------- | ------------------------------------------------------ | --------------------------------- |
+| Framework   | [Tauri v2](https://v2.tauri.app/)                      | Rust backend + native WebView     |
+| Frontend    | [Svelte 5](https://svelte.dev/)                        | Runes reactivity, zero runtime    |
+| Build       | [Vite 6](https://vite.dev/)                            | Fast HMR, multi-entry windows     |
+| Styling     | [TailwindCSS v4](https://tailwindcss.com/)             | Utility-first                     |
+| Charts      | [ECharts](https://echarts.apache.org/)                 | Tree-shaken, lazy-loaded          |
+| Database    | SQLite via [sqlx](https://github.com/launchbadge/sqlx) | Statistics persistence            |
+| Config      | TOML                                                   | Human-readable                    |
+| Audio       | rodio                                                  | Rust-native, dedicated thread     |
+| Type Bridge | ts-rs                                                  | Rust → TypeScript auto-generation |
 
 ## 🏗️ Architecture
 
@@ -127,11 +127,11 @@ npm run ci
 
 Config is stored as `config.toml` in the system app data directory; the statistics database `data.db` lives alongside it.
 
-| Platform | Path |
-|----------|------|
-| Windows | `%APPDATA%\com.eyezen.app\` |
-| macOS | `~/Library/Application Support/com.eyezen.app/` |
-| Linux | `~/.config/com.eyezen.app/` |
+| Platform | Path                                            |
+| -------- | ----------------------------------------------- |
+| Windows  | `%APPDATA%\com.eyezen.app\`                     |
+| macOS    | `~/Library/Application Support/com.eyezen.app/` |
+| Linux    | `~/.config/com.eyezen.app/`                     |
 
 All settings can be modified through the in-app Settings UI — you should never have to edit the TOML by hand.
 

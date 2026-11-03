@@ -40,18 +40,18 @@ Eyezen 是一个低噪音的桌面护眼工具。它按 **20-20-20 规则**（�
 
 ### 核心交互
 
-| 休息中 | 提醒窗口 |
-|:---:|:---:|
+|                      休息中                       |                        提醒窗口                        |
+| :-----------------------------------------------: | :----------------------------------------------------: |
 | ![休息中](../docs/public/screenshots/resting.png) | ![提醒窗口](../docs/public/screenshots/tip_window.png) |
 
-| 设置 | 关于 |
-|:---:|:---:|
+|                       设置                       |                     关于                      |
+| :----------------------------------------------: | :-------------------------------------------: |
 | ![设置](../docs/public/screenshots/settings.png) | ![关于](../docs/public/screenshots/about.png) |
 
 ### 统计与健康分析
 
-| 总览 · 护眼指数 · 24 小时色带 | 日 / 周 / 月趋势 |
-|:---:|:---:|
+|                  总览 · 护眼指数 · 24 小时色带                  |                      日 / 周 / 月趋势                      |
+| :-------------------------------------------------------------: | :--------------------------------------------------------: |
 | ![统计总览](../docs/public/screenshots/statistics-overview.png) | ![趋势图](../docs/public/screenshots/statistics-trend.png) |
 
 ### 番茄模式
@@ -82,17 +82,17 @@ npm run ci
 
 ## 🛠️ 技术栈
 
-| 层 | 选型 | 说明 |
-|---|------|------|
-| 框架 | [Tauri v2](https://v2.tauri.app/) | Rust 后端 + 原生 WebView |
-| 前端 | [Svelte 5](https://svelte.dev/) | Runes 响应式，零运行时 |
-| 构建 | [Vite 6](https://vite.dev/) | 极速 HMR，多入口窗口 |
-| 样式 | [TailwindCSS v4](https://tailwindcss.com/) | 工具类优先 |
-| 图表 | [ECharts](https://echarts.apache.org/) | Tree-shaken，按需加载 |
-| 数据库 | SQLite via [sqlx](https://github.com/launchbadge/sqlx) | 统计数据持久化 |
-| 配置 | TOML | 人类可读 |
-| 音频 | rodio | Rust 原生，独立线程 |
-| 类型桥接 | ts-rs | Rust → TypeScript 自动生成 |
+| 层       | 选型                                                   | 说明                       |
+| -------- | ------------------------------------------------------ | -------------------------- |
+| 框架     | [Tauri v2](https://v2.tauri.app/)                      | Rust 后端 + 原生 WebView   |
+| 前端     | [Svelte 5](https://svelte.dev/)                        | Runes 响应式，零运行时     |
+| 构建     | [Vite 6](https://vite.dev/)                            | 极速 HMR，多入口窗口       |
+| 样式     | [TailwindCSS v4](https://tailwindcss.com/)             | 工具类优先                 |
+| 图表     | [ECharts](https://echarts.apache.org/)                 | Tree-shaken，按需加载      |
+| 数据库   | SQLite via [sqlx](https://github.com/launchbadge/sqlx) | 统计数据持久化             |
+| 配置     | TOML                                                   | 人类可读                   |
+| 音频     | rodio                                                  | Rust 原生，独立线程        |
+| 类型桥接 | ts-rs                                                  | Rust → TypeScript 自动生成 |
 
 ## 🏗️ 项目架构
 
@@ -127,11 +127,11 @@ npm run ci
 
 配置存储于系统应用数据目录下的 `config.toml`；统计数据库 `data.db` 同目录。
 
-| 平台 | 路径 |
-|------|------|
-| Windows | `%APPDATA%\com.eyezen.app\` |
-| macOS | `~/Library/Application Support/com.eyezen.app/` |
-| Linux | `~/.config/com.eyezen.app/` |
+| 平台    | 路径                                            |
+| ------- | ----------------------------------------------- |
+| Windows | `%APPDATA%\com.eyezen.app\`                     |
+| macOS   | `~/Library/Application Support/com.eyezen.app/` |
+| Linux   | `~/.config/com.eyezen.app/`                     |
 
 所有设置均可通过应用内 Settings UI 修改，无需手动编辑 TOML。
 

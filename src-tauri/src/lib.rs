@@ -237,7 +237,7 @@ pub fn run() -> Result<(), tauri::Error> {
             if let Some(services) = app_handle.try_state::<services::SharedAppServices>() {
                 tauri::async_runtime::block_on(async {
                     info!("shutting down services");
-                    // Keep reverse-dependency shutdown aligned with CLAUDE.md:
+                    // Keep reverse-dependency shutdown aligned with AGENTS.md:
                     // event sources -> effect executors -> infrastructure.
                     shutdown_service("hotkeys", services.hotkeys.shutdown()).await;
                     shutdown_service("tray", services.tray.shutdown()).await;

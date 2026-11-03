@@ -84,8 +84,7 @@
       "LICENSE",
       "README.md",
       "AGENTS.md",
-      "CHANGELOG.md",
-      "CLAUDE.md"
+      "CHANGELOG.md"
     ],
     "srcTauri": {
       "entry": [
@@ -125,6 +124,7 @@
       "commands": ["src-tauri/src/commands/mod.rs"],
       "models": [
         "src-tauri/src/models/mod.rs",
+        "src-tauri/src/models/channels.rs",
         "src-tauri/src/models/config.rs",
         "src-tauri/src/models/events.rs",
         "src-tauri/src/models/hotkeys.rs",
@@ -208,6 +208,7 @@
         "bindings": [
           "src/lib/bindings/BehaviorConfig.ts",
           "src/lib/bindings/Config.ts",
+          "src/lib/bindings/ConfigSnapshot.ts",
           "src/lib/bindings/CycleOutcome.ts",
           "src/lib/bindings/CycleOutcomesPayload.ts",
           "src/lib/bindings/CycleReason.ts",
@@ -310,7 +311,7 @@
     {
       "name": "root",
       "path": ".",
-      "claudeMd": "CLAUDE.md",
+      "agentsMd": "AGENTS.md",
       "status": "configured",
       "description": "Project root with build config, HTML entries, code style and commit tooling"
     },
