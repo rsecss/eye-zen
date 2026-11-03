@@ -103,7 +103,7 @@ A cross-platform desktop eye-care tool based on the 20-20-20 rule.
 | Logging       | tracing + daily rotation | --                 | `~0.1` / `~0.3` / `~0.2` | tracing, subscriber, and appender |
 | Audio         | rodio                    | Dedicated thread   | `~0.20`                  |                                   |
 | Serialization | serde + serde_json       | `~1.0`             | `~1.0`                   |                                   |
-| Async runtime | tokio                    | `~1.x`             | `~1.50` (full)           |                                   |
+| Async runtime | tokio                    | `~1.x`             | `~1.51.6` (full)         |                                   |
 | Tests         | Vitest                   | `~3.x`             | `~3.2.4`                 |                                   |
 | Type checking | svelte-check             | `~4.x`             | `~4.4.5`                 |                                   |
 
