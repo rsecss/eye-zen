@@ -31,3 +31,6 @@ docs/devlog.md
 # Claude Code
 .ace-tool/
 coverage/
+
+# Agent scratch output
+.tmp/
